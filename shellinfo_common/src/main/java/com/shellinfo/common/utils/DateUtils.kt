@@ -1,0 +1,91 @@
+package com.shellinfo.common.utils
+
+import android.annotation.SuppressLint
+import android.content.Context
+import android.widget.Toast
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
+
+object DateUtils {
+
+    private val calendar = Calendar.getInstance()
+
+    fun getTimerText(): String {
+        return "%02d-%02d-%02d %02d:%02d:%02d".format(
+            calendar.get(Calendar.DATE),
+            calendar.get(Calendar.MONTH) + 1,
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.HOUR_OF_DAY),
+            calendar.get(Calendar.MINUTE),
+            calendar.get(Calendar.SECOND)
+        )
+    }
+
+
+    @SuppressLint("SimpleDateFormat")
+    fun getDate(format:String):String{
+        val sdf = SimpleDateFormat(format)
+        val date: Date = Date()
+        return sdf.format(date.time)
+    }
+
+
+    /**
+     * method to check server time and current time to make sure
+     * ticket is purchasing for the available timings
+     */
+    fun checkOperationalTimings(startTime: String, endTime: String,context: Context): Boolean{
+
+        try{
+
+            val cal = Calendar.getInstance(TimeZone.getTimeZone("Asia/Calcutta"))
+            val tz: TimeZone = cal.timeZone
+            val df = SimpleDateFormat("ddMMyyyyHHmm", Locale.getDefault())
+            df.timeZone = tz
+
+            val date = df.format(Calendar.getInstance().time)
+            val currentTime: Date = df.parse(date)!!
+            val pickedStartTime: Date = df.parse(startTime)!!
+            val pickedEndTime: Date = df.parse(endTime)!!
+
+            val dateformatter = SimpleDateFormat("HH:mm", Locale.getDefault())
+            val starttimeAm = dateformatter.format(pickedStartTime)
+            val endtimePm = dateformatter.format(pickedEndTime)
+
+            val dateFormat = SimpleDateFormat("ddMMyyyyHHmm", Locale.getDefault())
+            val cal1 = Calendar.getInstance()
+            cal1.time = currentTime
+            cal1.add(Calendar.DATE, 1)
+            val convertedDate = dateFormat.format(cal1.time)
+
+            if (currentTime.before(pickedStartTime)) {
+                Toast.makeText(context, "Book a Ticket after $starttimeAm AM", Toast.LENGTH_LONG).show()
+                return false
+            } else if (currentTime.after(pickedStartTime)) {
+                Toast.makeText(context, "Book a Ticket before $endtimePm PM", Toast.LENGTH_LONG).show()
+                return false
+            } else if (convertedDate > df.format(pickedStartTime)) {
+                Toast.makeText(context, "Book a Ticket add before $endtimePm PM", Toast.LENGTH_LONG).show()
+                return false
+            } else {
+                return true
+            }
+
+        }catch (ex:Exception){
+            Toast.makeText(context, "Something went wrong", Toast.LENGTH_LONG).show()
+            return false
+        }
+    }
+
+
+    /**
+     * method to get date and time in specific format
+     */
+    fun getDateInSpecificFormat(dateFormat: String): String? {
+        val dateFormat = SimpleDateFormat(dateFormat)
+        return dateFormat.format(Calendar.getInstance().time)
+    }
+}
