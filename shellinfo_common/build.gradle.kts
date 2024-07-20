@@ -3,17 +3,20 @@ plugins {
     id("org.jetbrains.kotlin.android")
     kotlin("kapt")
     id("kotlin-parcelize")
+    id("maven-publish")
 }
+
+//apply(from = "publish.gradle")
 
 
 
 
 android {
     namespace = "com.shellinfo.common"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 26
     }
 
 
@@ -27,22 +30,22 @@ android {
         debug {
             isMinifyEnabled = false
             buildConfigField("String", "SSL_FINGERPRINT", "\"fingerPrint\"")
-            buildConfigField("String", "BASE_API_URL", "\"https://a0f93e1a8724476c9a447a3922c4f225.api.mockbin.io/\"")
+            buildConfigField("String", "BASE_API_URL", "\"https://a0f93e1a8724476c9a447a3922c4f225.implementation.mockbin.io/\"")
             buildConfigField("String", "API_DOMAIN", "\"jsonplaceholder.typicode.com\"")
             buildConfigField("String", "CASH_FREE_DOMAIN", "\"https://sandbox.cashfree.com/pg/orders\"")
-            buildConfigField("String", "CASH_FREE_NOTIFY_URL", "\"https://122.252.226.254:5114/api/v1/NotifyUrl/CFPaymentRequest\"")
+            buildConfigField("String", "CASH_FREE_NOTIFY_URL", "\"https://122.252.226.254:5114/implementation/v1/NotifyUrl/CFPaymentRequest\"")
 
         }
 
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             //signingConfig = signingConfigs.getByName("release")
             buildConfigField("String", "BASE_API_URL", "\"https://jsonplaceholder.typicode.com/\"")
             buildConfigField("String", "API_DOMAIN", "\"jsonplaceholder.typicode.com\"")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             buildConfigField("String", "SSL_FINGERPRINT", "\"fingerPrint\"")
-            buildConfigField("String", "CASH_FREE_DOMAIN", "\"https://api.cashfree.com/pg/orders\"")
-            buildConfigField("String", "CASH_FREE_NOTIFY_URL", "\"https://125.18.76.109:5114/api/v1/NotifyUrl/CFPaymentRequest\"")
+            buildConfigField("String", "CASH_FREE_DOMAIN", "\"https://implementation.cashfree.com/pg/orders\"")
+            buildConfigField("String", "CASH_FREE_NOTIFY_URL", "\"https://125.18.76.109:5114/implementation/v1/NotifyUrl/CFPaymentRequest\"")
 
         }
     }
@@ -63,11 +66,23 @@ android {
         correctErrorTypes = true
     }
 
+    sourceSets {
+        getByName("main").java.srcDirs("src/main/java")
+    }
+
 }
 
-//fataar{
-//    transitive =true
-//}
+repositories {
+    google()
+    mavenCentral()
+    maven {
+        url = uri("https://repo.eclipse.org/content/repositories/paho-releases/")
+        url = uri("https://jitpack.io")
+    }
+}
+
+// Apply the standalone publish.gradle script
+//apply(from = "publish.gradle")
 
 
 dependencies {
@@ -79,7 +94,9 @@ dependencies {
 
     //hilt library for dependency injection
     implementation("com.google.dagger:hilt-android:2.46.1")
+    implementation("androidx.hilt:hilt-work:1.2.0")
     kapt("com.google.dagger:hilt-android-compiler:2.46.1")
+    kapt("androidx.hilt:hilt-compiler:1.2.0")
 
     // define a BOM and its version
     implementation(platform("com.squareup.okhttp3:okhttp-bom:4.9.0"))
@@ -87,7 +104,7 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor")
 
 
-    //retrofit for the API calls
+    //retrofit for the implementation calls
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.jakewharton.retrofit:retrofit2-kotlin-coroutines-adapter:0.9.2")
     implementation("com.squareup.retrofit2:converter-moshi:2.9.0")
@@ -127,12 +144,27 @@ dependencies {
     //barcode
     implementation("com.google.zxing:core:3.2.1")
 
+    //sunmi printer library
     implementation("com.sunmi:printerlibrary:1.0.18")
 
+    //cash free pg library
     implementation("com.cashfree.pg:api:2.1.9")
 
+    //work manager
+    implementation("androidx.work:work-runtime:2.9.0")
+
+    //Log files
+    implementation("com.github.aabolfazl:filelogger:1.0.2")
+
+    //Ftp client library
+    implementation("commons-net:commons-net:3.8.0")
+
+    // mqtt client
+    implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.4")
+    implementation("org.eclipse.paho:org.eclipse.paho.android.service:1.1.1")
 
 }
+
 
 
 

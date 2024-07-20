@@ -1,16 +1,17 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.google.dagger.hilt.android")
     kotlin("kapt")
 }
 
 android {
     namespace = "com.shell.library"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.shell.library"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 33
         versionCode = 1
         versionName = "1.0"
@@ -58,8 +59,15 @@ dependencies {
     implementation("androidx.core:core-ktx:1.10.1")
     implementation("androidx.activity:activity-ktx:1.7.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation(project(":shellinfo_common"))
 
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+
+    //hilt library for dependency injection
+    implementation("com.google.dagger:hilt-android:2.46.1")
+    implementation("androidx.hilt:hilt-work:1.2.0")
+    kapt("com.google.dagger:hilt-android-compiler:2.46.1")
+    kapt("androidx.hilt:hilt-compiler:1.2.0")
 }

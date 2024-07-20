@@ -54,4 +54,22 @@ interface ShellInfoProvider {
     fun doPayment(appPaymentRequest: AppPaymentRequest)
 
     fun getPrinter(type:PrinterType):PrinterProcessor
+
+    fun initLogger()
+
+    fun startLogging()
+
+    fun stopLogging()
+
+    fun log(tag:String, message:String)
+
+    fun mqttConnect()
+
+    fun subscribeMqttTopic(topic:String)
+
+    fun unsubscribeMqttTopic(topic:String)
+
+    fun publishMqttMessage(topic:String,msg:String)
+
+    fun disconnectMqtt()
 }

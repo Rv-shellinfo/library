@@ -11,6 +11,8 @@ import com.cashfree.pg.core.api.utils.CFErrorResponse
 import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.HttpType
 import com.shellinfo.common.code.enums.PrinterType
+import com.shellinfo.common.code.logs.LoggerImpl
+import com.shellinfo.common.code.mqtt.MQTTManager
 import com.shellinfo.common.code.payment_gateway.PaymentProcessor
 import com.shellinfo.common.code.printer.PrinterActions
 import com.shellinfo.common.code.printer.PrinterProcessor
@@ -38,7 +40,9 @@ class ShellInfoLibrary @Inject constructor(
     private val spUtils:SharedPreferenceUtil,
     private val networkCall: NetworkCall,
     private val databaseCall: DatabaseCall,
-    private val barcodeUtils: BarcodeUtils
+    private val barcodeUtils: BarcodeUtils,
+    private val loggerImpl: LoggerImpl,
+    private val mqttManager: MQTTManager
 ) :ShellInfoProvider {
 
     private var activity: Activity? = null
@@ -125,6 +129,13 @@ class ShellInfoLibrary @Inject constructor(
                 spUtils.savePreference(SpConstants.API_FULL_BASE_URL,spUtils.getPreference(SpConstants.API_BASE_URL,""))
             }
         }
+
+        //logging start
+        loggerImpl.initLogger()
+        loggerImpl.startLogging()
+
+
+
     }
 
 
@@ -203,6 +214,42 @@ class ShellInfoLibrary @Inject constructor(
         //returning the printer processor
         return printerProcessor
 
+    }
+
+    override fun initLogger() {
+        loggerImpl.initLogger()
+    }
+
+    override fun startLogging() {
+        loggerImpl.startLogging()
+    }
+
+    override fun stopLogging() {
+        loggerImpl.stopLogging()
+    }
+
+    override fun log(tag: String, message: String) {
+        loggerImpl.logData(tag,message)
+    }
+
+    override fun mqttConnect() {
+        mqttManager.connect()
+    }
+
+    override fun subscribeMqttTopic(topic: String) {
+        mqttManager.subscribe(topic)
+    }
+
+    override fun unsubscribeMqttTopic(topic: String) {
+        mqttManager.unsubscribe(topic)
+    }
+
+    override fun publishMqttMessage(topic: String, msg: String) {
+        mqttManager.publish(topic,msg)
+    }
+
+    override fun disconnectMqtt() {
+        mqttManager.disconnect()
     }
 
 

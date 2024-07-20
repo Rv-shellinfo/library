@@ -25,7 +25,6 @@ object ShellNetworkModule {
 
     @Singleton
     @Provides
-    @ShellLibrary
     fun provideRetrofit(): Retrofit = RetrofitClientProvider.getRetrofitBuilder(
         BuildConfig.BASE_API_URL, BuildConfig.API_DOMAIN).build()
 

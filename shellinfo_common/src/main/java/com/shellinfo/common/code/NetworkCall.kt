@@ -433,6 +433,8 @@ class NetworkCall @Inject constructor(
         val paymentGateway : PaymentGateway = when (payRequest.paymentGateway){
             PaymentGatewayType.CASHFREE ->
                 CashFreePaymentGateway(apiRepository, this, moshi)
+            PaymentGatewayType.PAYTM ->
+                CashFreePaymentGateway(apiRepository, this, moshi)
         }
 
         //init payment processor

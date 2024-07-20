@@ -1,0 +1,41 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+        maven {
+            setUrl("https://jitpack.io")
+        }
+    }
+
+
+
+    dependencies {
+        classpath('com.android.tools.build:gradle:8.2.0')
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.8.0")
+        classpath("com.google.dagger:hilt-android-gradle-plugin:2.46.1")
+        //classpath("com.github.aasitnikov:fat-aar-android:1.4.0")
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+
+}
+
+
+
+plugins{
+    id("org.jetbrains.kotlin.android").version('1.6.21').apply(false)
+    id("com.google.dagger.hilt.android").version("2.46.1").apply(false)
+
+
+
+}
+
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+        maven { url 'https://jitpack.io' }
+    }
+}

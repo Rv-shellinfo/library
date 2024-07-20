@@ -35,6 +35,7 @@ object RetrofitClientProvider {
             .build()
 
         return Retrofit.Builder()
+            .baseUrl(baseUrl)
             .addConverterFactory(ScalarsConverterFactory.create())
             .addConverterFactory(
                 MoshiConverterFactory.create(
