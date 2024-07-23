@@ -5,6 +5,7 @@ import com.shell.transitapp.utils.workers.LogWorkerStarter
 import com.shellinfo.common.code.ConfigMaster
 import com.shellinfo.common.code.logs.LoggerImpl
 import com.shellinfo.common.code.mqtt.MQTTManager
+import com.shellinfo.common.code.mqtt.MqttMessageHandler
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.utils.FtpUtils
 import dagger.Module
@@ -45,10 +46,15 @@ object UtilityModule {
         return FtpUtils(sharedPreferenceUtil,loggerImpl)
     }
 
+    @Singleton
+    @Provides
+    fun provideMqttMessageHandler() = MqttMessageHandler()
+
 
     @Singleton
     @Provides
-    fun provideMqttManager(configMaster: ConfigMaster,@ApplicationContext context: Context)= MQTTManager(configMaster,context)
+    fun provideMqttManager(configMaster: ConfigMaster,@ApplicationContext context: Context,mqttMessageHandler: MqttMessageHandler)= MQTTManager(configMaster,context,mqttMessageHandler)
+
 
 
 }

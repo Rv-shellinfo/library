@@ -2,9 +2,16 @@ package com.shellinfo.common.code.mqtt
 
 import android.content.Context
 import android.util.Log
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.shellinfo.common.code.ConfigMaster
+import com.shellinfo.common.code.enums.MqttTopicType
+import com.shellinfo.common.data.local.data.mqtt.BaseMessageMqtt
+import com.shellinfo.common.data.local.db.entity.StationsTable
+import com.squareup.moshi.JsonAdapter
 import dagger.hilt.android.qualifiers.ApplicationContext
-import org.eclipse.paho.android.service.MqttAndroidClient
+import info.mqtt.android.service.Ack
+import info.mqtt.android.service.MqttAndroidClient
 import org.eclipse.paho.client.mqttv3.IMqttActionListener
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.IMqttToken
@@ -18,10 +25,17 @@ import javax.inject.Singleton
 @Singleton
 class MQTTManager @Inject constructor(
     private val configMaster: ConfigMaster,
-    private val context: Context
+    private val context: Context,
+    private val mqttMessageHandler: MqttMessageHandler
 ){
 
+    @Inject
+    lateinit var mqttMessageAdapter: JsonAdapter<BaseMessageMqtt<*>>
+
     private lateinit var mqttClient: MqttAndroidClient
+
+    private val _mqttMessageLiveData = MutableLiveData<MqttMessage?>()
+    val mqttMessageLiveData: MutableLiveData<MqttMessage?> get() = _mqttMessageLiveData
 
     // TAG
     companion object {
@@ -29,11 +43,16 @@ class MQTTManager @Inject constructor(
     }
 
     fun connect() {
-        val serverURI = "tcp://broker.emqx.io:1883"
-        mqttClient = MqttAndroidClient(context, serverURI, "kotlin_client")
+        val serverURI = "tcp://152.70.73.136:1883"
+        mqttClient = MqttAndroidClient(context, serverURI, "kotlin_client", Ack.AUTO_ACK)
         mqttClient.setCallback(object : MqttCallback {
             override fun messageArrived(topic: String?, message: MqttMessage?) {
-                Log.d(TAG, "Receive message: ${message.toString()} from topic: $topic")
+
+                //parse the mqtt message
+                val mqttMessage = mqttMessageAdapter.fromJson(message.toString())
+
+                //handle the mqtt message received from mqtt broker
+                mqttMessageHandler.consumeMessage(MqttTopicType.fromTopic(topic),mqttMessage)
             }
 
             override fun connectionLost(cause: Throwable?) {
@@ -49,13 +68,14 @@ class MQTTManager @Inject constructor(
             mqttClient.connect(options, null, object : IMqttActionListener {
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
                     Log.d(TAG, "Connection success")
+                    subscribe("APP_UPDATE")
                 }
 
                 override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
                     Log.d(TAG, "Connection failure")
                 }
             })
-        } catch (e: MqttException) {
+        } catch (e: Exception) {
             e.printStackTrace()
         }
 

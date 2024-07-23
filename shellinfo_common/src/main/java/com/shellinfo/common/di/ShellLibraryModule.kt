@@ -37,7 +37,7 @@ object LibraryModule {
 
     @Provides
     @Singleton
-    fun provideBarCodeUtils(moshi: Moshi):BarcodeUtils{
+    fun provideBarCodeUtils(@DefaultMoshi moshi: Moshi):BarcodeUtils{
         return BarcodeUtils(moshi)
     }
 }

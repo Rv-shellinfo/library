@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.widget.Toast
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.cashfree.pg.api.CFPaymentGatewayService
 import com.cashfree.pg.core.api.callback.CFCheckoutResponseCallback
 import com.cashfree.pg.core.api.utils.CFErrorResponse
@@ -32,6 +33,7 @@ import com.shellinfo.common.utils.BarcodeUtils
 import com.shellinfo.common.utils.DateUtils
 import com.shellinfo.common.utils.SpConstants
 import dagger.hilt.android.qualifiers.ApplicationContext
+import org.eclipse.paho.client.mqttv3.MqttMessage
 import javax.inject.Inject
 
 
@@ -64,6 +66,10 @@ class ShellInfoLibrary @Inject constructor(
 
     //payment gateway response observer
     val paymentGatewayResponse: LiveData<ApiResponse<AppPaymentResponse>> get() = networkCall.paymentGatewayLiveData
+
+
+    //mqtt message
+    val mqttMessageResponse: MutableLiveData<MqttMessage?> get()= mqttManager.mqttMessageLiveData
 
 
     override fun setApiMode(mode: ApiMode) {

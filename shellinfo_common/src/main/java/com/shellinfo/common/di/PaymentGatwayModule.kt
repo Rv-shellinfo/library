@@ -16,7 +16,7 @@ object PaymentGatewayModule {
 
     @Provides
     @Singleton
-    fun provideCashFreePaymentGateway(apiRepository: ApiRepository,networkCall: NetworkCall,moshi: Moshi):CashFreePaymentGateway{
+    fun provideCashFreePaymentGateway(apiRepository: ApiRepository,networkCall: NetworkCall,@DefaultMoshi moshi: Moshi):CashFreePaymentGateway{
         return CashFreePaymentGateway(apiRepository,networkCall,moshi)
     }
 }

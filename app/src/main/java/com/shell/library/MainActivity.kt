@@ -2,6 +2,7 @@ package com.shell.library
 
 import android.app.Activity
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AppCompatActivity
 import com.shellinfo.common.code.ShellInfoLibrary
@@ -25,6 +26,12 @@ class MainActivity : AppCompatActivity() {
         shellInfoLibrary.init()
 
 
+        shellInfoLibrary.mqttConnect()
+        //shellInfoLibrary.subscribeMqttTopic("APP_UPDATE")
+        shellInfoLibrary.mqttMessageResponse.observe(this){message->
+
+           Log.e("message","message")
+        }
 
        // shellInfoLibrary.initKafka()
         //shellInfoLibrary.startKafka()

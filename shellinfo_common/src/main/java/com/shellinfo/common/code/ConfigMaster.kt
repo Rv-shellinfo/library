@@ -4,10 +4,11 @@ data class ConfigMaster(
 
     var operator_type:String ="",
     var operator_name:String ="",
-    var station_id:String ="",
-    var line_id:String ="",
+    var station_id:Int =0,
+    var line_id:Int = 0,
     var equipment_id:String ="",
     var equipment_group_id:String ="",
+    var equipment_group_name: String ="",
     var terminal_id:String ="",
     var activation_code:String ="",
     var acquirer_id:String ="",

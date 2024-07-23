@@ -4,9 +4,13 @@ plugins {
     kotlin("kapt")
     id("kotlin-parcelize")
     id("maven-publish")
+
+    id("com.vanniktech.maven.publish") version "0.28.0" apply false
+    id("com.gradleup.nmcp") version "0.0.7" apply false
 }
 
 //apply(from = "publish.gradle")
+//apply(from = "uploadLibrary.gradle")
 
 
 
@@ -78,6 +82,7 @@ repositories {
     maven {
         url = uri("https://repo.eclipse.org/content/repositories/paho-releases/")
         url = uri("https://jitpack.io")
+        url = uri("https://raw.github.com/synergian/wagon-git/releases")
     }
 }
 
@@ -161,7 +166,9 @@ dependencies {
 
     // mqtt client
     implementation("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.4")
-    implementation("org.eclipse.paho:org.eclipse.paho.android.service:1.1.1")
+    implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.0.0")
+    implementation("androidx.legacy:legacy-support-v4:1.0.0")
+    implementation("com.github.hannesa2:paho.mqtt.android:3.3.5")
 
 }
 

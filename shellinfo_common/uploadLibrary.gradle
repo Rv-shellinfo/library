@@ -1,0 +1,40 @@
+plugins {
+    id 'maven-publish'
+}
+
+repositories {
+    maven {
+        url "https://raw.github.com/synergian/wagon-git/releases"
+    }
+}
+
+configurations {
+    deployLibrary
+}
+
+dependencies {
+    deployLibrary "ar.com.synergian:wagon-git:0.2.5"
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            groupId = ARTIFACT_PACKAGE
+            artifactId = ARTIFACT_NAME
+            version = "${major}.${minor}.${patch}"
+            pom {
+                packaging = ARTIFACT_PACKAGING
+            }
+        }
+    }
+    repositories {
+        maven {
+            url 'http://3.110.117.250:7990/scm/sg/android_shell_library.git'
+            credentials {
+                username = findProperty("gitUsername") ?: System.getenv("GIT_USERNAME")
+                password = findProperty("gitPassword") ?: System.getenv("GIT_PASSWORD")
+            }
+        }
+    }
+}
