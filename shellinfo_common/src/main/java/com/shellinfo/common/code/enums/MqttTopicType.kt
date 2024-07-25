@@ -2,7 +2,7 @@ package com.shellinfo.common.code.enums
 
 enum class MqttTopicType(val topic: String) {
 
-    OTA_UPDATE("OTA_UPDATE"),
+    OTA_UPDATE("MQTT_OTA_UPDATE"),
     LOG_STATUS("LOG_STATUS"),
     CONFIG_UPDATE("CONFIG_UPDATE"),
     FIRMWARE_UPDATE("FIRMWARE_UPDATE"),

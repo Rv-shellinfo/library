@@ -43,7 +43,7 @@ class MQTTManager @Inject constructor(
     }
 
     fun connect() {
-        val serverURI = "tcp://152.70.73.136:1883"
+        val serverURI = "tcp://68.233.98.228:1883"
         mqttClient = MqttAndroidClient(context, serverURI, "kotlin_client", Ack.AUTO_ACK)
         mqttClient.setCallback(object : MqttCallback {
             override fun messageArrived(topic: String?, message: MqttMessage?) {
@@ -53,6 +53,9 @@ class MQTTManager @Inject constructor(
 
                 //handle the mqtt message received from mqtt broker
                 mqttMessageHandler.consumeMessage(MqttTopicType.fromTopic(topic),mqttMessage)
+
+
+
             }
 
             override fun connectionLost(cause: Throwable?) {
@@ -69,6 +72,28 @@ class MQTTManager @Inject constructor(
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
                     Log.d(TAG, "Connection success")
                     subscribe("APP_UPDATE")
+
+
+                    val jsonString = """
+{
+  "message_id":"OTA_UPDATE_TOM",
+  "equipmentGroupId":"2001",
+  "equipmentGroupName":"TOM",
+  "lineId":1,
+  "stationId":125,
+  "isAllEquipments":false,
+  "equipment_id":["123","234","456","678"],
+  "data" :{
+    "file_name":"release.apk",
+    "version":"1.1",
+    "ftp_path":"/tom_update/",
+    "md5FileHash":"",
+    "activationDateTime":"yyyy-mm-dd hh24:mm:ss"
+  }
+}
+""".trimIndent()
+
+                    publish("MQTT_OTA_UPDATE",jsonString)
                 }
 
                 override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {

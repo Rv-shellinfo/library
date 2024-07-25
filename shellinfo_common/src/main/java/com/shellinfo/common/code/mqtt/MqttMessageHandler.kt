@@ -61,6 +61,12 @@ class MqttMessageHandler @Inject constructor() {
         }
     }
 
+
+    fun publishMessage(topic: MqttTopicType?, message: BaseMessageMqtt<*>?)
+    {
+
+    }
+
     /**
      * Method to validate the MQTT message before processing
      */

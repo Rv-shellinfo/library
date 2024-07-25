@@ -33,6 +33,7 @@ class MainActivity : AppCompatActivity() {
            Log.e("message","message")
         }
 
+        //shellInfoLibrary.publishMqttMessage("MQTT_OTA_UPDATE","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9")
        // shellInfoLibrary.initKafka()
         //shellInfoLibrary.startKafka()
 
