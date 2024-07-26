@@ -4,9 +4,11 @@ interface LoggerInterface {
 
     fun initLogger()
 
-    fun startLogging()
+    fun startLogging(localLogs:Boolean, serverLogs:Boolean)
 
-    fun stopLogging()
+    fun stopLogging(localLogs:Boolean, serverLogs:Boolean)
 
     fun logData(tag: String, message: String)
+
+    fun logError(teg:String, error:Throwable)
 }

@@ -1,13 +1,16 @@
 package com.shellinfo.common.code.mqtt
 
+import abbasi.android.filelogger.FileLogger
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.shellinfo.common.code.ConfigMaster
 import com.shellinfo.common.code.enums.MqttTopicType
+import com.shellinfo.common.code.logs.LoggerImpl
 import com.shellinfo.common.data.local.data.mqtt.BaseMessageMqtt
 import com.shellinfo.common.data.local.db.entity.StationsTable
+import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.squareup.moshi.JsonAdapter
 import dagger.hilt.android.qualifiers.ApplicationContext
 import info.mqtt.android.service.Ack
@@ -32,113 +35,143 @@ class MQTTManager @Inject constructor(
     @Inject
     lateinit var mqttMessageAdapter: JsonAdapter<BaseMessageMqtt<*>>
 
+    @Inject
+    lateinit var sharedPreferenceUtil: SharedPreferenceUtil
+
+    private val TAG = MQTTManager::class.java.simpleName
+
+    //mqtt client
     private lateinit var mqttClient: MqttAndroidClient
 
+    //mqtt message live data
     private val _mqttMessageLiveData = MutableLiveData<MqttMessage?>()
     val mqttMessageLiveData: MutableLiveData<MqttMessage?> get() = _mqttMessageLiveData
 
-    // TAG
-    companion object {
-        const val TAG = "AndroidMqttClient"
-    }
+    //mqtt connection live data
+    private val _mqttConnectionLiveData = MutableLiveData<Boolean>()
+    val mqttConnectionLiveData: MutableLiveData<Boolean> get() = _mqttConnectionLiveData
 
+
+    /**
+     * Method to connect to MQTT
+     */
     fun connect() {
+
         val serverURI = "tcp://68.233.98.228:1883"
         mqttClient = MqttAndroidClient(context, serverURI, "kotlin_client", Ack.AUTO_ACK)
         mqttClient.setCallback(object : MqttCallback {
             override fun messageArrived(topic: String?, message: MqttMessage?) {
 
-                //parse the mqtt message
-                val mqttMessage = mqttMessageAdapter.fromJson(message.toString())
+                //log for mqtt connection success
+                FileLogger.d(TAG,"MQTT MESSAGE ARRIVED FOR TOPIC -> $topic")
 
-                //handle the mqtt message received from mqtt broker
-                mqttMessageHandler.consumeMessage(MqttTopicType.fromTopic(topic),mqttMessage)
+                try {
+
+                    //parse the mqtt message
+                    val mqttMessage = mqttMessageAdapter.fromJson(message.toString())
+
+                    //handle the mqtt message received from mqtt broker
+                    mqttMessageHandler.consumeMessage(MqttTopicType.fromTopic(topic),mqttMessage)
+
+
+                }catch (ex:Exception){
+
+                    FileLogger.e(TAG,"ERROR IN CONNECTION ${ex.message}")
+                    ex.cause?.let { FileLogger.e(TAG, it) }
+                }
+
+
 
 
 
             }
 
             override fun connectionLost(cause: Throwable?) {
-                Log.d(TAG, "Connection lost ${cause.toString()}")
+                FileLogger.e(TAG, "MQTT Connection lost ${cause.toString()}")
+                cause?.let { FileLogger.e(TAG, it) }
             }
 
             override fun deliveryComplete(token: IMqttDeliveryToken?) {
 
             }
         })
+
+        //MQTT options
         val options = MqttConnectOptions()
         try {
             mqttClient.connect(options, null, object : IMqttActionListener {
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
-                    Log.d(TAG, "Connection success")
-                    subscribe("APP_UPDATE")
 
 
-                    val jsonString = """
-{
-  "message_id":"OTA_UPDATE_TOM",
-  "equipmentGroupId":"2001",
-  "equipmentGroupName":"TOM",
-  "lineId":1,
-  "stationId":125,
-  "isAllEquipments":false,
-  "equipment_id":["123","234","456","678"],
-  "data" :{
-    "file_name":"release.apk",
-    "version":"1.1",
-    "ftp_path":"/tom_update/",
-    "md5FileHash":"",
-    "activationDateTime":"yyyy-mm-dd hh24:mm:ss"
-  }
-}
-""".trimIndent()
+                    FileLogger.d(TAG, "MQTT Connection success")
 
-                    publish("MQTT_OTA_UPDATE",jsonString)
+                    _mqttConnectionLiveData.value= true
                 }
 
                 override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-                    Log.d(TAG, "Connection failure")
+
+                    FileLogger.e(TAG, "MQTT Connection failure ${exception?.message}")
+                    exception?.let { FileLogger.e(TAG, it) }
                 }
             })
         } catch (e: Exception) {
             e.printStackTrace()
+            e.let { FileLogger.e(TAG, it) }
         }
 
     }
 
+    /**
+     * Method to subscribe the topic
+     */
     fun subscribe(topic: String, qos: Int = 1) {
         try {
             mqttClient.subscribe(topic, qos, null, object : IMqttActionListener {
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
-                    Log.d(TAG, "Subscribed to $topic")
+
+                    FileLogger.d(TAG, "Subscribed to $topic")
                 }
 
                 override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-                    Log.d(TAG, "Failed to subscribe $topic")
+                    FileLogger.e(TAG, "Failed to subscribe $topic")
+                    FileLogger.e(TAG, "Topic Subscription failure ${exception?.message}")
+                    exception?.let { FileLogger.e(TAG, it) }
                 }
             })
         } catch (e: MqttException) {
             e.printStackTrace()
+            e.let { FileLogger.e(TAG, it) }
         }
     }
 
+    /**
+     * Method to unsubscribe a message
+     */
     fun unsubscribe(topic: String) {
         try {
             mqttClient.unsubscribe(topic, null, object : IMqttActionListener {
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
-                    Log.d(TAG, "Unsubscribed to $topic")
+
+                    FileLogger.d(TAG, "Unsubscribed to $topic")
                 }
 
                 override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-                    Log.d(TAG, "Failed to unsubscribe $topic")
+
+                    FileLogger.e(TAG, "Failed to un-subscribe $topic")
+                    FileLogger.e(TAG, "Topic Un-Subscription failure ${exception?.message}")
+                    exception?.let { FileLogger.e(TAG, it) }
                 }
             })
         } catch (e: MqttException) {
             e.printStackTrace()
+            e.let { FileLogger.e(TAG, it) }
         }
     }
 
 
+    /**
+     * Method to publish a message on a topic
+     */
     fun publish(topic: String, msg: String, qos: Int = 1, retained: Boolean = false) {
         try {
             val message = MqttMessage()
@@ -147,31 +180,41 @@ class MQTTManager @Inject constructor(
             message.isRetained = retained
             mqttClient.publish(topic, message, null, object : IMqttActionListener {
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
-                    Log.d(TAG, "$msg published to $topic")
+                    FileLogger.d(TAG, "$msg published to $topic")
                 }
 
                 override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-                    Log.d(TAG, "Failed to publish $msg to $topic")
+
+                    FileLogger.e(TAG, "Failed to publish $msg to $topic")
+                    FileLogger.e(TAG, "Error message ${exception?.message}")
+                    exception?.let { FileLogger.e(TAG, it) }
                 }
             })
         } catch (e: MqttException) {
             e.printStackTrace()
+            e.let { FileLogger.e(TAG, it) }
         }
     }
 
+    /**
+     * Method to disconnect from MQTT server
+     */
     fun disconnect() {
         try {
             mqttClient.disconnect(null, object : IMqttActionListener {
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
-                    Log.d(TAG, "Disconnected")
+                    FileLogger.d(TAG, "MQTT Disconnected")
                 }
 
                 override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
-                    Log.d(TAG, "Failed to disconnect")
+                    FileLogger.e(TAG, "Failed to disconnect from MQTT")
+                    FileLogger.e(TAG, "MQTT DISCONNECT Error message ${exception?.message}")
+                    exception?.let { FileLogger.e(TAG, it) }
                 }
             })
         } catch (e: MqttException) {
             e.printStackTrace()
+            e.let { FileLogger.e(TAG, it) }
         }
     }
 

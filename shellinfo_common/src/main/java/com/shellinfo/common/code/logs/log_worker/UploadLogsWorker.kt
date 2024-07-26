@@ -1,5 +1,6 @@
 package com.shell.transitapp.utils.workers
 
+import abbasi.android.filelogger.FileLogger
 import android.content.Context
 import android.util.Log
 import androidx.hilt.work.HiltWorker
@@ -21,7 +22,7 @@ class UploadLogsWorker @AssistedInject constructor(
 
     override suspend fun doWork(): Result {
 
-        Log.e("Worker Started","Worker Started to Upload the Logs")
+        FileLogger.d("Worker Started","Worker Started to Upload the Logs")
 
         return withContext(Dispatchers.IO){
             ftpUtils.uploadFileToSc()

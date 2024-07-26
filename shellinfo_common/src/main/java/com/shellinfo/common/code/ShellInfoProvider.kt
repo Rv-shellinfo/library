@@ -8,6 +8,7 @@ import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.HttpType
 import com.shellinfo.common.code.enums.PrinterType
 import com.shellinfo.common.code.printer.PrinterProcessor
+import com.shellinfo.common.data.local.data.InitData
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
 import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentRequest
 import com.shellinfo.common.data.remote.response.model.ticket.Ticket
@@ -25,7 +26,7 @@ interface ShellInfoProvider {
 
     fun setActivity(activity: Activity)
 
-    fun init()
+    fun init(initData: InitData)
 
     fun setHttpProtocol(protocol: HttpType)
 
@@ -55,13 +56,13 @@ interface ShellInfoProvider {
 
     fun getPrinter(type:PrinterType):PrinterProcessor
 
-    fun initLogger()
+    fun startLogging(localLogs:Boolean, serverLogs:Boolean)
 
-    fun startLogging()
+    fun stopLogging(localLogs:Boolean, serverLogs:Boolean)
 
-    fun stopLogging()
+    fun logData(tag:String, message:String)
 
-    fun log(tag:String, message:String)
+    fun logError(tag:String, error:Throwable)
 
     fun mqttConnect()
 

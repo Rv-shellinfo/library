@@ -18,6 +18,7 @@ import com.shellinfo.common.code.payment_gateway.PaymentProcessor
 import com.shellinfo.common.code.printer.PrinterActions
 import com.shellinfo.common.code.printer.PrinterProcessor
 import com.shellinfo.common.code.printer.SunmiPrinter
+import com.shellinfo.common.data.local.data.InitData
 import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.remote.response.ApiResponse
@@ -35,8 +36,9 @@ import com.shellinfo.common.utils.SpConstants
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.eclipse.paho.client.mqttv3.MqttMessage
 import javax.inject.Inject
+import javax.inject.Singleton
 
-
+@Singleton
 class ShellInfoLibrary @Inject constructor(
     @ApplicationContext private val context: Context,
     private val spUtils:SharedPreferenceUtil,
@@ -47,7 +49,11 @@ class ShellInfoLibrary @Inject constructor(
     private val mqttManager: MQTTManager
 ) :ShellInfoProvider {
 
+    //application activity context
     private var activity: Activity? = null
+
+    @Inject
+    lateinit var masterConfig: ConfigMaster
 
     //stations live data
     var stationsLiveData: LiveData<List<StationsTable>> = databaseCall.stationsLiveData
@@ -67,9 +73,11 @@ class ShellInfoLibrary @Inject constructor(
     //payment gateway response observer
     val paymentGatewayResponse: LiveData<ApiResponse<AppPaymentResponse>> get() = networkCall.paymentGatewayLiveData
 
-
     //mqtt message
     val mqttMessageResponse: MutableLiveData<MqttMessage?> get()= mqttManager.mqttMessageLiveData
+
+    //mqtt connection callback
+    val mqttIsConnected: MutableLiveData<Boolean> get()= mqttManager.mqttConnectionLiveData
 
 
     override fun setApiMode(mode: ApiMode) {
@@ -107,7 +115,16 @@ class ShellInfoLibrary @Inject constructor(
 
     }
 
-    override fun init() {
+    override fun init(initData: InitData) {
+
+        //save application specific data in shared preferences for future use
+        spUtils.savePreference(SpConstants.APP_ID,initData.appId)
+        spUtils.savePreference(SpConstants.APP_NAME,initData.appName)
+        spUtils.savePreference(SpConstants.APP_VERSION_CODE,initData.appVersionCode)
+        spUtils.savePreference(SpConstants.APP_VERSION_NAME,initData.appVersionName)
+        spUtils.savePreference(SpConstants.APP_TYPE,initData.appType)
+        spUtils.savePreference(SpConstants.DEVICE_TYPE,initData.deviceType)
+        spUtils.savePreference(SpConstants.DEVICE_SERIAL,initData.deviceSerial)
 
         //check if private mode or public
         if(spUtils.getPreference(SpConstants.API_MODE, ApiMode.DEFAULT.name).equals(ApiMode.PRIVATE.name)){
@@ -136,11 +153,8 @@ class ShellInfoLibrary @Inject constructor(
             }
         }
 
-        //logging start
-        loggerImpl.initLogger()
-        loggerImpl.startLogging()
-
-
+        //mqtt connection
+        mqttManager.connect()
 
     }
 
@@ -222,20 +236,20 @@ class ShellInfoLibrary @Inject constructor(
 
     }
 
-    override fun initLogger() {
-        loggerImpl.initLogger()
+    override fun startLogging(localLogs:Boolean, serverLogs:Boolean) {
+        loggerImpl.startLogging(localLogs,serverLogs)
     }
 
-    override fun startLogging() {
-        loggerImpl.startLogging()
+    override fun stopLogging(localLogs:Boolean, serverLogs:Boolean) {
+        loggerImpl.stopLogging(serverLogs,serverLogs)
     }
 
-    override fun stopLogging() {
-        loggerImpl.stopLogging()
-    }
-
-    override fun log(tag: String, message: String) {
+    override fun logData(tag: String, message: String) {
         loggerImpl.logData(tag,message)
+    }
+
+    override fun logError(tag: String, error: Throwable) {
+        loggerImpl.logError(tag,error)
     }
 
     override fun mqttConnect() {

@@ -3,7 +3,9 @@ package com.shellinfo.common.code.mqtt
 import com.shellinfo.common.code.ConfigMaster
 import com.shellinfo.common.code.enums.EquipmentType
 import com.shellinfo.common.code.enums.MqttTopicType
+import com.shellinfo.common.code.mqtt.topic_handler.MqttOtaHandler
 import com.shellinfo.common.data.local.data.mqtt.BaseMessageMqtt
+import com.shellinfo.common.data.local.data.mqtt.OtaUpdateMessage
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -12,6 +14,9 @@ class MqttMessageHandler @Inject constructor() {
 
     @Inject
     lateinit var configMaster: ConfigMaster
+
+    @Inject
+    lateinit var mqttOtaHandler: MqttOtaHandler
 
     /**
      * Method to handle the MQTT message
@@ -26,7 +31,7 @@ class MqttMessageHandler @Inject constructor() {
         when(topic){
 
             MqttTopicType.OTA_UPDATE ->{
-
+                mqttOtaHandler.handleOta(message?.data as OtaUpdateMessage)
             }
 
             MqttTopicType.LOG_STATUS ->{
