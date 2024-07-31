@@ -1,5 +1,8 @@
 package com.shellinfo.common.data.local.data
 
+import android.service.controls.DeviceTypes
+import com.shellinfo.common.code.enums.EquipmentType
+
 data class InitData(
 
     var appId:String,
@@ -10,15 +13,9 @@ data class InitData(
 
     var appVersionName:String,
 
-    var equipmentId:String,
+    var deviceType: EquipmentType,
 
-    var equipmentName:String,
+    var appType:String,
 
-    var equipmentType:String,
-
-    var equipmentSerial:String,
-
-    var stationName:String,
-
-    var stationId:String
+    var deviceSerial:String
 )

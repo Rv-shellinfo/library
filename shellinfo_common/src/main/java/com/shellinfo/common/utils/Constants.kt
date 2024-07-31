@@ -14,6 +14,9 @@ object SpConstants{
     const val APP_ID="APPLICATION_ID"
     const val APP_VERSION_CODE="APPLICATION_VERSION_CODE"
     const val APP_VERSION_NAME="APPLICATION_VERSION_NAME"
+    const val APP_TYPE="APP_TYPE"
+    const val DEVICE_TYPE="DEVICE_TYPE"
+    const val DEVICE_SERIAL="DEVICE_SERIAL"
 
     //API constants
     const val API_MODE ="API_MODE"

@@ -3,8 +3,9 @@ package com.shellinfo.common.utils
 import abbasi.android.filelogger.FileLogger
 import android.os.Environment
 import android.util.Log
-import com.shellinfo.common.code.logs.LoggerConfig
+import com.shellinfo.common.code.ConfigMaster
 import com.shellinfo.common.code.logs.LoggerImpl
+import com.shellinfo.common.code.mqtt.MQTTManager
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import org.apache.commons.net.ftp.FTP
 import org.apache.commons.net.ftp.FTPClient
@@ -15,23 +16,30 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class FtpUtils @Inject constructor(
     private val sharedPreferenceUtil: SharedPreferenceUtil,
     private val loggerUtil: LoggerImpl
 ) {
 
+    private val TAG = this::class.java.simpleName
+
+    @Inject
+    lateinit var master: ConfigMaster
+
     //host ip address
-    private val host = sharedPreferenceUtil.getPreference(SpConstants.SC_IP_ADDRESS_API, "172.16.200.116")
+    private val host = master.ftp_ip_address
 
     //host port number
-    private val port = sharedPreferenceUtil.getPreference(SpConstants.SC_PORT, "22")
+    private val port = master.ftp_port
 
     //ftp user
-    private val ftpUser = sharedPreferenceUtil.getPreference(SpConstants.FTP_USER, "ftpsc")
+    private val ftpUser = master.ftp_user
 
     //ftp password
-    private val ftpPassword = sharedPreferenceUtil.getPreference(SpConstants.FTP_PASSWORD, "ftpsc")
+    private val ftpPassword = master.ftp_pass
 
     //method to upload the log files to SC
     fun uploadFileToSc() {
@@ -143,14 +151,13 @@ class FtpUtils @Inject constructor(
     fun downloadUpdatedApk(filePath: String?, fileName: String?, newVersion: Int, downloadHandler: (String) -> Unit) {
 
         //current version
-        //TODO make current version dynamic
-        val currentVersion = 1
+        val currentVersion = sharedPreferenceUtil.getPreference(SpConstants.APP_VERSION_CODE,0)
 
         //local file path
         val localFilePath = fileName
 
-
-        Log.e("FTP", "Local file >$localFilePath")
+        //logging the file path
+        FileLogger.d(TAG, "Local file >$localFilePath")
 
 
         //remote file path
@@ -161,23 +168,20 @@ class FtpUtils @Inject constructor(
         //check current version and new version / if new version number bigger then download new version
         if (currentVersion < newVersion) {
 
-            Log.e("Older installed version found","Trying to download new apk file")
+            FileLogger.d(TAG, "Older version found, Updated version starting to download")
 
             //creating ftp client for download
             val ftpClient = FTPClient()
 
             try {
-                ftpClient.connect(host)
+                ftpClient.connect("$host:$port")
 
-                if(ftpClient.login(ftpPassword,ftpPassword)){
+                if(ftpClient.login(ftpUser,ftpPassword)){
 
-                    Log.e("FTP","FTP login success for download apk")
+                    FileLogger.d(TAG,"FTP login success for download apk")
 
                     ftpClient.enterLocalPassiveMode()
                     ftpClient.setFileType(FTP.BINARY_FILE_TYPE)
-
-                    Log.e("FTP", "Local File > $localFilePath")
-
 
                     val folder = File(Environment.getExternalStorageDirectory(),"/transit_app_build")
 
