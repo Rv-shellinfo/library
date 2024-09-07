@@ -5,10 +5,10 @@ import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.remote.ApiEndPoints
 import com.shellinfo.common.data.remote.NetworkUtils
 import com.shellinfo.common.data.remote.response.ApiResponse
+import com.shellinfo.common.data.remote.response.model.entry_validation.EntryValidationRequest
+import com.shellinfo.common.data.remote.response.model.entry_validation.EntryValidationResponse
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
 import com.shellinfo.common.data.remote.response.model.fare.FareResponse
-import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentRequest
-import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentResponse
 import com.shellinfo.common.data.remote.response.model.payment_gateway.ChecksumRequest
 import com.shellinfo.common.data.remote.response.model.payment_gateway.ChecksumResponse
 import com.shellinfo.common.data.remote.response.model.payment_gateway.TrackTransactionRequest
@@ -148,5 +148,10 @@ class ApiRepository @Inject constructor(
         emit(ApiResponse.Loading)
         request.authorization=spUtils.getPreference(SpConstants.API_TOKEN,"")
         emit(networkUtils.handleApiCall { apiService.getTicketByOrderId(URL+ApiEndPoints.PUBLIC_GENERATE_TICKET_BY_ORDER_ID,request)})
+    }
+
+    fun doEntryValidation(request:EntryValidationRequest):Flow<ApiResponse<EntryValidationResponse>> = flow {
+        emit(ApiResponse.Loading)
+        emit(networkUtils.handleApiCall { apiService.doEntryValidation(URL+ApiEndPoints.ENDPOINT_ENTRY_VALIDATION,request)})
     }
 }

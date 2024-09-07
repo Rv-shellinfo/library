@@ -16,6 +16,10 @@ object ApiEndPoints {
     const val ENDPOINT_TICKET_DETAILS_BY_PHONE =  "/api/pos/v1/Ticket/GetPOSTicketDetailsByPatronPhone"
     const val ENDPOINT_GET_QR_FARE_SPECIAL_EXIST =  "/api/pos/v1/Fare/getQRFareSpecialExit"
     const val ENDPOINT_BILL_EASY_OTP_VERIFICATION =  "/api/v1/Billeasy/OTPVerification"
+    const val ENDPOINT_ENTRY_VALIDATION =  "/api/v1/Transaction/EntryValidation"
+    const val ENDPOINT_HEALTH_URL =  "/api/v1/Equipment/UpdateEquipHealthData"
+    const val ENDPOINT_ENTRY_TRX_URL =  "/api/v1/Transaction/AddEntryTxnDetails"
+    const val ENDPOINT_EXIT_TRX_URL =  "/api/v1/Transaction/AddExitTxnDetails"
 
 
 
@@ -29,4 +33,5 @@ object ApiEndPoints {
     const val PUBLIC_GENERATE_PAYMENT_GATEWAY_CHECKSUM =  "getbilldeskchecksumandroidnewqr/services.do"
     const val PUBLIC_CASH_FREE_PAYMENT_API =  "https://sandbox.cashfree.com/pg/orders"
     const val PUBLIC_GENERATE_TICKET_BY_ORDER_ID =  "getorderstatusbytsavaariorderid/services.do"
+
 }

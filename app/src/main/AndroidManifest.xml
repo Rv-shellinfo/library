@@ -18,6 +18,14 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Android_Shell_Library"
         tools:targetApi="31">
+
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            tools:node="remove">
+        </provider>
+
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

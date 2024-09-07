@@ -12,6 +12,8 @@
     <uses-permission android:name="android.permission.USE_EXACT_ALARM"
         tools:ignore="ExactAlarm" />
 
+    <uses-permission android:name="android.permission.BIND_REMOTE_SERVICE" />
+
     <uses-permission
         android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
         android:minSdkVersion="29" />
@@ -22,9 +24,28 @@
     <uses-feature android:name="android.hardware.usb.accessory" android:required="true"/>
 
 
-    <application>
+    <queries>
+        <intent>
+            <action android:name="IpcInterface.AIDL" />
+        </intent>
+    </queries>
+
+    <application
+
+        android:requestLegacyExternalStorage="true">
 
 
+
+        <service
+            android:name=".code.ipc.TransitIPCService"
+            android:exported="true"
+            android:enabled="true">
+
+            <intent-filter>
+                <action android:name="com.shell.ipc.TRANSIT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </service>
 
 
     </application>

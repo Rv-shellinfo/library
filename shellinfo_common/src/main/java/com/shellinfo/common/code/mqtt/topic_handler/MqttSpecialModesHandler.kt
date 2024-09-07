@@ -5,4 +5,6 @@ import javax.inject.Singleton
 
 @Singleton
 class MqttSpecialModesHandler @Inject constructor(){
+
+
 }

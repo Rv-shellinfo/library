@@ -1,6 +1,5 @@
 package com.shellinfo.common.code
 
-import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatActivity
@@ -9,6 +8,7 @@ import com.shellinfo.common.code.enums.HttpType
 import com.shellinfo.common.code.enums.PrinterType
 import com.shellinfo.common.code.printer.PrinterProcessor
 import com.shellinfo.common.data.local.data.InitData
+import com.shellinfo.common.BaseMessage
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
 import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentRequest
 import com.shellinfo.common.data.remote.response.model.ticket.Ticket
@@ -24,7 +24,7 @@ interface ShellInfoProvider {
 
     fun seAuthToken(token:String)
 
-    fun setActivity(activity: Activity)
+    fun setActivity(activity: AppCompatActivity)
 
     fun init(initData: InitData)
 
@@ -73,4 +73,12 @@ interface ShellInfoProvider {
     fun publishMqttMessage(topic:String,msg:String)
 
     fun disconnectMqtt()
+
+    fun startIpcService(context: Context)
+
+    fun stopIpcService(context: Context)
+
+    fun sendMessageToIpcService(baseMessage: BaseMessage<*>)
+
+
 }

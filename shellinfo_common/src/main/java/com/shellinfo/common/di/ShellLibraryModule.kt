@@ -4,10 +4,12 @@ import android.content.Context
 import com.shellinfo.common.code.DatabaseCall
 import com.shellinfo.common.code.NetworkCall
 import com.shellinfo.common.code.ShellInfoLibrary
+import com.shellinfo.common.code.ipc.IPCDataHandler
 import com.shellinfo.common.code.logs.LoggerImpl
 import com.shellinfo.common.code.mqtt.MQTTManager
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.utils.BarcodeUtils
+import com.shellinfo.common.utils.PermissionsUtils
 import com.squareup.moshi.Moshi
 import dagger.Module
 import dagger.Provides
@@ -29,9 +31,11 @@ object LibraryModule {
         databaseCall: DatabaseCall,
         barcodeUtils: BarcodeUtils,
         loggerImpl: LoggerImpl,
-        mqttManager: MQTTManager
+        mqttManager: MQTTManager,
+        ipcDataHandler: IPCDataHandler,
+        permissionsUtils: PermissionsUtils
     ):ShellInfoLibrary{
-        return ShellInfoLibrary(context,spUtils,networkCall,databaseCall,barcodeUtils,loggerImpl,mqttManager)
+        return ShellInfoLibrary(context,spUtils,networkCall,databaseCall,barcodeUtils,loggerImpl,mqttManager,ipcDataHandler,permissionsUtils)
     }
 
 

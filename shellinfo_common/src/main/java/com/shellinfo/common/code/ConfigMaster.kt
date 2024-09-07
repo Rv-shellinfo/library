@@ -1,6 +1,10 @@
 package com.shellinfo.common.code
 
-data class ConfigMaster(
+import javax.inject.Singleton
+
+
+@Singleton
+data class ConfigMaster (
 
     var operator_type:String ="",
     var operator_name:String ="",
@@ -39,15 +43,15 @@ data class ConfigMaster(
     var health_api_url:String ="",
     var entry_trx_api_url:String ="",
     var exit_trx_api_url:String ="",
-    var ftp_ip_address:String ="",
-    var ftp_port:String ="",
-    var ftp_user:String ="",
-    var ftp_pass:String ="",
-    var log_local_file_name:String ="",
-    var log_server_file_name:String ="",
-    var log_local_file_path:String ="",
-    var log_server_file_path:String ="",
-    var log_frequency:String ="",
+    var ftp_ip_address:String ="68.233.98.228",
+    var ftp_port:String ="21",
+    var ftp_user:String ="otauser",
+    var ftp_pass:String ="otauser",
+    var log_local_file_name:String ="transit_log",
+    var log_server_file_name:String ="transit_log",
+    var log_local_file_path:String ="/Shell/Transit",
+    var log_server_file_path:String ="/home/otauser/logs/transit",
+    var log_frequency:String ="1",
     var ticket_printer_type:String ="",
     var ticket_printer_name:String ="",
     var payment_gateway:String ="",

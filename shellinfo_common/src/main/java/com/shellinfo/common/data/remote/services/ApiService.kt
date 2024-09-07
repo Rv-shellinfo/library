@@ -1,6 +1,10 @@
 package com.shellinfo.common.data.remote.services
 
 import com.shellinfo.common.data.remote.ApiEndPoints
+import com.shellinfo.common.data.remote.response.model.entry_validation.EntryValidationRequest
+import com.shellinfo.common.data.remote.response.model.entry_validation.EntryValidationResponse
+import com.shellinfo.common.data.remote.response.model.exit_validation.ExitValidationRequest
+import com.shellinfo.common.data.remote.response.model.exit_validation.ExitValidationResponse
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
 import com.shellinfo.common.data.remote.response.model.fare.FareResponse
 import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentRequest
@@ -66,4 +70,8 @@ interface ApiService {
 
     @POST
     suspend fun getTicketByOrderId(@Url url: String, @Body body:OrderStatusRequest):Response<TicketResponse>
+
+    @POST
+    suspend fun doEntryValidation(@Url url: String, @Body body:EntryValidationRequest):Response<EntryValidationResponse>
+
 }

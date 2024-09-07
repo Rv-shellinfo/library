@@ -4,6 +4,7 @@ import abbasi.android.filelogger.FileLogger
 import android.os.Environment
 import android.util.Log
 import com.shellinfo.common.code.ConfigMaster
+import com.shellinfo.common.code.enums.EquipmentType
 import com.shellinfo.common.code.logs.LoggerImpl
 import com.shellinfo.common.code.mqtt.MQTTManager
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
@@ -21,13 +22,11 @@ import javax.inject.Singleton
 @Singleton
 class FtpUtils @Inject constructor(
     private val sharedPreferenceUtil: SharedPreferenceUtil,
-    private val loggerUtil: LoggerImpl
+    private val loggerUtil: LoggerImpl,
+    private val master: ConfigMaster
 ) {
 
     private val TAG = this::class.java.simpleName
-
-    @Inject
-    lateinit var master: ConfigMaster
 
     //host ip address
     private val host = master.ftp_ip_address
@@ -41,8 +40,15 @@ class FtpUtils @Inject constructor(
     //ftp password
     private val ftpPassword = master.ftp_pass
 
+    //application type
+    lateinit var equipmentType: String
+
     //method to upload the log files to SC
     fun uploadFileToSc() {
+
+        //get equipment type
+        equipmentType= sharedPreferenceUtil.getPreference(SpConstants.DEVICE_TYPE,"")
+
 
         //ftp client object creation
         val ftpClient = FTPClient()
@@ -50,11 +56,16 @@ class FtpUtils @Inject constructor(
         //local path of the log file which needs to be uploaded on the SC
         val logPath = sharedPreferenceUtil.getPreference(SpConstants.LOCAL_LOG_FILE_DIRECTORY, "")
 
+
         //time stamp
         val timestampFormat = SimpleDateFormat("dd-MM-yyyy-HH:mm:ss", Locale.US)
 
+        //time stamp 2 for ftp server folder date wise
+        val timestampFormat2 = SimpleDateFormat("dd-MM-yyyy", Locale.US)
+        val ftpFolderDate = timestampFormat2.format(Date())
+
         //device serial
-        val deviceSerial = ""
+        val deviceSerial = sharedPreferenceUtil.getPreference(SpConstants.DEVICE_SERIAL, "")
 
         //current date
         val currentDate = timestampFormat.format(Date())
@@ -63,9 +74,9 @@ class FtpUtils @Inject constructor(
         val serverLogPath = ""
 
         //server file name to store
-        val serverFileName= "upload/Ravi_log_${deviceSerial}_${currentDate}.txt"
+        val serverFileName= "/home/otauser/logs/$equipmentType/$deviceSerial/$ftpFolderDate/${currentDate}.txt"
 
-        Log.e("Server Log Path",serverLogPath)
+        FileLogger.i("Server Log Path",serverLogPath)
 
 
         //get all files from local directory
@@ -76,12 +87,12 @@ class FtpUtils @Inject constructor(
         try {
 
             //connect to the host
-            ftpClient.connect(host)
+            ftpClient.connect(host,port.toInt())
 
             //if able to login then start uploading
             if(ftpClient.login(ftpUser,ftpPassword)){
 
-                Log.e("FTP LOGIN>>"," FTP LOGIN SUCCESS")
+                FileLogger.i("FTP LOGIN>>"," FTP LOGIN SUCCESS")
 
                 ftpClient.enterLocalPassiveMode()
                 ftpClient.setFileType(FTP.BINARY_FILE_TYPE)
@@ -89,16 +100,16 @@ class FtpUtils @Inject constructor(
                 //upload every file on server
                 for (file in filesInDirectory) {
 
-                    Log.e("File Path to upload", file.absolutePath)
+                    FileLogger.i("File Path to upload", file.absolutePath)
 
-                    Log.e("File name to upload", file.name)
+                    FileLogger.i("File name to upload", file.name)
 
                     val inputStream = FileInputStream(file)
                     val isUploaded= ftpClient.storeFile(serverFileName,inputStream)
                     inputStream.close()
 
                     if(isUploaded){
-                        Log.e("File uploaded success"," File Uploaded successfully")
+                        FileLogger.i("File uploaded success"," File Uploaded successfully")
                     }
                 }
 
@@ -114,7 +125,7 @@ class FtpUtils @Inject constructor(
 
             }else{
 
-                Log.e("FTP","FTP SERVER LOGIN FAILED FOR UPLOAD LOGS")
+                FileLogger.e("FTP","FTP SERVER LOGIN FAILED FOR UPLOAD LOGS")
             }
 
         } catch (e: Exception) {
@@ -200,20 +211,20 @@ class FtpUtils @Inject constructor(
 
                         if(deleted){
 
-                            Log.e("FTP","Local existing apk file deleted")
+                            FileLogger.i("FTP","Local existing apk file deleted")
 
                             // File does not exist, create it
                             val created = localFile.createNewFile()
 
                             if(created){
-                                Log.e("FTP","Local new apk file created")
+                                FileLogger.i("FTP","Local new apk file created")
                             }
                         }
                     }else{
 
                         localFile.createNewFile()
 
-                        Log.e("FTP","Local new apk file created")
+                        FileLogger.i("FTP","Local new apk file created")
 
                     }
 
@@ -243,7 +254,7 @@ class FtpUtils @Inject constructor(
                     }
                 }else{
 
-                    Log.e("FTP","FTP SERVER LOGIN FAILED FOR DOWNLOAD APK")
+                    FileLogger.i("FTP","FTP SERVER LOGIN FAILED FOR DOWNLOAD APK")
                 }
 
 

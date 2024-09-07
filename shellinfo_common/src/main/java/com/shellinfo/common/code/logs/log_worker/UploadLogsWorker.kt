@@ -15,9 +15,9 @@ import kotlinx.coroutines.withContext
 
 @HiltWorker
 class UploadLogsWorker @AssistedInject constructor(
-    private val ftpUtils: FtpUtils,
     @Assisted appContext : Context,
-    @Assisted params : WorkerParameters
+    @Assisted params : WorkerParameters,
+    private val ftpUtils: FtpUtils,
 ): CoroutineWorker(appContext,params){
 
     override suspend fun doWork(): Result {

@@ -20,7 +20,7 @@ android {
     compileSdk = 34
 
     defaultConfig {
-        minSdk = 26
+        minSdk = 24
     }
 
 
@@ -56,6 +56,7 @@ android {
 
     buildFeatures{
         buildConfig =true
+        aidl =true
     }
 
     compileOptions {
@@ -169,6 +170,9 @@ dependencies {
     implementation("androidx.localbroadcastmanager:localbroadcastmanager:1.0.0")
     implementation("androidx.legacy:legacy-support-v4:1.0.0")
     implementation("com.github.hannesa2:paho.mqtt.android:3.3.5")
+
+    //date time library for backward comaptibility
+    implementation("com.jakewharton.threetenabp:threetenabp:1.3.1")
 
 }
 

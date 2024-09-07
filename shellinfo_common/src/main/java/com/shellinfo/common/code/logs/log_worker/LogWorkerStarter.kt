@@ -17,23 +17,27 @@ import javax.inject.Singleton
 @Singleton
 class LogWorkerStarter @Inject constructor(
     private val context: Context,
-    private val spUtils: SharedPreferenceUtil
+    private val spUtils: SharedPreferenceUtil,
+    private val master: ConfigMaster
+
 ) {
 
-    @Inject
-    lateinit var master: ConfigMaster
 
     //WORK Manager name to upload the logs on the server
     private val WORK_NAME="UPLOAD_LOG_WORK"
 
-    //work manager
-    private val workManager = WorkManager.getInstance(context)
+    private lateinit var workManager:WorkManager
+
+
 
     companion object {
         const val WORK_MANAGER_UPLOAD_LOGS_TAG = "WORK_MANAGER_UPLOAD_LOGS_TAG"
     }
 
     operator fun invoke(){
+
+        //work manager
+         workManager = WorkManager.getInstance(context)
 
         FileLogger.d("Log Upload Worker", "Starting...")
 
@@ -49,7 +53,7 @@ class LogWorkerStarter @Inject constructor(
         FileLogger.d("Log Upload Worker", "Init Done...")
 
 
-        workManager.enqueueUniquePeriodicWork(WORK_NAME,ExistingPeriodicWorkPolicy.UPDATE, request)
+        workManager.enqueueUniquePeriodicWork(WORK_NAME,ExistingPeriodicWorkPolicy.KEEP, request)
     }
 
      fun stopLogWorker(){

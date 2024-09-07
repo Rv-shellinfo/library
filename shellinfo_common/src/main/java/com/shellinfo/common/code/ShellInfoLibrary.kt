@@ -1,24 +1,26 @@
 package com.shellinfo.common.code
 
-import android.app.Activity
+import android.Manifest
 import android.content.Context
 import android.graphics.Bitmap
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.cashfree.pg.api.CFPaymentGatewayService
-import com.cashfree.pg.core.api.callback.CFCheckoutResponseCallback
-import com.cashfree.pg.core.api.utils.CFErrorResponse
+import androidx.lifecycle.Observer
 import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.HttpType
 import com.shellinfo.common.code.enums.PrinterType
+import com.shellinfo.common.code.ipc.IPCDataHandler
 import com.shellinfo.common.code.logs.LoggerImpl
 import com.shellinfo.common.code.mqtt.MQTTManager
-import com.shellinfo.common.code.payment_gateway.PaymentProcessor
 import com.shellinfo.common.code.printer.PrinterActions
 import com.shellinfo.common.code.printer.PrinterProcessor
 import com.shellinfo.common.code.printer.SunmiPrinter
 import com.shellinfo.common.data.local.data.InitData
+import com.shellinfo.common.BaseMessage
+import com.shellinfo.common.code.ipc.IpcConnectionHandler
 import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.remote.response.ApiResponse
@@ -32,6 +34,7 @@ import com.shellinfo.common.data.remote.response.model.ticket.TicketRequest
 import com.shellinfo.common.data.remote.response.model.ticket.TicketResponse
 import com.shellinfo.common.utils.BarcodeUtils
 import com.shellinfo.common.utils.DateUtils
+import com.shellinfo.common.utils.PermissionsUtils
 import com.shellinfo.common.utils.SpConstants
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.eclipse.paho.client.mqttv3.MqttMessage
@@ -46,14 +49,21 @@ class ShellInfoLibrary @Inject constructor(
     private val databaseCall: DatabaseCall,
     private val barcodeUtils: BarcodeUtils,
     private val loggerImpl: LoggerImpl,
-    private val mqttManager: MQTTManager
+    private val mqttManager: MQTTManager,
+    private val ipcDataHandler: IPCDataHandler,
+    private val permissionsUtils: PermissionsUtils,
 ) :ShellInfoProvider {
 
     //application activity context
-    private var activity: Activity? = null
+    private var activity: AppCompatActivity? = null
+
+    //write permission
+    private val REQUEST_WRITE_EXTERNAL_STORAGE = 1
 
     @Inject
     lateinit var masterConfig: ConfigMaster
+
+    lateinit var ipcConnectionHandler: IpcConnectionHandler
 
     //stations live data
     var stationsLiveData: LiveData<List<StationsTable>> = databaseCall.stationsLiveData
@@ -104,7 +114,7 @@ class ShellInfoLibrary @Inject constructor(
         spUtils.savePreference(SpConstants.API_TOKEN,token)
     }
 
-    override fun setActivity(activity: Activity) {
+    override fun setActivity(activity: AppCompatActivity) {
         this.activity=activity
     }
 
@@ -115,16 +125,21 @@ class ShellInfoLibrary @Inject constructor(
 
     }
 
+
+
     override fun init(initData: InitData) {
 
         //save application specific data in shared preferences for future use
-        spUtils.savePreference(SpConstants.APP_ID,initData.appId)
-        spUtils.savePreference(SpConstants.APP_NAME,initData.appName)
-        spUtils.savePreference(SpConstants.APP_VERSION_CODE,initData.appVersionCode)
-        spUtils.savePreference(SpConstants.APP_VERSION_NAME,initData.appVersionName)
-        spUtils.savePreference(SpConstants.APP_TYPE,initData.appType)
-        spUtils.savePreference(SpConstants.DEVICE_TYPE,initData.deviceType)
+//        spUtils.savePreference(SpConstants.APP_ID,initData.appId)
+//        spUtils.savePreference(SpConstants.APP_NAME,initData.appName)
+//        spUtils.savePreference(SpConstants.APP_VERSION_CODE,initData.appVersionCode)
+//        spUtils.savePreference(SpConstants.APP_VERSION_NAME,initData.appVersionName)
+//        spUtils.savePreference(SpConstants.APP_TYPE,initData.appType)
+        spUtils.savePreference(SpConstants.DEVICE_TYPE, initData.deviceType.name)
         spUtils.savePreference(SpConstants.DEVICE_SERIAL,initData.deviceSerial)
+
+        ipcConnectionHandler= IpcConnectionHandler()
+        ipcConnectionHandler.bindToIpcService(activity!!)
 
         //check if private mode or public
         if(spUtils.getPreference(SpConstants.API_MODE, ApiMode.DEFAULT.name).equals(ApiMode.PRIVATE.name)){
@@ -153,10 +168,65 @@ class ShellInfoLibrary @Inject constructor(
             }
         }
 
-        //mqtt connection
-        mqttManager.connect()
+        //handle permissions
+        handlePermissions()
 
     }
+
+    /**
+     * Method to handle permissions
+     */
+    private fun handlePermissions(){
+
+        activity?.let { it ->
+
+            permissionsUtils.permissionsState.observe(it, Observer { state ->
+                when (state) {
+                    is PermissionsUtils.PermissionsState.Granted -> {
+
+                        //start logging
+                        startLogging(true,true)
+
+                        //mqtt connection
+                        mqttManager.connect()
+
+                        //start ipc service
+                        activity?.let { startIpcService(it) }
+
+
+                    }
+                    is PermissionsUtils.PermissionsState.Denied -> {
+                        Toast.makeText(activity,"Permissions denied. The app cannot proceed.",Toast.LENGTH_LONG).show()
+                    }
+                    is PermissionsUtils.PermissionsState.ShouldShowRationale -> {
+                        activity?.let { permissionsUtils.checkPermissions(state.permissions, it) }
+                    }
+                    is PermissionsUtils.PermissionsState.RequestPermissions -> {
+                        activity?.let {
+                            ActivityCompat.requestPermissions(
+                                it,
+                                state.permissions,
+                                PermissionsUtils.REQUEST_CODE
+                            )
+                        }
+                    }
+                    else ->{
+
+                    }
+                }
+            })
+
+            // Check permissions on create
+            val requiredPermissions = arrayOf(
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+            activity?.let { permissionsUtils.checkPermissions(requiredPermissions, it) }
+        }
+
+
+    }
+
 
 
 
@@ -270,6 +340,18 @@ class ShellInfoLibrary @Inject constructor(
 
     override fun disconnectMqtt() {
         mqttManager.disconnect()
+    }
+
+    override fun startIpcService(context: Context) {
+        ipcDataHandler.startIPCService(context)
+    }
+
+    override fun stopIpcService(context: Context) {
+        ipcDataHandler.stopIpcService(context)
+    }
+
+    override fun sendMessageToIpcService(baseMessage: BaseMessage<*>) {
+        ipcDataHandler.sendMessageToPaymentApp(baseMessage)
     }
 
 

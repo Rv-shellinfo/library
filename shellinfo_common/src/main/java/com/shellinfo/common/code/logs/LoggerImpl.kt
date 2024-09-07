@@ -19,18 +19,15 @@ import javax.inject.Inject
 
 class LoggerImpl @Inject constructor(
     private val sharedPreferenceUtil: SharedPreferenceUtil,
-    private val logWorkerStarter: LogWorkerStarter
-):LoggerInterface, Configuration.Provider {
+    private val logWorkerStarter: LogWorkerStarter,
+    private val masterConfig: ConfigMaster
+):LoggerInterface {
 
     private val TAG = LoggerImpl::class.java.simpleName
 
-    @Inject
-    lateinit var workerFactory: HiltWorkerFactory
-
-    @Inject
-    lateinit var masterConfig: ConfigMaster
-
     override fun initLogger() {
+
+
 
         //time stamp
         val timestampFormat = SimpleDateFormat("dd-MM-yyyy-HH:mm:ss", Locale.US)
@@ -46,7 +43,10 @@ class LoggerImpl @Inject constructor(
         val logFileName = "log_${masterConfig.log_local_file_name}_${deviceSerial}_${currentDate}.txt"
 
         //creating directory
-        val directoryPath = Environment.getExternalStorageDirectory().absolutePath + masterConfig.log_local_file_path
+        var directoryPath = Environment.getExternalStorageDirectory().absolutePath + masterConfig.log_local_file_path
+
+        //add file logger default name
+        directoryPath= "$directoryPath/fileLogs"
 
         // Create the directory if it doesn't exist
         val directory = File(directoryPath)
@@ -132,8 +132,4 @@ class LoggerImpl @Inject constructor(
         FileLogger.e(tag = tag, error)
     }
 
-    override val workManagerConfiguration: Configuration
-        get() = Configuration.Builder()
-            .setWorkerFactory(workerFactory)
-            .build()
 }

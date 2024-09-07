@@ -3,11 +3,15 @@ package com.shellinfo.common.utils
 import android.annotation.SuppressLint
 import android.content.Context
 import android.widget.Toast
+import org.threeten.bp.LocalDateTime
+import org.threeten.bp.ZoneOffset
+import org.threeten.bp.format.DateTimeFormatter
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+
 
 object DateUtils {
 
@@ -88,4 +92,20 @@ object DateUtils {
         val dateFormat = SimpleDateFormat(dateFormat)
         return dateFormat.format(Calendar.getInstance().time)
     }
+
+
+    /**
+     * method to get the data in format specific
+     */
+    fun getTimeInYMDHMS(timeInSeconds: Long): String {
+        // Convert the seconds to a LocalDateTime object
+        val dateTime = LocalDateTime.ofEpochSecond(timeInSeconds, 0, ZoneOffset.UTC)
+
+        // Format the date and time
+        val formatter = DateTimeFormatter.ofPattern("yyMMddHHmmss", Locale.getDefault())
+
+        // Return the formatted string
+        return dateTime.format(formatter)
+    }
+
 }

@@ -34,15 +34,17 @@ class MainActivity : AppCompatActivity() {
             "Transit",
             Build.SERIAL)
 
+
+        shellInfoLibrary.setActivity(this)
         shellInfoLibrary.init(initData)
 
 
-        shellInfoLibrary.mqttConnect()
+        //shellInfoLibrary.mqttConnect()
         //shellInfoLibrary.subscribeMqttTopic("APP_UPDATE")
-        shellInfoLibrary.mqttMessageResponse.observe(this){message->
-
-           Log.e("message","message")
-        }
+//        shellInfoLibrary.mqttMessageResponse.observe(this){message->
+//
+//           Log.e("message","message")
+//        }
 
         //shellInfoLibrary.publishMqttMessage("MQTT_OTA_UPDATE","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9")
        // shellInfoLibrary.initKafka()

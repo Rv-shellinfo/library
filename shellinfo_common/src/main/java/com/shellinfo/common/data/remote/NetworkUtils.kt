@@ -3,6 +3,7 @@ package com.shellinfo.common.data.remote
 import android.content.Context
 import com.shellinfo.common.R
 import com.shellinfo.common.data.remote.response.ApiResponse
+import com.shellinfo.common.data.remote.response.model.payment_gateway.cash_free.CashFreePaymentResponse
 import dagger.hilt.android.qualifiers.ApplicationContext
 import retrofit2.Response
 import javax.inject.Inject
