@@ -8,7 +8,7 @@ import com.shellinfo.common.code.enums.HttpType
 import com.shellinfo.common.code.enums.PrinterType
 import com.shellinfo.common.code.printer.PrinterProcessor
 import com.shellinfo.common.data.local.data.InitData
-import com.shellinfo.common.BaseMessage
+import com.shellinfo.common.data.local.data.ipc.base.BaseMessage
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
 import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentRequest
 import com.shellinfo.common.data.remote.response.model.ticket.Ticket
@@ -78,7 +78,7 @@ interface ShellInfoProvider {
 
     fun stopIpcService(context: Context)
 
-    fun sendMessageToIpcService(baseMessage: BaseMessage<*>)
+    fun sendMessageToIpcService(messageId:Int,baseMessage: BaseMessage<*>)
 
 
 }

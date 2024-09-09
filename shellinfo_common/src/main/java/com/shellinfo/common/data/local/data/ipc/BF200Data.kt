@@ -8,7 +8,8 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 @JsonClass(generateAdapter = true)
 data class BF200Data(
-    @Json(name = "B") val b: B
+    @Json(name = "B") val b: B,
+    var serviceHeader:List<Byte>?
 ): Parcelable
 
 @Parcelize

@@ -16,9 +16,9 @@ import com.shellinfo.common.data.local.data.emv_rupay.HistoryQueue
  * @property rfu: (242 to 256)
  */
 data class CSADataRaw(
-    var serviceData: ServiceData,
-    var generalData: GeneralData,
-    var validationData: ValidationData,
-    var historyData: HistoryQueue<HistoryData>,
+    var serviceData: ServiceData? =null,
+    var generalData: GeneralData? =null,
+    var validationData: ValidationData? =null,
+    var historyData: HistoryQueue<HistoryData>? =null,
     var rfu:String =""
 )

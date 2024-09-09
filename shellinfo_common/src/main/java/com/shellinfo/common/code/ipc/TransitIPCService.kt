@@ -10,13 +10,23 @@ import android.os.Looper
 import android.os.Message
 import android.os.Messenger
 import android.os.RemoteException
-import com.shellinfo.common.BaseMessage
+import android.util.Log
+import com.shellinfo.common.data.local.data.ipc.BF200Data
+import com.shellinfo.common.data.local.data.ipc.base.BaseMessage
+import com.shellinfo.common.di.DefaultMoshi
 import com.shellinfo.common.utils.IPCConstants
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
+@AndroidEntryPoint
 class TransitIPCService: Service() {
 
     val TAG =  TransitIPCService::class.java.simpleName
+
+
 
     companion object {
         const val MSG_FROM_PAYMENT_APP = 1
@@ -28,6 +38,10 @@ class TransitIPCService: Service() {
     @Inject
     lateinit var ipcDataHandler: IPCDataHandler
 
+    @Inject
+    @DefaultMoshi
+    lateinit var moshi: Moshi
+
     private inner class IncomingHandler : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
             when (msg.what) {
@@ -36,16 +50,21 @@ class TransitIPCService: Service() {
 
                     // Message received from service
                     val bundle = msg.data
-                    bundle.classLoader= BaseMessage::class.java.classLoader
 
                     try {
 
-                        val baseMessage: BaseMessage<*>? = bundle.getParcelable(IPCConstants.PAYMENT_APP_MESSAGE)
+
+                        val receivedJson= bundle.getString(IPCConstants.PAYMENT_APP_MESSAGE)
+
+                        // Convert JSON string back to BaseMessage object
+                        val baseMessage: BaseMessage<*>? = convertFromJson<BF200Data>(receivedJson!!)
+
+
                         if (baseMessage != null) {
                             ipcDataHandler.handlePaymentAppMessage(baseMessage)
                         }
                     }catch (ex:Exception){
-
+                        FileLogger.e(TAG,"Error found in receive message ${ex.message}")
                     }
 
 
@@ -76,5 +95,17 @@ class TransitIPCService: Service() {
     override fun onBind(intent: Intent?): IBinder? {
         FileLogger.d(TAG, "Shell Lib IPC Service bound")
         return messenger.binder
+    }
+
+    // Generic function to convert JSON string back to BaseMessage<T>
+    inline fun <reified T> convertFromJson(json: String): BaseMessage<T>? {
+        return try {
+            val type = Types.newParameterizedType(BaseMessage::class.java, T::class.java)
+            val adapter = moshi.adapter<BaseMessage<T>>(type)
+            adapter.fromJson(json)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 }

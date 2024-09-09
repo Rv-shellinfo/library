@@ -19,8 +19,8 @@ import com.shellinfo.common.code.printer.PrinterActions
 import com.shellinfo.common.code.printer.PrinterProcessor
 import com.shellinfo.common.code.printer.SunmiPrinter
 import com.shellinfo.common.data.local.data.InitData
-import com.shellinfo.common.BaseMessage
-import com.shellinfo.common.code.ipc.IpcConnectionHandler
+import com.shellinfo.common.data.local.data.ipc.BF200Data
+import com.shellinfo.common.data.local.data.ipc.base.BaseMessage
 import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.remote.response.ApiResponse
@@ -36,6 +36,8 @@ import com.shellinfo.common.utils.BarcodeUtils
 import com.shellinfo.common.utils.DateUtils
 import com.shellinfo.common.utils.PermissionsUtils
 import com.shellinfo.common.utils.SpConstants
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.eclipse.paho.client.mqttv3.MqttMessage
 import javax.inject.Inject
@@ -63,7 +65,6 @@ class ShellInfoLibrary @Inject constructor(
     @Inject
     lateinit var masterConfig: ConfigMaster
 
-    lateinit var ipcConnectionHandler: IpcConnectionHandler
 
     //stations live data
     var stationsLiveData: LiveData<List<StationsTable>> = databaseCall.stationsLiveData
@@ -129,6 +130,9 @@ class ShellInfoLibrary @Inject constructor(
 
     override fun init(initData: InitData) {
 
+        //start simulation payment app data
+        startSimulation()
+
         //save application specific data in shared preferences for future use
 //        spUtils.savePreference(SpConstants.APP_ID,initData.appId)
 //        spUtils.savePreference(SpConstants.APP_NAME,initData.appName)
@@ -138,8 +142,6 @@ class ShellInfoLibrary @Inject constructor(
         spUtils.savePreference(SpConstants.DEVICE_TYPE, initData.deviceType.name)
         spUtils.savePreference(SpConstants.DEVICE_SERIAL,initData.deviceSerial)
 
-        ipcConnectionHandler= IpcConnectionHandler()
-        ipcConnectionHandler.bindToIpcService(activity!!)
 
         //check if private mode or public
         if(spUtils.getPreference(SpConstants.API_MODE, ApiMode.DEFAULT.name).equals(ApiMode.PRIVATE.name)){
@@ -192,6 +194,9 @@ class ShellInfoLibrary @Inject constructor(
 
                         //start ipc service
                         activity?.let { startIpcService(it) }
+
+
+
 
 
                     }
@@ -350,9 +355,33 @@ class ShellInfoLibrary @Inject constructor(
         ipcDataHandler.stopIpcService(context)
     }
 
-    override fun sendMessageToIpcService(baseMessage: BaseMessage<*>) {
-        ipcDataHandler.sendMessageToPaymentApp(baseMessage)
+    override fun sendMessageToIpcService(messageId:Int,baseMessage: BaseMessage<*>) {
+        ipcDataHandler.sendMessageToService(messageId,baseMessage)
     }
 
+    
+    fun startSimulation(){
+
+        val dataReceived ="{\"messageId\":0,\"data\":{\"B\":{\"CI\":{\"57\":\"6083263242000066D26126209840000000000F\",\"82\":\"1900\",\"84\":\"A0000005241010\",\"5A\":\"6083263242000066\",\"5F24\":\"261231\",\"5F2A\":\"0164\",\"5F28\":\"0356\",\"9F26\":\"1290A1D20FFE0EC8\",\"4F\":\"A0000005241010\",\"9F36\":\"296B\",\"5F34\":\"01\",\"9F27\":\"00\",\"9F6E\":\"\",\"9F10\":\"0FB5018401400000190000000000000092000000000092000010100210000000\",\"5F25\":\"180101\",\"9F07\":\"AB80\",\"9F08\":\"\",\"9F0D\":\"A468FC9800\",\"9F0E\":\"1010000000\",\"9F0F\":\"A468FC9800\",\"9F5A\":\"\",\"9F7C\":\"\",\"T2L\":\"19\",\"8E\":\"000000000000000042035E031F03\",\"9F19\":\"\",\"9F24\":\"\",\"9F25\":\"0066\",\"9F41\":\"\",\"9F63\":\"\",\"CardType\":\"0D\",\"DF33\":\"011010AC00C39E93010000000028FE2409071138401E4E0000000000920356603100002007E1260000100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\"},\"TI\":{\"95\":\"0000000000\",\"9F4E\":\"test                            \",\"9A\":\"240909\",\"9F21\":\"101841\",\"9C\":\"00\",\"9F1A\":\"0356\",\"9F37\":\"D3F12987\",\"9F02\":\"000000000000\",\"9F03\":\"000000000000\",\"9F09\":\"0002\",\"9F1E\":\"C9210403DC6FFE10\",\"9F33\":\"0008C8\",\"9F34\":\"1F0302\",\"9F35\":\"96\",\"DF7F\":\"\"}},\"serviceHeader\":[0,22,255,129,2,16,255,3,13,223,22,2,16,16,223,84,5,8,16,16,145,0]}}"
+
+        val moshi = Moshi.Builder().build()
+
+        // Convert JSON string back to BaseMessage object
+        val baseMessage: BaseMessage<*>? = convertFromJson<BF200Data>(dataReceived,moshi)
+
+
+        ipcDataHandler.handlePaymentAppMessage(baseMessage!!)
+    }
+
+    inline fun <reified T> convertFromJson(json: String, moshi: Moshi): BaseMessage<T>? {
+        return try {
+            val type = Types.newParameterizedType(BaseMessage::class.java, T::class.java)
+            val adapter = moshi.adapter<BaseMessage<T>>(type)
+            adapter.fromJson(json)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
 
 }

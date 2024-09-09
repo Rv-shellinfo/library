@@ -102,7 +102,7 @@ class RupayDataHandler @Inject constructor(
         csaMasterData.bf200Data = bF200Data
 
         //check reader location
-        when(spUtils.getPreference(READER_LOCATION,"")){
+        when(spUtils.getPreference(READER_LOCATION,"ENTRY")){
 
             ENTRY_SIDE ->{
                 processEntryCSA(csaMasterData)
@@ -171,7 +171,7 @@ class RupayDataHandler @Inject constructor(
             // Calculate last transaction time from CSA.validationData.trxDateTime
             for (i in 0..2) {
                 // Convert each hex character
-                val part = csaRawData!!.validationData.txnDateTime.substring(i * 2, i * 2 + 2).toInt(16)
+                val part = csaRawData!!.validationData!!.txnDateTime.substring(i * 2, i * 2 + 2).toInt(16)
                 trxTimeFromCardEffDate = (trxTimeFromCardEffDate * 16 * 16) + part
             }
 

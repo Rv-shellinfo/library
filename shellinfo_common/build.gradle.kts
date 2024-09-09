@@ -4,6 +4,7 @@ plugins {
     kotlin("kapt")
     id("kotlin-parcelize")
     id("maven-publish")
+    id("com.google.dagger.hilt.android")
 
     id("com.vanniktech.maven.publish") version "0.28.0" apply false
     id("com.gradleup.nmcp") version "0.0.7" apply false
@@ -56,7 +57,7 @@ android {
 
     buildFeatures{
         buildConfig =true
-        aidl =true
+        aidl= true
     }
 
     compileOptions {

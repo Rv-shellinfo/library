@@ -1,7 +1,7 @@
 package com.shellinfo.common.data.local.data.emv_rupay.binary.csa_bin
 
 data class ValidationBin(
-    var errorCode: Byte,
+    var errorCode: Byte?,
     var productType: Byte,
     var acquirerID: Byte,
     var operatorID: ByteArray, // 2 bytes
@@ -12,14 +12,14 @@ data class ValidationBin(
     var serviceProviderData: ByteArray, // 3 bytes
     private var trxStatusAndRfu: Byte // 4 bits for trxStatus, 4 bits for RFU
 ){
-    init {
-        require(operatorID.size == 2) { "operatorID must be 2 bytes" }
-        require(terminalID.size == 3) { "terminalID must be 3 bytes" }
-        require(trxDateTime.size == 3) { "trxDateTime must be 3 bytes" }
-        require(fareAmt.size == 2) { "fareAmt must be 2 bytes" }
-        require(routeNo.size == 2) { "routeNo must be 2 bytes" }
-        require(serviceProviderData.size == 3) { "serviceProviderData must be 3 bytes" }
-    }
+//    init {
+//        require(operatorID.size == 2) { "operatorID must be 2 bytes" }
+//        require(terminalID.size == 3) { "terminalID must be 3 bytes" }
+//        require(trxDateTime.size == 3) { "trxDateTime must be 3 bytes" }
+//        require(fareAmt.size == 2) { "fareAmt must be 2 bytes" }
+//        require(routeNo.size == 2) { "routeNo must be 2 bytes" }
+//        require(serviceProviderData.size == 3) { "serviceProviderData must be 3 bytes" }
+//    }
 
     // Getter for the 4 most significant bits (transaction status)
     fun getTrxStatus(): Int {

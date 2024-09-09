@@ -1,8 +1,8 @@
 package com.shellinfo.common.data.local.data.emv_rupay.binary.csa_bin
 
 data class GeneralBin(
-    var versionNumber: Byte,
-    var languageInfoAndRfu: Byte
+    var versionNumber: Byte =0,
+    var languageInfoAndRfu: Byte=0
 ){
     // Getter for the 5-bit languageInfo
     fun getLanguageInfo(): Int {

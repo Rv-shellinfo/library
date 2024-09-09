@@ -13,6 +13,13 @@
         tools:ignore="ExactAlarm" />
 
     <uses-permission android:name="android.permission.BIND_REMOTE_SERVICE" />
+    <uses-permission android:name="android.permission.BIND_SERVICE" />
+    <uses-permission android:name="android.permission.BIND_EXTERNAL_SERVICE" />
+
+
+    <queries>
+        <package android:name="com.shellinfo.paymentapp" />
+    </queries>
 
     <uses-permission
         android:name="android.permission.MANAGE_EXTERNAL_STORAGE"
@@ -23,12 +30,6 @@
     <uses-feature android:name="android.hardware.usb.host" android:required="true"/>
     <uses-feature android:name="android.hardware.usb.accessory" android:required="true"/>
 
-
-    <queries>
-        <intent>
-            <action android:name="IpcInterface.AIDL" />
-        </intent>
-    </queries>
 
     <application
 

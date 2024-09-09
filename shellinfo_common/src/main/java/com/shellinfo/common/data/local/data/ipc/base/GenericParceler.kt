@@ -5,7 +5,7 @@ import kotlinx.parcelize.Parceler
 
     object GenericParceler : Parceler<Any?> {
         override fun create(parcel: Parcel): Any? {
-            return parcel.readValue(ClassLoader.getSystemClassLoader())
+            return parcel.readValue(BaseMessage::class.java.classLoader)
         }
 
         override fun Any?.write(parcel: Parcel, flags: Int) {

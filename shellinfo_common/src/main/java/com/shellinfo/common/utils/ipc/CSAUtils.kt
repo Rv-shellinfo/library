@@ -19,10 +19,9 @@ import com.shellinfo.common.utils.IPCConstants
 import javax.inject.Inject
 
 
-class CSAUtils @Inject constructor(){
-
-    @Inject
-    lateinit var emvUtils: EMVUtils
+class CSAUtils @Inject constructor(
+    private val emvUtils: EMVUtils
+){
 
     //csa master data in which raw and display data combined
     private lateinit var csaMasterData: CSAMasterData
@@ -44,208 +43,279 @@ class CSAUtils @Inject constructor(){
         //init master csa data
         csaMasterData= CSAMasterData()
 
-        //global wallet balance
-        val cardBalance_str: String = getSubString(df33_data,46,55)
-        val cardbalance = cardBalance_str.toDouble() / 100
-        val cardBalanceFormat = emvUtils.df.format(cardbalance)
+        try {
 
-        //penalty amount
-        val penalty_str: String = getSubString(df33_data,90, 94)
-        val penalty_amnt = penalty_str.toDouble() / 100
-        val penaltyAmtFormat = emvUtils.df.format(penalty_amnt)
+            //global wallet balance
+            val cardBalance_str: String = getSubString(df33_data, 46, 55)
+            val cardbalance = cardBalance_str.toDouble() / 100
+            val cardBalanceFormat = emvUtils.df.format(cardbalance)
 
-        //error string any
-        val error_code: String = getSubString(df33_data,68, 70)
-        val errorFormat: String = getError(error_code)
+            //penalty amount
+            val penalty_str: String = getSubString(df33_data, 90, 94)
+            val penalty_amnt = penalty_str.toDouble() / 100
+            val penaltyAmtFormat = emvUtils.df.format(penalty_amnt)
 
-        //status
-        val status: String = getSubString(df33_data,104, 106)
-        val statusValue:Int = getTxnStatusNCMC(status)
-        val statusFormat: String = getTxnStatus(status)
+            //error string any
+            val error_code: String = getSubString(df33_data, 68, 70)
+            val errorFormat: String = getError(error_code)
 
-        //last transaction date time
-        val date: String = getSubString(df33_data,84, 90)
-        val finaltxndate = if (emvUtils.getHexatoDecimal(date).toInt() == 0) {
-            "--"
-        } else {
-            emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(date))
-        }
+            //status
+            val status: String = getSubString(df33_data, 104, 106)
+            val statusValue: Int = getTxnStatusNCMC(status)
+            val statusFormat: String = getTxnStatus(status)
 
-        Log.e("error", errorFormat)
-        Log.e("staus", statusFormat)
-        Log.e("finaltxndate", finaltxndate)
+            //last transaction date time
+            val date: String = getSubString(df33_data, 84, 90)
+            val finaltxndate = if (emvUtils.getHexatoDecimal(date).toInt() == 0) {
+                "--"
+            } else {
+                emvUtils.calculateSecondsOfTxn(
+                    data_5F25 + "000000",
+                    emvUtils.getHexatoDecimal(date)
+                )
+            }
 
-        //last equipment id
-        var lastequip: String = getSubString(df33_data, 72, 84)
-        lastequip = getLastEquipmentId(lastequip.substring(6, 12))
+            Log.e("error", errorFormat)
+            Log.e("staus", statusFormat)
+            Log.e("finaltxndate", finaltxndate)
 
-        //last station name
-        //TODO need to fix the station name
-        var lastStation=lastequip.substring(6,9)
-        lastStation= "NAGOLE"
+            //last equipment id
+            var lastequip: String = getSubString(df33_data, 72, 84)
+            lastequip = getLastEquipmentId(lastequip.substring(6, 11))
+
+            //last station name
+            //TODO need to fix the station name
+//            var lastStation = lastequip.substring(6, 9)
+//            lastStation = "NAGOLE"
+            var lastStation = "NAGOLE"
 
 
-        //history last transactions
-        //history log1
+
+            //history last transactions
+            //history log1
 
 
 //-----------------------------------------------------------------------------------------------------------------
 
 
-        //history log1
-        var datentime1: String = getSubString(df33_data, 118, 124)
-        datentime1 =
-            if (emvUtils.getHexatoDecimal(datentime1).toInt() === 0) "-- --" else emvUtils.calculateSecondsOfTxn(
-                data_5F25 + "000000",
-                emvUtils.getHexatoDecimal(datentime1)
+            //history log1
+            var datentime1: String = getSubString(df33_data, 118, 124)
+            datentime1 =
+                if (emvUtils.getHexatoDecimal(datentime1)
+                        .toInt() === 0
+                ) "-- --" else emvUtils.calculateSecondsOfTxn(
+                    data_5F25 + "000000",
+                    emvUtils.getHexatoDecimal(datentime1)
+                )
+
+            val txn_amnt_str1: String =
+                getSubString(df33_data, 128, 132)
+            val txn_amnt1 = (emvUtils.getHexatoDecimal(txn_amnt_str1)).toDouble() / 10
+
+            val txnseqno1 = "" + emvUtils.getHexatoDecimal(
+                getSubString(
+                    df33_data,
+                    124,
+                    128
+                )
+            )
+            val transtype1 =
+                if (datentime1 == "-- --") "--" else getHistoryTxnStatus(
+                    getSubString(df33_data, 137, 138)
+                )
+
+            val transStationId1 = getSubString(df33_data, 106, 118)
+
+
+            //history log2
+            var datentime2: String =
+                getSubString(df33_data, 152, 158)
+            datentime2 =
+                if (emvUtils.getHexatoDecimal(datentime2)
+                        .toInt() === 0
+                ) "-- --" else emvUtils.calculateSecondsOfTxn(
+                    data_5F25 + "000000",
+                    emvUtils.getHexatoDecimal(datentime2)
+                )
+            val txn_amnt_str2: String =
+                getSubString(df33_data, 162, 166)
+            val txn_amnt2 = (emvUtils.getHexatoDecimal(txn_amnt_str2)).toDouble() / 10
+
+            val txnseqno2 = "" + emvUtils.getHexatoDecimal(
+                getSubString(
+                    df33_data,
+                    158,
+                    162
+                )
+            )
+            val transtype2 =
+                if (datentime2 == "-- --") "--" else getHistoryTxnStatus(
+                    getSubString(df33_data, 171, 172)
+                )
+
+            val transStationId2 = getSubString(df33_data, 106, 118)
+
+            //history log3
+            var datentime3: String =
+                getSubString(df33_data, 140, 152)
+            datentime3 =
+                if (emvUtils.getHexatoDecimal(datentime3)
+                        .toInt() === 0
+                ) "-- --" else emvUtils.calculateSecondsOfTxn(
+                    data_5F25 + "000000",
+                    emvUtils.getHexatoDecimal(datentime3)
+                )
+            val txn_amnt_str3: String =
+                getSubString(df33_data, 196, 200)
+            val txn_amnt3 = (emvUtils.getHexatoDecimal(txn_amnt_str3)).toDouble() / 10
+
+            val txnseqno3 = "" + emvUtils.getHexatoDecimal(
+                getSubString(
+                    df33_data,
+                    192,
+                    196
+                )
+            )
+            val transtype3 =
+                if (datentime3 == "-- --") "--" else getHistoryTxnStatus(
+                    getSubString(df33_data, 205, 206)
+                )
+
+            val transStationId3 = getSubString(df33_data, 174, 186)
+
+            //history log4
+            var datentime4: String =
+                getSubString(df33_data, 220, 226)
+            datentime4 =
+                if (emvUtils.getHexatoDecimal(datentime4)
+                        .toInt() === 0
+                ) "-- --" else emvUtils.calculateSecondsOfTxn(
+                    data_5F25 + "000000",
+                    emvUtils.getHexatoDecimal(datentime4)
+                )
+
+            val txn_amnt_str4: String =
+                getSubString(df33_data, 230, 234)
+            val txn_amnt4 = (emvUtils.getHexatoDecimal(txn_amnt_str4)).toDouble() / 10
+            val txnseqno4 = "" + emvUtils.getHexatoDecimal(
+                getSubString(
+                    df33_data,
+                    226,
+                    230
+                )
+            )
+            val transtype4 =
+                if (datentime4 == "-- --") "--" else getHistoryTxnStatus(
+                    getSubString(df33_data, 239, 240)
+                )
+
+            val transStationId4 = getSubString(df33_data, 208, 220)
+
+            var station_str1 = transStationId1.substring(6, 9)
+            station_str1 =
+                if (station_str1 == "000") "--" else emvUtils.getStationIdFromStationDetailList(
+                    "0$station_str1"
+                )
+
+            var station_str2: String = transStationId2.substring(6, 9)
+            station_str2 =
+                if (station_str2 == "000") "--" else emvUtils.getStationIdFromStationDetailList(
+                    "0$station_str2"
+                )
+            var station_str3: String = transStationId3.substring(6, 9)
+            station_str3 =
+                if (station_str3 == "000") "--" else emvUtils.getStationIdFromStationDetailList(
+                    "0$station_str3"
+                )
+            var station_str4: String = transStationId4.substring(6, 9)
+            station_str4 =
+                if (station_str4 == "000") "--" else emvUtils.getStationIdFromStationDetailList(
+                    "0$station_str4"
+                )
+
+
+            //adding the transaction history
+            val transactions = mutableListOf<TxnHistory>()
+            transactions.add(
+                TxnHistory(
+                    txnseqno1,
+                    datentime1.split(" ")[0],
+                    datentime1.split(" ")[1],
+                    emvUtils.df.format(txn_amnt1),
+                    getTxnStatus(transtype1),
+                    station_str1
+                )
+            )
+            transactions.add(
+                TxnHistory(
+                    txnseqno2,
+                    datentime2.split(" ")[0],
+                    datentime2.split(" ")[1],
+                    emvUtils.df.format(txn_amnt2),
+                    getTxnStatus(transtype2),
+                    station_str2
+                )
+            )
+            transactions.add(
+                TxnHistory(
+                    txnseqno3,
+                    datentime3.split(" ")[0],
+                    datentime3.split(" ")[1],
+                    emvUtils.df.format(txn_amnt3),
+                    getTxnStatus(transtype3),
+                    station_str3
+                )
+            )
+            transactions.add(
+                TxnHistory(
+                    txnseqno4,
+                    datentime4.split(" ")[0],
+                    datentime4.split(" ")[1],
+                    emvUtils.df.format(txn_amnt4),
+                    getTxnStatus(transtype4),
+                    station_str4
+                )
             )
 
-        val txn_amnt_str1: String =
-            getSubString(df33_data, 128, 132)
-        val txn_amnt1 = emvUtils.getHexatoDecimal(txn_amnt_str1) as Double / 10
 
-        val txnseqno1 = "" + emvUtils.getHexatoDecimal(
-            getSubString(
-                df33_data,
-                124,
-                128
-            )
-        )
-        val transtype1 =
-            if (datentime1 == "-- --") "--" else getHistoryTxnStatus(
-                getSubString(df33_data, 137, 138)
-            )
+            //card effective date
+            val cardEffectiveDate = readCardEffectiveDate(data_5F25.toInt())
 
-        val transStationId1 = getSubString(df33_data,106, 118)
-
-
-        //history log2
-        var datentime2: String =
-            getSubString(df33_data, 152, 158)
-        datentime2 =
-            if (emvUtils.getHexatoDecimal(datentime2).toInt() === 0) "-- --" else emvUtils.calculateSecondsOfTxn(
-                data_5F25 + "000000",
-                emvUtils.getHexatoDecimal(datentime2)
-            )
-        val txn_amnt_str2: String =
-            getSubString(df33_data, 162, 166)
-        val txn_amnt2 = emvUtils.getHexatoDecimal(txn_amnt_str2) as Double / 10
-
-        val txnseqno2 = "" + emvUtils.getHexatoDecimal(
-            getSubString(
-                df33_data,
-                158,
-                162
-            )
-        )
-        val transtype2 =
-            if (datentime2 == "-- --") "--" else getHistoryTxnStatus(
-                getSubString(df33_data, 171, 172)
+            //CSA full data for display
+            val csaDataDisplay = CSADataDisplay(
+                cardbalance,
+                cardBalanceFormat,
+                penalty_amnt,
+                penaltyAmtFormat,
+                errorFormat,
+                error_code.toInt(),
+                finaltxndate,
+                statusFormat,
+                lastStation,
+                statusValue,
+                cardEffectiveDate,
+                transactions
             )
 
-        val transStationId2 = getSubString(df33_data,106, 118)
+            //CSA raw data for writing
+            val csaRawData = setCsaRawData(df33_data)
 
-        //history log3
-        var datentime3: String =
-            getSubString(df33_data, 140, 152)
-        datentime3 =
-            if (emvUtils.getHexatoDecimal(datentime3).toInt() === 0) "-- --" else emvUtils.calculateSecondsOfTxn(
-                data_5F25 + "000000",
-                emvUtils.getHexatoDecimal(datentime3)
-            )
-        val txn_amnt_str3: String =
-            getSubString(df33_data, 196, 200)
-        val txn_amnt3 = emvUtils.getHexatoDecimal(txn_amnt_str3) as Double / 10
+            //CSA binary data
+            val csaBinData = setCsaBinValue(df33_data)
 
-        val txnseqno3 = "" + emvUtils.getHexatoDecimal(
-            getSubString(
-                df33_data,
-                192,
-                196
-            )
-        )
-        val transtype3 =
-            if (datentime3 == "-- --") "--" else getHistoryTxnStatus(
-                getSubString(df33_data, 205, 206)
-            )
+            //set master data
+            csaMasterData.csaDisplayData = csaDataDisplay
+            csaMasterData.csaRawData = csaRawData
+            csaMasterData.csaUpdatedRawData = csaRawData
+            csaMasterData.csaBinData = csaBinData
+            Log.e("TAG","SUCCESS parsing")
 
-        val transStationId3 = getSubString(df33_data,174, 186)
+            return csaMasterData
 
-        //history log4
-        var datentime4: String =
-            getSubString(df33_data, 220, 226)
-        datentime4 =
-            if (emvUtils.getHexatoDecimal(datentime4).toInt() === 0) "-- --" else emvUtils.calculateSecondsOfTxn(
-                data_5F25 + "000000",
-                emvUtils.getHexatoDecimal(datentime4)
-            )
-
-        val txn_amnt_str4: String =
-            getSubString(df33_data, 230, 234)
-        val txn_amnt4 = emvUtils.getHexatoDecimal(txn_amnt_str4) as Double / 10
-        val txnseqno4 = "" + emvUtils.getHexatoDecimal(
-            getSubString(
-                df33_data,
-                226,
-                230
-            )
-        )
-        val transtype4 =
-            if (datentime4 == "-- --") "--" else getHistoryTxnStatus(
-                getSubString(df33_data, 239, 240)
-            )
-
-        val transStationId4 = getSubString(df33_data,208, 220)
-
-        var station_str1 = transStationId1.substring(6, 9)
-        station_str1 =
-            if (station_str1 == "000") "--" else emvUtils.getStationIdFromStationDetailList(
-                "0$station_str1"
-            )
-
-        var station_str2: String =transStationId2.substring(6, 9)
-        station_str2 =
-            if (station_str2 == "000") "--" else emvUtils.getStationIdFromStationDetailList(
-                "0$station_str2"
-            )
-        var station_str3: String =transStationId3.substring(6, 9)
-        station_str3 =
-            if (station_str3 == "000") "--" else emvUtils.getStationIdFromStationDetailList(
-                "0$station_str3"
-            )
-        var station_str4: String =transStationId4.substring(6, 9)
-        station_str4 =
-            if (station_str4 == "000") "--" else emvUtils.getStationIdFromStationDetailList(
-                "0$station_str4"
-            )
-
-
-        //adding the transaction history
-        val transactions = mutableListOf<TxnHistory>()
-        transactions.add(TxnHistory(txnseqno1,datentime1.split(" ")[0],datentime1.split(" ")[1],emvUtils.df.format(txn_amnt1),getTxnStatus(transtype1),station_str1))
-        transactions.add(TxnHistory(txnseqno2,datentime2.split(" ")[0],datentime2.split(" ")[1],emvUtils.df.format(txn_amnt2),getTxnStatus(transtype2),station_str2))
-        transactions.add(TxnHistory(txnseqno3,datentime3.split(" ")[0],datentime3.split(" ")[1],emvUtils.df.format(txn_amnt3),getTxnStatus(transtype3),station_str3))
-        transactions.add(TxnHistory(txnseqno4,datentime4.split(" ")[0],datentime4.split(" ")[1],emvUtils.df.format(txn_amnt4),getTxnStatus(transtype4),station_str4))
-
-
-        //card effective date
-        val cardEffectiveDate = readCardEffectiveDate(data_5F25.toInt())
-
-        //CSA full data for display
-        val csaDataDisplay = CSADataDisplay(cardbalance,cardBalanceFormat,penalty_amnt,penaltyAmtFormat,errorFormat,error_code.toInt(), finaltxndate,statusFormat,lastStation,statusValue,cardEffectiveDate,transactions)
-
-        //CSA raw data for writing
-        val csaRawData = setCsaRawData(df33_data)
-
-        //CSA binary data
-        val csaBinData = setCsaBinValue(df33_data)
-
-        //set master data
-        csaMasterData.csaDisplayData= csaDataDisplay
-        csaMasterData.csaRawData= csaRawData
-        csaMasterData.csaUpdatedRawData= csaRawData
-
-        return csaMasterData
+        }catch (ex:Exception){
+            Log.e("TAG","Exception :${ex.printStackTrace()}")
+            return csaMasterData
+        }
     }
 
 
@@ -253,6 +323,8 @@ class CSAUtils @Inject constructor(){
      * Method to set the CSA Hex values
      */
     private fun setCsaRawData(tagDF33:String):CSADataRaw{
+
+
 
         //set service data
         val serviceData= ServiceData()
@@ -377,11 +449,17 @@ class CSAUtils @Inject constructor(){
         historyQueue.add(historyData4)
 
         //set csa raw data to send back
-        csaRawData.serviceData= serviceData
-        csaRawData.generalData= generalData
-        csaRawData.validationData =validationData
-        csaRawData.historyData=historyQueue
-        csaRawData.rfu = tagDF33.substring(242,256)
+        csaRawData = CSADataRaw(serviceData = serviceData,
+            generalData= generalData,
+            validationData=validationData,
+            historyData=historyQueue,
+            rfu = tagDF33.substring(242,256)
+            )
+//        csaRawData.serviceData= serviceData
+//        csaRawData.generalData= generalData
+//        csaRawData.validationData =validationData
+//        csaRawData.historyData=historyQueue
+//        csaRawData.rfu = tagDF33.substring(242,256)
 
         return csaRawData
 
@@ -389,6 +467,8 @@ class CSAUtils @Inject constructor(){
     
     
     private fun setCsaBinValue(tagDF33:String):CsaBin{
+
+
 
         //set general data
         val generalData = GeneralBin(
@@ -489,10 +569,15 @@ class CSAUtils @Inject constructor(){
 
         //set csa raw data to send back
         //csaRawData.serviceData= serviceData
-        csaBinData.generalInfo= generalData
-        csaBinData.validationData =validationData
-        csaBinData.history=historyQueue
-        csaBinData.rfu = tagDF33.substring(242,256).toByteArray()
+
+        csaBinData = CsaBin(generalInfo= generalData,
+            validationData =validationData,
+            history=historyQueue,
+            rfu = tagDF33.substring(242,256).toByteArray())
+//        csaBinData.generalInfo= generalData
+//        csaBinData.validationData =validationData
+//        csaBinData.history=historyQueue
+//        csaBinData.rfu = tagDF33.substring(242,256).toByteArray()
 
         return csaBinData
     }

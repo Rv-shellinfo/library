@@ -8,7 +8,6 @@ import android.os.IBinder
 import android.os.Messenger
 import com.shellinfo.common.code.NetworkCall
 import com.shellinfo.common.code.ipc.IPCDataHandler
-import com.shellinfo.common.code.ipc.IpcConnectionHandler
 import com.shellinfo.common.code.ipc.RupayDataHandler
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.remote.repository.ApiRepository
@@ -28,11 +27,15 @@ object ShellIPCModule {
 
     @Singleton
     @Provides
-    fun provideEmvUtils() = EMVUtils()
+    fun provideEmvUtils():EMVUtils{
+        return EMVUtils()
+    }
 
     @Singleton
     @Provides
-    fun provideCSAUtils() = CSAUtils()
+    fun provideCSAUtils(emvUtils: EMVUtils):CSAUtils{
+        return CSAUtils(emvUtils)
+    }
 
     @Singleton
     @Provides
@@ -70,10 +73,4 @@ object ShellIPCModule {
         return messenger
     }
 
-
-    @Singleton
-    @Provides
-    fun provideIpcConnectionHandler():IpcConnectionHandler{
-        return IpcConnectionHandler()
-    }
 }

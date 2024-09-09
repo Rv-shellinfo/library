@@ -12,94 +12,116 @@ import android.os.Message
 import android.os.Messenger
 import android.os.RemoteException
 import android.util.Log
+import com.shellinfo.IRemoteCallback
+import com.shellinfo.IRemoteService
 import com.shellinfo.common.data.local.data.ipc.BF200Data
-import com.shellinfo.common.BaseMessage
+import com.shellinfo.common.data.local.data.ipc.base.BaseMessage
+import com.shellinfo.common.di.DefaultMoshi
 import com.shellinfo.common.utils.IPCConstants
 import com.shellinfo.common.utils.IPCConstants.PAYMENT_APP_MESSAGE
 import com.shellinfo.common.utils.IPCConstants.PAYMENT_MESSAGE
 import com.shellinfo.common.utils.IPCConstants.STYL_NO_ERROR
 import com.shellinfo.common.utils.IPCConstants.TRANSIT_APP_MESSAGE
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class IPCDataHandler @Inject constructor(
-    private val rupayDataHandler: RupayDataHandler
+    private val rupayDataHandler: RupayDataHandler,
+    @DefaultMoshi private val moshi: Moshi
 ){
 
-    /** IPC DATA **/
-    private lateinit var messengerService: Messenger
-    private var bound = false
+
+    private var communicationService: IRemoteService? = null
 
     val TAG =  TransitIPCService::class.java.simpleName
+
+    private var bound =false
 
     fun startIPCService(context: Context){
 
         //binding ipc service from payment app
-        val intent = Intent()
-        intent.setComponent(ComponentName("com.shell.paymentapp", "com.shell.paymentapp.ui.services.PaymentIPCService"))
-        context.bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        // Bind to the service in App A
+        val intent = Intent().apply {
+            component = ComponentName("com.shell.paymentapp", "com.shell.paymentapp.ui.services.RemoteService")
+        }
+        context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+
     }
 
-    private val connection = object : ServiceConnection {
-        override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
-            messengerService = Messenger(service)
-            bound = true
+    private val callback = object : IRemoteCallback.Stub() {
+        override fun onMessageReceived(message: String) {
+            FileLogger.d(TAG, "Received message from payment service: $message")
 
-            // Send a message to the service
-            //sendMessageToService("Hello from AppB!")
+            //handling the message
+            handleMessage(message)
+
+        }
+    }
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+            communicationService = IRemoteService.Stub.asInterface(binder)
+            bound=true
+            try {
+                // Register the callback to receive messages
+                communicationService?.registerCallback(callback)
+            } catch (e: RemoteException) {
+                e.printStackTrace()
+            }
         }
 
         override fun onServiceDisconnected(name: ComponentName?) {
-            bound = false
+            bound=false
+            communicationService = null
         }
     }
+
+    // Method to send a message to Payment App's service
+    fun sendMessageToService(messageId:Int, baseMessage: BaseMessage<*>) {
+
+        //TODO need to convert the data
+
+        communicationService?.sendData(1,"RAVI")
+    }
+
 
 
     fun stopIpcService(context: Context){
         if (bound) {
-            context.unbindService(connection)
+            context.unbindService(serviceConnection)
             bound = false
         }
     }
 
-
-    inner class IncomingHandler : Handler() {
-        override fun handleMessage(msg: Message) {
-            when (msg.what) {
-                IPCConstants.TRANSIT_MESSAGE -> {
-                    // Message received from service
-                    val bundle = msg.data
-                    val baseMessage: BaseMessage<*>? = bundle.getParcelable(TRANSIT_APP_MESSAGE)
-                    if (baseMessage != null) {
-                        //handlePaymentAppMessage(baseMessage)
-                    }
-
-                    //Log.d("AppB MainActivity", "Received response from service: $serviceResponse")
-                }
-                else -> super.handleMessage(msg)
-            }
-        }
-    }
-
     /**
-     * Method to send the message to Payment Application
+     * Inline method to convert the string to generic type
      */
-    fun sendMessageToPaymentApp(baseMessage: BaseMessage<*>) {
-        if (!bound) return
-
-        val msg = Message.obtain(null, PAYMENT_MESSAGE)
-        val bundle = Bundle().apply {
-            putParcelable(PAYMENT_APP_MESSAGE,baseMessage)
-        }
-        msg.data = bundle
-        msg.replyTo = Messenger(IncomingHandler())
-        try {
-            messengerService.send(msg)
-        } catch (e: RemoteException) {
-            Log.e("AppB MainActivity", "Failed to send message to service: ${e.message}")
+    inline fun <reified T> convertFromJson(json: String,moshi:Moshi): BaseMessage<T>? {
+        return try {
+            val type = Types.newParameterizedType(BaseMessage::class.java, T::class.java)
+            val adapter = moshi.adapter<BaseMessage<T>>(type)
+            adapter.fromJson(json)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
+
+
+    fun handleMessage(message:String){
+
+        // Convert JSON string back to BaseMessage object
+        val baseMessage: BaseMessage<*>? = convertFromJson<BF200Data>(message,moshi)
+
+        if (baseMessage != null) {
+            handlePaymentAppMessage(baseMessage)
+        }
+    }
+
+
 
 
     /**
