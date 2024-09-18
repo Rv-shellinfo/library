@@ -1,3 +1,6 @@
+import org.gradle.api.publish.maven.MavenPublication
+import org.gradle.kotlin.dsl.publishing
+
 plugins {
     id("com.android.library")
     id("org.jetbrains.kotlin.android")
@@ -76,6 +79,17 @@ android {
         getByName("main").java.srcDirs("src/main/java")
     }
 
+}
+
+publishing{
+
+    publications{
+        register<MavenPublication>("debug"){
+            afterEvaluate{
+                from(components["debug"])
+            }
+        }
+    }
 }
 
 repositories {

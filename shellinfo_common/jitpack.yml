@@ -1,3 +1,5 @@
-install:
-  FILE="-Dfile=shellinfo_common-release.aar"
-  mvn install:install-file $FILE -DgroupId=com.shell -DartifactId=test -Dversion=1.0 -Dpackaging=aar -DpomFile=pom.xml
+jdk:
+  - openjdk17
+before-install:
+  - sdk install java 17.0.7-open
+  - sdk use java 17.0.7-open
