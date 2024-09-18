@@ -15,11 +15,16 @@ import com.shellinfo.common.data.local.data.emv_rupay.raw.HistoryData
 import com.shellinfo.common.data.local.data.emv_rupay.raw.ServiceData
 import com.shellinfo.common.data.local.data.emv_rupay.raw.TerminalData
 import com.shellinfo.common.data.local.data.emv_rupay.raw.ValidationData
+import com.shellinfo.common.data.local.data.ipc.BF200Data
 import com.shellinfo.common.utils.IPCConstants
+import java.nio.BufferOverflowException
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import javax.inject.Inject
+import kotlin.reflect.full.memberProperties
 
 
-class CSAUtils @Inject constructor(
+class RupayUtils @Inject constructor(
     private val emvUtils: EMVUtils
 ){
 
@@ -38,7 +43,10 @@ class CSAUtils @Inject constructor(
     /**
      * Method to read tlv data and set the raw and display csa data classes
      */
-    fun readCSAData(df33_data:String, data_5F25:String): CSAMasterData {
+    fun readCSAData(bF200Data: BF200Data): CSAMasterData {
+
+        val df33_data= bF200Data.b.DF33!!
+        val data_5F25= bF200Data.b.`5F25`!!
 
         //init master csa data
         csaMasterData= CSAMasterData()
@@ -46,7 +54,7 @@ class CSAUtils @Inject constructor(
         try {
 
             //global wallet balance
-            val cardBalance_str: String = getSubString(df33_data, 46, 55)
+            val cardBalance_str: String = getSubString(df33_data, 46, 58)
             val cardbalance = cardBalance_str.toDouble() / 100
             val cardBalanceFormat = emvUtils.df.format(cardbalance)
 
@@ -279,7 +287,7 @@ class CSAUtils @Inject constructor(
 
 
             //card effective date
-            val cardEffectiveDate = readCardEffectiveDate(data_5F25.toInt())
+            val cardEffectiveDate = data_5F25
 
             //CSA full data for display
             val csaDataDisplay = CSADataDisplay(
@@ -301,13 +309,12 @@ class CSAUtils @Inject constructor(
             val csaRawData = setCsaRawData(df33_data)
 
             //CSA binary data
-            val csaBinData = setCsaBinValue(df33_data)
+            val csaBinData = setCsaBinValue(bF200Data.serviceRelatedData!!.toByteArray().sliceArray(bF200Data.serviceDataIndex!!..bF200Data.serviceDataIndex!!+95))
 
             //set master data
             csaMasterData.csaDisplayData = csaDataDisplay
-            csaMasterData.csaRawData = csaRawData
-            csaMasterData.csaUpdatedRawData = csaRawData
             csaMasterData.csaBinData = csaBinData
+            csaMasterData.csaUpdatedBinData=csaBinData
             Log.e("TAG","SUCCESS parsing")
 
             return csaMasterData
@@ -466,120 +473,124 @@ class CSAUtils @Inject constructor(
     }
     
     
-    private fun setCsaBinValue(tagDF33:String):CsaBin{
+    private fun setCsaBinValue(byteArray: ByteArray):CsaBin{
 
+        // Create a ByteBuffer wrapping the byteArray and set it to little-endian order
+        val buffer = ByteBuffer.wrap(byteArray).order(ByteOrder.LITTLE_ENDIAN)
 
+        // Extract generalInfo
+        val versionNumber = buffer.get()
+        val languageInfo = buffer.get()
 
-        //set general data
-        val generalData = GeneralBin(
-            versionNumber = tagDF33.substring(64,66).toInt(16).toByte(),
-            languageInfoAndRfu = tagDF33.substring(66,68).toInt(16).toByte()
-        )
+        val generalInfo = GeneralBin(versionNumber, languageInfo)
 
+        // Extract validationData
+        val errorCode = buffer.get()
+        val productType = buffer.get()
+        val acquirerID = buffer.get()
+        val operatorID = ByteArray(2)
+        buffer.get(operatorID)
+        val terminalID = ByteArray(3)
+        buffer.get(terminalID)
+        val trxDateTime = ByteArray(3)
+        buffer.get(trxDateTime)
+        val fareAmt = ByteArray(2)
+        buffer.get(fareAmt)
+        val routeNo = ByteArray(2)
+        buffer.get(routeNo)
+        val serviceProviderData = ByteArray(3)
+        buffer.get(serviceProviderData)
+        val trxStatus = buffer.get()
 
-
-        //set validation data
         val validationData = ValidationBin(
-            errorCode = tagDF33.substring(68,70).toInt(16).toByte(),
-            productType = tagDF33.substring(70,72).toInt(16).toByte(),
-            acquirerID = tagDF33.substring(72,76).toInt(16).toByte(),
-            operatorID = tagDF33.substring(76,80).toByteArray(),
-            terminalID = tagDF33.substring(80,84).toByteArray(),
-            trxDateTime =  tagDF33.substring(84,90).toByteArray(),
-            fareAmt =  tagDF33.substring(90,94).toByteArray(),
-            routeNo =  tagDF33.substring(94,98).toByteArray(),
-            serviceProviderData =  tagDF33.substring(98,104).toByteArray(),
-            trxStatusAndRfu =  tagDF33.substring(104,106).toInt(16).toByte(),
+            errorCode, productType, acquirerID, operatorID, terminalID,
+            trxDateTime, fareAmt, routeNo, serviceProviderData, trxStatus
         )
 
+        // Extract history (4 entries, each 17 bytes)
+        val history = List(4) {
+            val acquirerID = buffer.get()
+            val operatorID = ByteArray(2)
+            buffer.get(operatorID)
+            val terminalID = ByteArray(3)
+            buffer.get(terminalID)
+            val trxDateTime = ByteArray(3)
+            buffer.get(trxDateTime)
+            val trxSeqNum = ByteArray(2)
+            buffer.get(trxSeqNum)
+            val trxAmt = ByteArray(2)
+            buffer.get(trxAmt)
+            val cardBalance1 = buffer.get()
+            val cardBalance2 = buffer.get()
+            val cardBalance3 = buffer.get() // cardBalance3 and trxStatus share bits
+            val trxStatus = cardBalance3
+            val rfu = buffer.get()
 
+            HistoryBin(acquirerID, operatorID, terminalID, trxDateTime, trxSeqNum, trxAmt, cardBalance1, cardBalance2, cardBalance3, trxStatus, rfu)
+        }
 
-        //set history data 1
-        val historyData1 = HistoryBin(
-            acquirerID = tagDF33.substring(106,110).toInt(16).toByte(),
-            operatorID = tagDF33.substring(110,114).toByteArray(),
-            terminalID = tagDF33.substring(114,118).toByteArray(),
-            trxDateTime = tagDF33.substring(118,124).toByteArray(),
-            trxSeqNum = tagDF33.substring(124,128).toByteArray(),
-            trxAmt = tagDF33.substring(128,132).toByteArray(),
-            cardBalance1 = tagDF33.substring(132,134).toInt(16).toByte(),
-            cardBalance2 = tagDF33.substring(134,136).toInt(16).toByte(),
-            cardBalance3 = tagDF33.substring(136,137).toInt(16).toByte(),
-            trxStatus = tagDF33.substring(137,138).toInt(16).toByte(),
-            rfu = tagDF33.substring(138,140).toInt(16).toByte()
-        )
-
-
-        //set history data 2
-        val historyData2 = HistoryBin(
-            acquirerID = tagDF33.substring(140,144).toInt(16).toByte(),
-            operatorID = tagDF33.substring(144,148).toByteArray(),
-            terminalID = tagDF33.substring(148,152).toByteArray(),
-            trxDateTime = tagDF33.substring(152,158).toByteArray(),
-            trxSeqNum = tagDF33.substring(158,162).toByteArray(),
-            trxAmt = tagDF33.substring(162,166).toByteArray(),
-            cardBalance1 = tagDF33.substring(166,168).toInt(16).toByte(),
-            cardBalance2 = tagDF33.substring(168,170).toInt(16).toByte(),
-            cardBalance3 = tagDF33.substring(170,171).toInt(16).toByte(),
-            trxStatus = tagDF33.substring(171,172).toInt(16).toByte(),
-            rfu = tagDF33.substring(172,174).toInt(16).toByte()
-
-        )
-
-
-        //set history data 3
-        val historyData3 = HistoryBin(
-            acquirerID = tagDF33.substring(174,178).toInt(16).toByte(),
-            operatorID = tagDF33.substring(178,182).toByteArray(),
-            terminalID = tagDF33.substring(182,186).toByteArray(),
-            trxDateTime = tagDF33.substring(186,192).toByteArray(),
-            trxSeqNum = tagDF33.substring(192,196).toByteArray(),
-            trxAmt = tagDF33.substring(196,200).toByteArray(),
-            cardBalance1 = tagDF33.substring(200,202).toInt(16).toByte(),
-            cardBalance2 = tagDF33.substring(202,204).toInt(16).toByte(),
-            cardBalance3 = tagDF33.substring(204,205).toInt(16).toByte(),
-            trxStatus = tagDF33.substring(205,206).toInt(16).toByte(),
-            rfu = tagDF33.substring(206,208).toInt(16).toByte()
-        )
-
-
-        //set history data 4
-        val historyData4 = HistoryBin(
-            acquirerID = tagDF33.substring(208,212).toInt(16).toByte(),
-            operatorID = tagDF33.substring(212,216).toByteArray(),
-            terminalID = tagDF33.substring(216,220).toByteArray(),
-            trxDateTime = tagDF33.substring(220,226).toByteArray(),
-            trxSeqNum = tagDF33.substring(226,230).toByteArray(),
-            trxAmt = tagDF33.substring(230,234).toByteArray(),
-            cardBalance1 = tagDF33.substring(234,236).toInt(16).toByte(),
-            cardBalance2 = tagDF33.substring(236,238).toInt(16).toByte(),
-            cardBalance3 = tagDF33.substring(238,239).toInt(16).toByte(),
-            trxStatus = tagDF33.substring(239,240).toInt(16).toByte(),
-            rfu = tagDF33.substring(240,242).toInt(16).toByte()
-        )
-
-
+        // Extract rfu
+        val rfu = ByteArray(7)
+        buffer.get(rfu)
 
         //create history queue
         val historyQueue = HistoryQueue<HistoryBin>(4)
-        historyQueue.add(historyData1)
-        historyQueue.add(historyData2)
-        historyQueue.add(historyData3)
-        historyQueue.add(historyData4)
+        historyQueue.add(history.get(0))
+        historyQueue.add(history.get(1))
+        historyQueue.add(history.get(2))
+        historyQueue.add(history.get(3))
 
-        //set csa raw data to send back
-        //csaRawData.serviceData= serviceData
+        return CsaBin(generalInfo, validationData, historyQueue, rfu)
+    }
 
-        csaBinData = CsaBin(generalInfo= generalData,
-            validationData =validationData,
-            history=historyQueue,
-            rfu = tagDF33.substring(242,256).toByteArray())
-//        csaBinData.generalInfo= generalData
-//        csaBinData.validationData =validationData
-//        csaBinData.history=historyQueue
-//        csaBinData.rfu = tagDF33.substring(242,256).toByteArray()
 
-        return csaBinData
+
+     fun csaToByteArray(csaBin: CsaBin): ByteArray {
+        // Create a ByteBuffer of appropriate size and set it to little-endian order
+        val buffer = ByteBuffer.allocate(96).order(ByteOrder.LITTLE_ENDIAN) // Adjust the size accordingly
+
+        // Serialize generalInfo
+        buffer.put(csaBin.generalInfo.versionNumber)
+        buffer.put(csaBin.generalInfo.languageInfo)
+
+        // Serialize validationData
+        buffer.put(csaBin.validationData.errorCode!!)
+        buffer.put(csaBin.validationData.productType)
+        buffer.put(csaBin.validationData.acquirerID)
+        buffer.put(csaBin.validationData.operatorID)
+        buffer.put(csaBin.validationData.terminalID)
+        buffer.put(csaBin.validationData.trxDateTime)
+        buffer.put(csaBin.validationData.fareAmt)
+        buffer.put(csaBin.validationData.routeNo)
+        buffer.put(csaBin.validationData.serviceProviderData)
+        buffer.put(csaBin.validationData.trxStatusAndRfu)
+
+
+         // Serialize history (4 entries, each 17 bytes)
+         for (history in csaBin.history) {
+             // Ensure the buffer has enough remaining space
+             if (buffer.remaining() < 17) {
+                 throw BufferOverflowException()
+             }
+
+             buffer.put(history.acquirerID!!) // Single byte
+             buffer.put(history.operatorID!!)
+             buffer.put(history.terminalID!!)
+             buffer.put(history.trxDateTime!!)
+             buffer.put(history.trxSeqNum!!)
+             buffer.put(history.trxAmt!!)
+             buffer.put(history.cardBalance1!!) // Single byte
+             buffer.put(history.cardBalance2!!) // Single byte
+             buffer.put(history.cardBalance3!!) // Single byte
+             buffer.put(history.rfu!!) // Single byte
+         }
+
+
+        // Serialize rfu (7 bytes)
+        buffer.put(csaBin.rfu)
+
+        // Return the byte array
+        return buffer.array()
     }
 
 
@@ -698,4 +709,220 @@ class CSAUtils @Inject constructor(
         return cardEffectiveDate
     }
 
+    fun readCardEffectiveDate(tag5F25Hex: String): String {
+        // Ensure the input hex string is valid (must be exactly 6 characters, representing 3 bytes)
+        require(tag5F25Hex.length == 6) { "Input hex string must be exactly 6 characters long" }
+
+        // Convert the hex string into a ByteArray (3 bytes)
+        val tag5F25 = ByteArray(3)
+        for (i in tag5F25.indices) {
+            tag5F25[i] = tag5F25Hex.substring(i * 2, i * 2 + 2).toInt(16).toByte()
+        }
+
+        val date = CharArray(8)
+
+        // Extract day (tag5F25[2])
+        date[0] = ((tag5F25[2].toInt() and 0xF0) shr 4 + 0x30).toChar()
+        date[1] = ((tag5F25[2].toInt() and 0x0F) + 0x30).toChar()
+
+        // Extract month (tag5F25[1])
+        date[2] = ((tag5F25[1].toInt() and 0xF0) shr 4 + 0x30).toChar()
+        date[3] = ((tag5F25[1].toInt() and 0x0F) + 0x30).toChar()
+
+        // Set the century (20)
+        date[4] = '2'
+        date[5] = '0'
+
+        // Extract year (tag5F25[0])
+        date[6] = ((tag5F25[0].toInt() and 0xF0) shr 4 + 0x30).toChar()
+        date[7] = ((tag5F25[0].toInt() and 0x0F) + 0x30).toChar()
+
+        // Return the final date string
+        return String(date)
+    }
+
+
+    /**
+     * Converts a hex string into a single Byte or a ByteArray depending on its length.
+     * @param hex Hexadecimal string.
+     * @return ByteArray for lengths greater than 2, or a single Byte for 2-character strings.
+     */
+    fun hexToBytes(hex: String): Any? {
+        val len = hex.length
+        return when {
+            len % 2 != 0 -> null  // Hex string length must be even
+            len == 2 -> hexToByte(hex)  // For 2-character hex strings, convert to single Byte
+            else -> hexToByteArray(hex) // For longer strings, convert to ByteArray
+        }
+    }
+
+    /**
+     * Converts a two-character hex string (e.g., "1A") into a single Byte.
+     * @param hex Two-character hex string.
+     * @return Byte value, or null if the hex string is invalid.
+     */
+    fun hexToByte(hex: String): Byte? {
+        val firstNibble = chr2nib(hex[0])
+        val secondNibble = chr2nib(hex[1])
+
+        if (firstNibble >= 0x10 || secondNibble >= 0x10) return null
+
+        return ((firstNibble shl 4) or secondNibble).toByte()
+    }
+
+
+    fun byteToHex(byte: Byte): String {
+        // Convert Byte to unsigned integer to handle values from 0x00 to 0xFF
+        val unsignedByte = byte.toInt() and 0xFF
+
+        // Convert the integer to a hexadecimal string with 2 digits
+        return String.format("%02X", unsignedByte)
+    }
+
+    /**
+     * Converts a longer hex string into a ByteArray.
+     * @param hex Hexadecimal string.
+     * @return ByteArray representation of the hex string.
+     */
+    fun hexToByteArray(hex: String): ByteArray? {
+        val len = hex.length
+        val byteArray = ByteArray(len / 2)
+
+        for (i in byteArray.indices) {
+            val firstNibble = chr2nib(hex[i * 2])
+            val secondNibble = chr2nib(hex[i * 2 + 1])
+
+            if (firstNibble >= 0x10 || secondNibble >= 0x10) return null
+
+            byteArray[i] = ((firstNibble shl 4) or secondNibble).toByte()
+        }
+        return byteArray
+    }
+
+
+    fun byteArrayToHex(byteArray: ByteArray): String {
+        return byteArray.joinToString("") { byte ->
+            // Convert each byte to a 2-digit hexadecimal string and ensure uppercase
+            String.format("%02X", byte)
+        }
+    }
+
+    /**
+     * Converts a single hex character to its corresponding nibble (4 bits).
+     * @param c Hexadecimal character ('0'-'9', 'A'-'F', 'a'-'f').
+     * @return Nibble value (0-15), or 16 if the character is invalid.
+     */
+    private fun chr2nib(c: Char): Int {
+        return when (c) {
+            in '0'..'9' -> c - '0'
+            in 'A'..'F' -> c - 'A' + 10
+            in 'a'..'f' -> c - 'a' + 10
+            else -> 16 // Invalid hex character
+        }
+    }
+
+    /**
+     * Converts a Long integer into a ByteArray (hex format).
+     * Example: 512 (0x200) -> [0x02, 0x00]
+     *
+     * @param num The long integer to be converted
+     * @param len The length of the ByteArray
+     * @return The ByteArray representing the binary (hex) format of the number
+     */
+    fun num2bin(num: Long, len: Int): ByteArray? {
+        var number = num
+        val bin = ByteArray(len)
+
+        for (i in len - 1 downTo 0) {
+            bin[i] = (number % 256).toByte()
+            number /= 256
+        }
+
+        // If number is not zero, return null to indicate an error (equivalent to the C version's lblKO)
+        return if (number == 0L) bin else null
+    }
+
+    /**
+     * Converts a ByteArray (hex format) into a Long integer.
+     * Example: [0x02, 0x00] -> 512 (0x200)
+     *
+     * @param bin The ByteArray to be converted
+     * @param len The length of the ByteArray
+     * @return The Long integer representing the binary (hex) format of the input
+     */
+    fun bin2num(bin: ByteArray, len: Int): Long {
+        var num: Long = 0
+
+        for (i in 0 until len) {
+            num = num * 256 + (bin[i].toInt() and 0xFF)
+        }
+
+        return num
+    }
+
+
+    fun createTerminalID(stationId: Int, stationCategory: Int, stationSerial: Int): ByteArray {
+        // Ensure that the inputs fit into their respective bit lengths
+        require(stationId in 0..0xFFF) { "Station ID must be a 12-bit value (0 to 4095)" }
+        require(stationCategory in 0..0x3F) { "Station Category must be a 6-bit value (0 to 63)" }
+        require(stationSerial in 0..0x3F) { "Station Serial must be a 6-bit value (0 to 63)" }
+
+        // Pack stationId, stationCategory, and stationSerial into 3 bytes
+        val terminalId = ByteArray(3)
+
+        // First byte: Upper 8 bits of stationId
+        terminalId[0] = (stationId shr 4).toByte()
+
+        // Second byte: Lower 4 bits of stationId and upper 4 bits of stationCategory
+        terminalId[1] = ((stationId and 0x0F) shl 4 or (stationCategory shr 2)).toByte()
+
+        // Third byte: Lower 2 bits of stationCategory and all 6 bits of stationSerial
+        terminalId[2] = (((stationCategory and 0x03) shl 6) or (stationSerial and 0x3F)).toByte()
+
+        return terminalId
+    }
+
+
+    fun extractTerminalID(terminalId: ByteArray): Triple<Int, Int, Int> {
+        require(terminalId.size == 3) { "Terminal ID byte array must be exactly 3 bytes long" }
+
+        // Extract the stationId (12 bits)
+        val stationId = ((terminalId[0].toInt() and 0xFF) shl 4) or ((terminalId[1].toInt() and 0xF0) shr 4)
+
+        // Extract the stationCategory (6 bits)
+        val stationCategory = ((terminalId[1].toInt() and 0x0F) shl 2) or ((terminalId[2].toInt() and 0xC0) shr 6)
+
+        // Extract the stationSerial (6 bits)
+        val stationSerial = terminalId[2].toInt() and 0x3F
+
+        return Triple(stationId, stationCategory, stationSerial)
+    }
+
+
+
+//    fun hexStringToByteArray(hex: String): ByteArray {
+//        val cleanHex = hex.filterNot { it.isWhitespace() }  // In case the string has spaces
+//        val result = ByteArray(cleanHex.length / 2)
+//        for (i in cleanHex.indices step 2) {
+//            result[i / 2] = ((cleanHex[i].digitToInt(16) shl 4) + cleanHex[i + 1].digitToInt(16)).toByte()
+//        }
+//        return result
+//    }
+//
+//    fun classToByteArray(anyClass: Any): ByteArray {
+//        val byteArrayList = mutableListOf<Byte>()
+//        val properties = anyClass::class.memberProperties
+//
+//        // Iterate through all properties of the class
+//        for (property in properties) {
+//            // Only handle properties that are strings (representing hex values)
+//            val value = property.get(anyClass) as? String
+//            if (value != null && value.isNotEmpty()) {
+//                // Convert hex string to byte array and add it to the list
+//                val byteArray = hexStringToByteArray(value)
+//                byteArrayList.addAll(byteArray.toList())
+//            }
+//        }
+//        return byteArrayList.toByteArray()
+//    }
 }

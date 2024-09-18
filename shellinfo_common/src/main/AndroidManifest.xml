@@ -17,6 +17,7 @@
     <uses-permission android:name="android.permission.BIND_EXTERNAL_SERVICE" />
 
 
+
     <queries>
         <package android:name="com.shellinfo.paymentapp" />
     </queries>
@@ -34,20 +35,6 @@
     <application
 
         android:requestLegacyExternalStorage="true">
-
-
-
-        <service
-            android:name=".code.ipc.TransitIPCService"
-            android:exported="true"
-            android:enabled="true">
-
-            <intent-filter>
-                <action android:name="com.shell.ipc.TRANSIT" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </service>
-
 
     </application>
 

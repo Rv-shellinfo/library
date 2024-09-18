@@ -44,31 +44,35 @@ object Utils {
     }
 
 
-    fun bin2hex(bin: String, len: Int): String {
-        // Ensure the input string is a valid hexadecimal string
-        require(bin.length == len * 2) { "Input string length must be twice the byte array length." }
-
-        val result = StringBuilder(len * 2) // Each byte will be converted into two hex characters
-        var index = 0
-
-        while (index < len * 2) {
-            // Extract two hex characters at a time (each representing 4 bits)
-            val firstNibble = bin[index].digitToInt(16) // First 4 bits
-            val secondNibble = bin[index + 1].digitToInt(16) // Second 4 bits
-
-            // Convert each nibble to its corresponding hex character
-            result.append(nib2chr(firstNibble))
-            result.append(nib2chr(secondNibble))
-
-            index += 2 // Move to the next pair of hex characters
+    /**
+     * @brief bin2hex: Convert binary data (hex data) to hex string format (Example given below)
+     * @param bin Input binary data as ByteArray
+     * @param len Length of binary data
+     * @return Hexadecimal string representation of the input binary data
+     */
+// ex Input : byteArrayOf(0x12, 0x34, 0x56, 0x78, 0x90, 0x12, 0x34, 0x56)
+//    Output: "1234567890123456"
+    fun bin2hex(bin: ByteArray, len: Int): String {
+        val hexBuilder = StringBuilder(len * 2) // Each byte will be converted to two hex chars
+        for (i in 0 until len) {
+            val tmp = bin[i].toInt() and 0xFF  // Ensure the byte is treated as unsigned
+            hexBuilder.append(nib2chr(tmp / 16)) // Convert first nibble (upper 4 bits)
+            hexBuilder.append(nib2chr(tmp % 16)) // Convert second nibble (lower 4 bits)
         }
-
-        return result.toString()
+        return hexBuilder.toString()
     }
 
+    /**
+     * Converts a nibble (half-byte, i.e., 4 bits) to its corresponding hex character.
+     * @param nibble The nibble value (0-15)
+     * @return Hexadecimal character ('0'-'9' or 'A'-'F')
+     */
     fun nib2chr(nibble: Int): Char {
-        // Convert nibble (0–15) to its corresponding hex character (0–9 or A–F)
-        return "0123456789ABCDEF"[nibble]
+        return if (nibble in 0..9) {
+            (nibble + '0'.code).toChar() // Convert to '0' - '9'
+        } else {
+            (nibble - 10 + 'A'.code).toChar() // Convert to 'A' - 'F'
+        }
     }
 
     fun numToBin(bin: ByteArray, num: Long, len: Int): Int {

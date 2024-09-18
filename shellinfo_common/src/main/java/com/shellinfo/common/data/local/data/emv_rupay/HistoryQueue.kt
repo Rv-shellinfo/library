@@ -1,8 +1,13 @@
 package com.shellinfo.common.data.local.data.emv_rupay
 
-class HistoryQueue<T>(private val maxSize: Int) {
+class HistoryQueue<T>(private val maxSize: Int) : Iterable<T>{
+
 
     private val deque: ArrayDeque<T> = ArrayDeque(maxSize)
+
+    override fun iterator(): Iterator<T> {
+        return deque.iterator()
+    }
 
     fun add(element: T): Boolean {
         if (deque.size == maxSize) {

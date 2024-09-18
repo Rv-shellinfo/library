@@ -158,15 +158,16 @@ object IPCConstants{
     const val CLOSED_LOOP_CARD_PRESENTED	=		    106			//Closed loop card presented on reader
     const val APPLICATION_BLOCKED			=		    107			//Application Blocked
     const val CARD_ALREADY_TAPPED			=		    108			//Card already tapped
-    const val FAILURE_ENTRY_VALIDATION			=		109			//Fail Entry Validation
+    const val READER_FUNCTIONALITY_DISABLED			=	109			//Reader in Maintenance mode/Reader Off
+    const val FAILURE_ENTRY_VALIDATION			=		110		//Fail Entry Validation
 
     //CSA pre-defined product type (NCMC Interface Specs)
-    const val PROD_TYPE_SINGLE_JOURNEY  =			    0x00
-    const val PROD_TYPE_DISCOUNTED_FARE  =			    0x1F
-    const val PROD_TYPE_PASS  =			                0xFF
+    const val PROD_TYPE_SINGLE_JOURNEY:Byte  =			    0x00
+    const val PROD_TYPE_DISCOUNTED_FARE:Byte  =			    0x1F
+    const val PROD_TYPE_PASS  =			                    0xFF
 
     // Message ID for messages from Payment to Transit Application
-    const val MSG_ID_TRX_DATA_RUPAY_NCMC : Int =          0x01
+    const val MSG_ID_TRX_DATA_RUPAY_NCMC  =               0x01
     const val MSG_ID_TRX_STATUS_RUPAY_NCMC =              0x02
     const val MSG_ID_TRX_DATA_EMV =                       0x03
     const val MSG_ID_PAYMENT_APP_VERSION_DATA =           0x04
@@ -174,7 +175,7 @@ object IPCConstants{
     const val MSG_ID_AMOUNT_REQUEST =                     0x06
 
     //CSA pre-defined values as per NCMC specs
-    const val VERSION_NUMBER =                            0x31
+    const val VERSION_NUMBER:Byte =                            0x31
 
     // Message ID for messages from Transit to Payment Application for Transaction
     const val MSG_ID_TRANSIT_VALIDATION_RUPAY_NCMC =            0x81
@@ -194,8 +195,11 @@ object IPCConstants{
     const val MSG_ID_CUP_DENY_LIST_UPDATE_COMMAND =              0xF10
 
 
+    const val TRX_STATUS_MASK = 0b11110000 // Mask for the upper 4 bits (trxStatus)
+    const val RFU_MASK = 0b00001111 // Mask for the lower 4 bits (RFU)
 
     //CSA pre-defined LANGUAGE values as per NCMC specs
+    const val LANGUAGE_MASK =                           0b00011111
     const val LANG_ENGLISH =                               0b00000
     const val LANG_HINDI =                                 0b00001
     const val LANG_BENGALI =                               0b00010

@@ -12,8 +12,9 @@ import com.shellinfo.common.code.ipc.RupayDataHandler
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.remote.repository.ApiRepository
 import com.shellinfo.common.data.shared.SharedDataManager
-import com.shellinfo.common.utils.ipc.CSAUtils
+import com.shellinfo.common.utils.ipc.RupayUtils
 import com.shellinfo.common.utils.ipc.EMVUtils
+import com.squareup.moshi.Moshi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,20 +34,20 @@ object ShellIPCModule {
 
     @Singleton
     @Provides
-    fun provideCSAUtils(emvUtils: EMVUtils):CSAUtils{
-        return CSAUtils(emvUtils)
+    fun provideCSAUtils(emvUtils: EMVUtils):RupayUtils{
+        return RupayUtils(emvUtils)
     }
 
     @Singleton
     @Provides
-    fun provideRupayDataHandler(csaUtils: CSAUtils,sharedPreferenceUtil: SharedPreferenceUtil,sharedDataManager: SharedDataManager,
-                                apiRepository: ApiRepository,networkCall: NetworkCall)
-    = RupayDataHandler(csaUtils,sharedPreferenceUtil,sharedDataManager,apiRepository,networkCall)
+    fun provideRupayDataHandler(rupayUtils: RupayUtils, sharedPreferenceUtil: SharedPreferenceUtil, sharedDataManager: SharedDataManager,
+                                apiRepository: ApiRepository, networkCall: NetworkCall)
+    = RupayDataHandler(rupayUtils,sharedPreferenceUtil,sharedDataManager,apiRepository,networkCall)
 
     @Singleton
     @Provides
-    fun provideIPCDataHandler(rupayDataHandler: RupayDataHandler)
-        = IPCDataHandler(rupayDataHandler)
+    fun provideIPCDataHandler(rupayDataHandler: RupayDataHandler,@DefaultMoshi moshi: Moshi)
+        = IPCDataHandler(rupayDataHandler,moshi)
 
     @Singleton
     @Provides

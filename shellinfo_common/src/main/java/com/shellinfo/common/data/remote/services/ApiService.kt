@@ -7,6 +7,8 @@ import com.shellinfo.common.data.remote.response.model.exit_validation.ExitValid
 import com.shellinfo.common.data.remote.response.model.exit_validation.ExitValidationResponse
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
 import com.shellinfo.common.data.remote.response.model.fare.FareResponse
+import com.shellinfo.common.data.remote.response.model.gate_fare.GateFareRequest
+import com.shellinfo.common.data.remote.response.model.gate_fare.GateFareResponse
 import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentRequest
 import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentResponse
 import com.shellinfo.common.data.remote.response.model.payment_gateway.ChecksumRequest
@@ -73,5 +75,8 @@ interface ApiService {
 
     @POST
     suspend fun doEntryValidation(@Url url: String, @Body body:EntryValidationRequest):Response<EntryValidationResponse>
+
+    @POST
+    suspend fun doGetFare(@Url url: String, @Body body: GateFareRequest):Response<GateFareResponse>
 
 }

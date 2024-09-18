@@ -5,13 +5,13 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class FareRequest(
-    @Json(name ="fromStationId") val fromStationId: String,
-    @Json(name ="toStationId") val toStationId: String,
+    @Json(name ="fromStationId") var fromStationId: String?="",
+    @Json(name ="toStationId") var toStationId: String?="",
     @Json(name ="zoneNumberOrStored_ValueAmount") val zoneNumberOrStored_ValueAmount: Int? = 0,
-    @Json(name ="ticketTypeId") val ticketTypeId: Int,
-    @Json(name ="merchantId") val merchantId: String,
-    @Json(name ="travelDatetime") val travelDatetime: String?="",
-    @Json(name ="authorization") var authorization: String?=null
+    @Json(name ="ticketTypeId") var ticketTypeId: Int?=0,
+    @Json(name ="merchantId") var merchantId: String?="",
+    @Json(name ="travelDatetime") var travelDatetime: String?="",
+    @Json(name ="authorization") var authorization: String?=""
 
 
 )

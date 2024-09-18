@@ -9,6 +9,8 @@ import com.shellinfo.common.data.remote.response.model.entry_validation.EntryVal
 import com.shellinfo.common.data.remote.response.model.entry_validation.EntryValidationResponse
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
 import com.shellinfo.common.data.remote.response.model.fare.FareResponse
+import com.shellinfo.common.data.remote.response.model.gate_fare.GateFareRequest
+import com.shellinfo.common.data.remote.response.model.gate_fare.GateFareResponse
 import com.shellinfo.common.data.remote.response.model.payment_gateway.ChecksumRequest
 import com.shellinfo.common.data.remote.response.model.payment_gateway.ChecksumResponse
 import com.shellinfo.common.data.remote.response.model.payment_gateway.TrackTransactionRequest
@@ -152,6 +154,11 @@ class ApiRepository @Inject constructor(
 
     fun doEntryValidation(request:EntryValidationRequest):Flow<ApiResponse<EntryValidationResponse>> = flow {
         emit(ApiResponse.Loading)
-        emit(networkUtils.handleApiCall { apiService.doEntryValidation(URL+ApiEndPoints.ENDPOINT_ENTRY_VALIDATION,request)})
+        emit(networkUtils.handleApiCall { apiService.doEntryValidation("https://maas.ts-afc.com"+ApiEndPoints.ENDPOINT_ENTRY_VALIDATION,request)})
+    }
+
+    fun doFareCalculation(request:GateFareRequest):Flow<ApiResponse<GateFareResponse>> = flow {
+        emit(ApiResponse.Loading)
+        emit(networkUtils.handleApiCall { apiService.doGetFare("https://maas.ts-afc.com"+ApiEndPoints.ENDPOINT_GET_FARE,request)})
     }
 }

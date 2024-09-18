@@ -5,9 +5,16 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class EntryValidationRequest(
-    @Json(name ="binNumber") var binNumber: String? =null,
-    @Json(name ="lastStationId") var lastStationId: String? =null,
-    @Json(name ="fromStationId") var lastTransactionDateTime: String? =null,
-    @Json(name ="equipmentId") var equipmentId: String? =null,
-    @Json(name ="fromStationId") var equipmentGroupId: String? =null,
+    @Json(name ="binNumber") var binNumber: String? ="",
+    @Json(name ="cardNumberSha") var cardNumberSha: String? ="",
+    @Json(name ="lastStationId") var lastStationId: String? ="",
+    @Json(name ="lastTransactionDateTime") var lastTransactionDateTime: String? ="",
+    @Json(name ="equipmentId") var equipmentId: String? ="",
+    @Json(name ="equipmentGroupId") var equipmentGroupId: String? ="",
+    @Json(name ="cdacTerminalId") var cdacTerminalId: String? ="",
+    @Json(name ="dataOne") var dataOne: String? ="",
+    @Json(name ="dataTwo") var dataTwo: String? ="",
+    @Json(name ="dataThree") var dataThree: String? ="",
+    @Json(name ="dataFour") var dataFour: String? ="",
+    @Json(name ="dataFive") var dataFive: String? =""
 )

@@ -5,5 +5,6 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class EntryValidationResponse(
-    @Json(name ="errorCode") val errorCode: Int,
+    @Json(name ="returnCode") val returnCode: Int,
+    @Json(name ="returnMessage") val returnMessage: String,
 )
