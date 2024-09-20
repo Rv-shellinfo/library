@@ -26,7 +26,9 @@ interface ShellInfoProvider {
 
     fun setActivity(activity: AppCompatActivity)
 
-    fun init(initData: InitData)
+    fun start(initData: InitData)
+
+    fun stop()
 
     fun setHttpProtocol(protocol: HttpType)
 

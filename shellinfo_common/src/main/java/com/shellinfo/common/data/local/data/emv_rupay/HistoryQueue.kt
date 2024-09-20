@@ -1,7 +1,6 @@
 package com.shellinfo.common.data.local.data.emv_rupay
 
-class HistoryQueue<T>(private val maxSize: Int) : Iterable<T>{
-
+class HistoryQueue<T>(private val maxSize: Int = 4) : Iterable<T> {
 
     private val deque: ArrayDeque<T> = ArrayDeque(maxSize)
 
@@ -9,19 +8,19 @@ class HistoryQueue<T>(private val maxSize: Int) : Iterable<T>{
         return deque.iterator()
     }
 
+    // Add method to support FIFO behavior and ensure queue has at most maxSize elements
     fun add(element: T): Boolean {
         if (deque.size == maxSize) {
-            throw IllegalStateException("Queue full")
+            deque.removeFirst() // Remove the oldest element to maintain the size
         }
         return deque.add(element)
     }
 
     fun offer(element: T): Boolean {
-        return if (deque.size == maxSize) {
-            false
-        } else {
-            deque.add(element)
+        if (deque.size == maxSize) {
+            deque.removeFirst() // Remove the oldest element
         }
+        return deque.add(element)
     }
 
     fun remove(): T {

@@ -128,10 +128,10 @@ class ShellInfoLibrary @Inject constructor(
 
 
 
-    override fun init(initData: InitData) {
+    override fun start(initData: InitData) {
 
         //start simulation payment app data
-        startSimulation()
+        //startSimulation()
 
         //save application specific data in shared preferences for future use
 //        spUtils.savePreference(SpConstants.APP_ID,initData.appId)
@@ -176,6 +176,16 @@ class ShellInfoLibrary @Inject constructor(
         //handle permissions
         handlePermissions()
 
+    }
+
+    override fun stop() {
+
+        //start ipc service
+        activity?.let { stopIpcService(it) }
+
+        stopLogging(true,true)
+
+        disconnectMqtt()
     }
 
     /**
@@ -351,7 +361,7 @@ class ShellInfoLibrary @Inject constructor(
     }
 
     override fun startIpcService(context: Context) {
-        ipcDataHandler.startIPCService(context)
+        ipcDataHandler.startConnection(context)
     }
 
     override fun stopIpcService(context: Context) {

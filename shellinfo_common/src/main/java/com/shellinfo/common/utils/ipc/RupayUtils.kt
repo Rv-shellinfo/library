@@ -17,9 +17,13 @@ import com.shellinfo.common.data.local.data.emv_rupay.raw.TerminalData
 import com.shellinfo.common.data.local.data.emv_rupay.raw.ValidationData
 import com.shellinfo.common.data.local.data.ipc.BF200Data
 import com.shellinfo.common.utils.IPCConstants
+import org.threeten.bp.LocalDateTime
+import org.threeten.bp.ZoneOffset
 import java.nio.BufferOverflowException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.text.SimpleDateFormat
+import java.util.Calendar
 import javax.inject.Inject
 import kotlin.reflect.full.memberProperties
 
@@ -709,37 +713,29 @@ class RupayUtils @Inject constructor(
         return cardEffectiveDate
     }
 
-    fun readCardEffectiveDate(tag5F25Hex: String): String {
-        // Ensure the input hex string is valid (must be exactly 6 characters, representing 3 bytes)
-        require(tag5F25Hex.length == 6) { "Input hex string must be exactly 6 characters long" }
-
-        // Convert the hex string into a ByteArray (3 bytes)
-        val tag5F25 = ByteArray(3)
-        for (i in tag5F25.indices) {
-            tag5F25[i] = tag5F25Hex.substring(i * 2, i * 2 + 2).toInt(16).toByte()
-        }
-
+    fun readCardEffectiveDate(tag5F25: ByteArray): String {
         val date = CharArray(8)
 
-        // Extract day (tag5F25[2])
-        date[0] = ((tag5F25[2].toInt() and 0xF0) shr 4 + 0x30).toChar()
-        date[1] = ((tag5F25[2].toInt() and 0x0F) + 0x30).toChar()
+        // Extract day from tag5F25[2]
+        date[0] = ((tag5F25[2].toInt() and 0xF0) shr 4).plus(0x30).toChar()
+        date[1] = (tag5F25[2].toInt() and 0x0F).plus(0x30).toChar()
 
-        // Extract month (tag5F25[1])
-        date[2] = ((tag5F25[1].toInt() and 0xF0) shr 4 + 0x30).toChar()
-        date[3] = ((tag5F25[1].toInt() and 0x0F) + 0x30).toChar()
+        // Extract month from tag5F25[1]
+        date[2] = ((tag5F25[1].toInt() and 0xF0) shr 4).plus(0x30).toChar()
+        date[3] = (tag5F25[1].toInt() and 0x0F).plus(0x30).toChar()
 
-        // Set the century (20)
+        // Year is hardcoded as starting with "20"
         date[4] = '2'
         date[5] = '0'
 
-        // Extract year (tag5F25[0])
-        date[6] = ((tag5F25[0].toInt() and 0xF0) shr 4 + 0x30).toChar()
-        date[7] = ((tag5F25[0].toInt() and 0x0F) + 0x30).toChar()
+        // Extract year from tag5F25[0]
+        date[6] = ((tag5F25[0].toInt() and 0xF0) shr 4).plus(0x30).toChar()
+        date[7] = (tag5F25[0].toInt() and 0x0F).plus(0x30).toChar()
 
-        // Return the final date string
+        // Return the date as a String
         return String(date)
     }
+
 
 
     /**
@@ -897,6 +893,92 @@ class RupayUtils @Inject constructor(
 
         return Triple(stationId, stationCategory, stationSerial)
     }
+
+    fun readCardEffectiveDateFromHexString(tag5F25Hex: String): Long {
+        // Convert the hex string to ByteArray
+        val tag5F25 = hexStringToByteArray(tag5F25Hex)
+
+        // Ensure tag5F25 has at least 3 bytes
+        if (tag5F25.size < 3) {
+            throw IllegalArgumentException("tag5F25 must contain at least 3 bytes")
+        }
+
+        // Extract year, month, and day from tag5F25 (in reverse order as in C code)
+        val year = ((tag5F25[0].toInt() and 0xF0) shr 4) * 10 + (tag5F25[0].toInt() and 0x0F)
+        val month = ((tag5F25[1].toInt() and 0xF0) shr 4) * 10 + (tag5F25[1].toInt() and 0x0F)
+        val day = ((tag5F25[2].toInt() and 0xF0) shr 4) * 10 + (tag5F25[2].toInt() and 0x0F)
+
+        // Construct the full date as a long value in the format YYYYMMDD
+        val fullYear = 2000 + year // Assuming the century is 2000 (based on "20" prefix)
+        return fullYear * 10000L + month * 100L + day
+    }
+
+    fun hexStringToByteArray(hex: String): ByteArray {
+        val result = ByteArray(hex.length / 2)
+        for (i in result.indices) {
+            val index = i * 2
+            val byte = hex.substring(index, index + 2).toInt(16).toByte()
+            result[i] = byte
+        }
+        return result
+    }
+
+
+
+
+
+    fun calculateTrxTimeFromCardEffectiveDate(cardEffectiveDate: String, trxTimeFromEpoch: Long): Long {
+        // Input cardEffectiveDate is expected in DDMMYYYY format
+        if (cardEffectiveDate.length != 8) {
+            throw IllegalArgumentException("Card effective date must be in DDMMYYYY format")
+        }
+
+        // Extract day, month, and year from the cardEffectiveDate string
+        val day = cardEffectiveDate.substring(0, 2).toInt()
+        val month = cardEffectiveDate.substring(2, 4).toInt()
+        val year = cardEffectiveDate.substring(4, 8).toInt()
+
+        // Create a calendar instance and set the card's effective date
+        val cardEffCalendar = Calendar.getInstance().apply {
+            set(Calendar.YEAR, year)
+            set(Calendar.MONTH, month - 1) // Months are 0-based in Calendar
+            set(Calendar.DAY_OF_MONTH, day)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+
+        // Convert card's effective date to epoch time (seconds since Unix epoch)
+        val cardEffDateFromEpoch = cardEffCalendar.timeInMillis / 1000
+
+        // Calculate the transaction time relative to card effective date in minutes
+        val trxTimeFromCardEffDate = (trxTimeFromEpoch / 60) - (cardEffDateFromEpoch / 60)
+
+        // For debugging: print the cardEffectiveDate and calculated times
+        println("Card Effective Date: ${SimpleDateFormat("dd/MM/yyyy").format(cardEffCalendar.time)}")
+        println("trxTimeFromEpoch: $trxTimeFromEpoch, cardEffDateFromEpoch: $cardEffDateFromEpoch, trxTimeFromCardEffDate: $trxTimeFromCardEffDate")
+
+        return trxTimeFromCardEffDate
+    }
+
+    fun convertAmountToBCD(amount: Long, numericAmount: ByteArray?) {
+        val AMOUNT_NUMERIC_SIZE = 12 // Define this according to your specific requirements
+
+        if (numericAmount != null) {
+            numericAmount.fill(0, 0, AMOUNT_NUMERIC_SIZE / 2)
+            var tmpamount = amount
+            var i = 0
+            while (tmpamount > 0) {
+                numericAmount[(AMOUNT_NUMERIC_SIZE / 2) - 1 - (i / 2)] =
+                    (numericAmount[(AMOUNT_NUMERIC_SIZE / 2) - 1 - (i / 2)].toInt() + ((tmpamount % 10).toInt() shl (4 * (i % 2)))).toByte()
+                tmpamount /= 10
+                i++
+            }
+        }
+    }
+
+
 
 
 

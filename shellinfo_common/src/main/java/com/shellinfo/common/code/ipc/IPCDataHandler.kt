@@ -105,7 +105,7 @@ class IPCDataHandler @Inject constructor(
             rupayDataHandler.setRemoteService(communicationService!!)
             stopIpcService(context)
             Log.e(TAG,">>>>REMOTE SERVICE CONNECTION -> DISCONNECTED")
-            reconnect()
+            startConnection(context)
         }
 
         override fun onBindingDied(name: ComponentName?) {
@@ -113,7 +113,7 @@ class IPCDataHandler @Inject constructor(
             bound=false
             communicationService = null
             Log.e(TAG,">>>>REMOTE SERVICE CONNECTION BINDING DIED-> DISCONNECTED")
-            reconnect()
+            startConnection(context)
         }
 
         override fun onNullBinding(name: ComponentName?) {
@@ -121,7 +121,7 @@ class IPCDataHandler @Inject constructor(
             bound=false
             communicationService = null
             Log.e(TAG,">>>>REMOTE SERVICE CONNECTION NULL BINDING-> DISCONNECTED")
-            reconnect()
+            startConnection(context)
         }
     }
 
@@ -157,11 +157,15 @@ class IPCDataHandler @Inject constructor(
 
     fun stopIpcService(context: Context){
         try{
-            Log.e(TAG,">>>>IPC SERVICE STOPPED")
-            context.unbindService(serviceConnection)
-            bound = false
+
+            if(bound) {
+                Log.e(TAG, ">>>>IPC SERVICE STOPPED")
+                context.unbindService(serviceConnection)
+                bound = false
+            }
         }catch (ex:Exception){
 
+            Log.e(TAG, ">>>>IPC SERVICE STOPPED with EXCEPTION")
         }
     }
 
@@ -373,8 +377,8 @@ class IPCDataHandler @Inject constructor(
      * Continues checking in every 5 seconds
      */
 
-    private fun reconnect(){
-
+     fun startConnection(context: Context){
+        this.context=context
 
         val handler = Handler(Looper.getMainLooper())
         val runnable = object : Runnable {
@@ -389,7 +393,7 @@ class IPCDataHandler @Inject constructor(
                 startIPCService(context)
 
                 // Call again after 5 seconds
-                handler.postDelayed(this, 5000)
+                handler.postDelayed(this, 2000)
             }
         }
 

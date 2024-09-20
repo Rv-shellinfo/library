@@ -17,6 +17,7 @@ import com.shellinfo.common.code.enums.TicketType
 import com.shellinfo.common.code.payment_gateway.CashFreePaymentGateway
 import com.shellinfo.common.code.payment_gateway.PaymentGateway
 import com.shellinfo.common.code.payment_gateway.PaymentProcessor
+import com.shellinfo.common.data.local.data.emv_rupay.CSAMasterData
 import com.shellinfo.common.data.local.db.entity.OrdersTable
 import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.data.local.db.entity.TicketBackupTable
@@ -25,6 +26,8 @@ import com.shellinfo.common.data.remote.repository.ApiRepository
 import com.shellinfo.common.data.remote.response.ApiResponse
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
 import com.shellinfo.common.data.remote.response.model.fare.FareResponse
+import com.shellinfo.common.data.remote.response.model.gate_fare.GateFareRequest
+import com.shellinfo.common.data.remote.response.model.gate_fare.GateFareResponse
 import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentRequest
 import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentResponse
 import com.shellinfo.common.data.remote.response.model.payment_gateway.ChecksumRequest
@@ -32,20 +35,24 @@ import com.shellinfo.common.data.remote.response.model.payment_gateway.TrackTran
 import com.shellinfo.common.data.remote.response.model.server.ServerDateTimeResponse
 import com.shellinfo.common.data.remote.response.model.ticket.TicketRequest
 import com.shellinfo.common.data.remote.response.model.ticket.TicketResponse
+import com.shellinfo.common.di.DefaultMoshi
 import com.shellinfo.common.utils.DateUtils
 import com.shellinfo.common.utils.Utils
 import com.squareup.moshi.Moshi
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.lang.Exception
 import javax.inject.Inject
+import kotlin.reflect.KClass
 
 @HiltViewModel
 class NetworkCall @Inject constructor(
     private val apiRepository: ApiRepository,
     private val dbRepository: DbRepository,
-    private val moshi: Moshi
+    @DefaultMoshi private val moshi: Moshi
 ):ViewModel(){
 
 
@@ -70,6 +77,14 @@ class NetworkCall @Inject constructor(
     val _paymentGatewayResponse = MutableLiveData<ApiResponse<AppPaymentResponse>>()
     val paymentGatewayLiveData : LiveData<ApiResponse<AppPaymentResponse>> get() = _paymentGatewayResponse
 
+
+
+    // A generic function to convert any object to JSON using Moshi
+    fun <T : Any> toJson(obj: T, clazz: KClass<T>): String {
+        // Create a JsonAdapter for the object
+        val jsonAdapter = moshi.adapter(clazz.java)
+        return jsonAdapter.toJson(obj) // Convert the object to a JSON string
+    }
 
     /**
      * Station list getting
@@ -445,4 +460,6 @@ class NetworkCall @Inject constructor(
         paymentProcessor.processPayment(payRequest, context)
 
     }
+
+
 }

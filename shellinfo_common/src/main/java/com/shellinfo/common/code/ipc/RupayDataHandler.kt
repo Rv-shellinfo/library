@@ -103,6 +103,9 @@ class RupayDataHandler @Inject constructor(
     //Entry exit override
     private var entryExitOverride = false
 
+    //card effective date
+    private var cardEffectiveDate:String? =null
+
 
     /**
      * Method to set the Remote Service
@@ -120,12 +123,16 @@ class RupayDataHandler @Inject constructor(
         //parsing csa master data
         var csaMasterData = rupayUtils.readCSAData(bF200Data)
 
+
+        //calculate card effective date
+        cardEffectiveDate= rupayUtils.readCardEffectiveDate(rupayUtils.hexStringToByteArray(bF200Data.b.`5F25`!!))
+
         //set bf200 data in master data
         csaMasterData.bf200Data = bF200Data
 
 
         //check reader location
-        when (spUtils.getPreference(READER_LOCATION, "ENTRY")) {
+        when (spUtils.getPreference(READER_LOCATION, "EXIT")) {
 
             ENTRY_SIDE -> {
 
@@ -203,7 +210,7 @@ class RupayDataHandler @Inject constructor(
 
 
         //check last transaction is ENTRY
-        if (extractTrxStatus(csaRawData.validationData.trxStatusAndRfu) == TXN_STATUS_ENTRY) {
+        if (csaRawData.validationData.trxStatusAndRfu.toInt() == TXN_STATUS_ENTRY) {
 
             var trxTimeFromCardEffDate: Long = 0
             var entryTime: Long
@@ -219,8 +226,7 @@ class RupayDataHandler @Inject constructor(
                         (((trxDateTime[i].toInt() and 0xF0) shr 4) * 16) + (trxDateTime[i].toInt() and 0x0F)
             }
 
-            val cardEffectiveDate: Long =
-                csaDataDisplay!!.cardEffectiveDate.toLong() // Example effective date
+            val cardEffectiveDate: Long = rupayUtils.calculateTrxTimeFromCardEffectiveDate(cardEffectiveDate!!,currentTime)
 
 
             // Calculate entryTime based on trxTimeFromCardEffDate and cardEffectiveDate
@@ -289,6 +295,8 @@ class RupayDataHandler @Inject constructor(
         //set current equipmentId and equipmentGroupId
         entryValidationRequest.equipmentId = spUtils.getPreference(EQUIPMENT_ID, "")
         entryValidationRequest.equipmentGroupId = spUtils.getPreference(EQUIPMENT_GROUP_ID, "")
+
+        Log.e(TAG,">>>> ENTRY VALIDATION DATA: ${networkCall.toJson(entryValidationRequest,EntryValidationRequest::class)}")
 
 
         //TODO call ENTRY VALIDATION API
@@ -404,13 +412,19 @@ class RupayDataHandler @Inject constructor(
     /**
      * Method to SET the Validation data transaction status first four bits
      */
-    fun setTrxStatus(trxStatusAndRfu: Byte, newTrxStatus: Int): Byte {
-        // Mask out the 4 most significant bits (trxStatus) by ANDing with 0x0F (to keep RFU bits intact)
-        val rfuBits = trxStatusAndRfu.toInt() and 0x0F
+//    fun setTrxStatus(trxStatusAndRfu: Byte, newTrxStatus: Int): Byte {
+//        // Mask out the 4 most significant bits (trxStatus) by ANDing with 0x0F (to keep RFU bits intact)
+//        val rfuBits = trxStatusAndRfu.toInt() and 0x0F
+//
+//        // Shift newTrxStatus left by 4 to occupy the 4 most significant bits, and OR with RFU bits
+//        return ((newTrxStatus shl 4) or rfuBits).toByte()
+//    }
 
-        // Shift newTrxStatus left by 4 to occupy the 4 most significant bits, and OR with RFU bits
-        return ((newTrxStatus shl 4) or rfuBits).toByte()
-    }
+//    fun setTrxStatus(byteValue: Byte): Byte {
+//        // Clear the lower 4 bits and set them to 0x10 (00010000)
+//        val newByte = (byteValue.toInt() and 0xF0) or 0x01
+//        return newByte.toByte()
+//    }
 
     /**
      * Method to handle the Entry Validation Api Response
@@ -420,8 +434,8 @@ class RupayDataHandler @Inject constructor(
         csaMasterData: CSAMasterData
     ) {
 
-        //get api error code
-        val apiErrorCode = entryValidationResponse.returnCode
+        //get api error code, replace the 0x prefix
+        val apiErrorCode = entryValidationResponse.returnCode.replace("0x","")
 
         //if logging ON then print Entry Validation Error Code
         if (spUtils.getPreference(LOGGING_ON_OFF, false)) {
@@ -429,16 +443,15 @@ class RupayDataHandler @Inject constructor(
         }
 
         //if api error code is not NO_ERROR then check for the error code
-        if (apiErrorCode != NO_ERROR) {
+        if (apiErrorCode.toInt() != NO_ERROR) {
 
             //if error code is Exit Not Found then update the csa validation data txn status
-            if (apiErrorCode == EXIT_NOT_FOUND_CSA) {
+            if (apiErrorCode.toInt() == EXIT_NOT_FOUND_CSA) {
 
                 //updating the txn status
-                setTrxStatus(
-                    csaMasterData.csaUpdatedBinData!!.validationData.trxStatusAndRfu,
-                    EXIT_NOT_FOUND_CSA
-                )
+                csaMasterData.csaUpdatedBinData!!.validationData.trxStatusAndRfu=EXIT_NOT_FOUND_CSA.toByte()
+                //setTrxStatus(csaMasterData.csaUpdatedBinData!!.validationData.trxStatusAndRfu,EXIT_NOT_FOUND_CSA)
+
 
                 //set error code and error message
                 csaMasterData.rupayError?.errorCode = EXIT_NOT_FOUND_CSA
@@ -446,6 +459,8 @@ class RupayDataHandler @Inject constructor(
 
                 //publish error message
                 sharedDataManager.updateCardData(csaMasterData)
+
+                return
             }
         }
 
@@ -455,7 +470,7 @@ class RupayDataHandler @Inject constructor(
 
         if (((lastTrxStatus == TXN_STATUS_EXIT) || (lastTrxStatus == TXN_STATUS_ONE_TAP_TICKET)
                     || (lastTrxStatus == TXN_STATUS_PENALTY) || entryExitOverride || isCheckEmergencyMode)
-            && apiErrorCode == NO_ERROR
+            && apiErrorCode.toInt() == NO_ERROR
         ) {
 
 
@@ -481,11 +496,10 @@ class RupayDataHandler @Inject constructor(
 
 
         } else {
+            csaMasterData.csaUpdatedBinData!!.validationData.trxStatusAndRfu=EXIT_NOT_FOUND_CSA.toByte()
 
-            setTrxStatus(
-                csaMasterData.csaUpdatedBinData!!.validationData.trxStatusAndRfu,
-                EXIT_NOT_FOUND_CSA
-            )
+            //setTrxStatus(csaMasterData.csaUpdatedBinData!!.validationData.trxStatusAndRfu,EXIT_NOT_FOUND_CSA)
+
 
             //set error code and error message
             csaMasterData.rupayError?.errorCode = EXIT_NOT_FOUND_CSA
@@ -566,11 +580,11 @@ class RupayDataHandler @Inject constructor(
         }
 
 
+        //code to calculate entry time from card effective date
         var trxTimeFromCardEffDate: Long = 0
         var entryTime: Long=0
         var lastTrxTime:Long=0
-        val currentTime: Long =
-            System.currentTimeMillis() / 1000 // Get current time in seconds from epoch
+        val currentTime: Long = System.currentTimeMillis() / 1000 // Get current time in seconds from epoch
 
         // CSA.validationData.trxDateTime is assumed to be a byte array of size 3
         val trxDateTime: ByteArray = csaRawData.validationData.trxDateTime
@@ -581,31 +595,27 @@ class RupayDataHandler @Inject constructor(
                     (((trxDateTime[i].toInt() and 0xF0) shr 4) * 16) + (trxDateTime[i].toInt() and 0x0F)
         }
 
-
-        val cardEffectiveDate: Long =
-            csaDataDisplay!!.cardEffectiveDate.toLong() // Example effective date
-
+        //card effective date in
+        val cardEffectiveDate: Long = rupayUtils.calculateTrxTimeFromCardEffectiveDate(cardEffectiveDate!!,currentTime)
 
         // Calculate entryTime based on trxTimeFromCardEffDate and cardEffectiveDate
         entryTime = 60 * calculateTrxTimeFromEpoch(cardEffectiveDate, trxTimeFromCardEffDate)
 
         lastTrxTime= entryTime
 
+        //extract last transaction status
+        val lastTrxStatus = csaMasterData.csaBinData!!.validationData.trxStatusAndRfu
 
-        //check last transaction is ENTRY
-        if (extractTrxStatus(csaRawData.validationData.trxStatusAndRfu) == TXN_STATUS_EXIT) {
+        //check last transaction is ENTRY or EXIT
+        if (lastTrxStatus.toInt() == TXN_STATUS_EXIT) {
 
 
-
+            //if logging on then print the log and save
             if (spUtils.getPreference(LOGGING_ON_OFF, false)) {
-                FileLogger.d(
-                    TAG,
-                    "${currentTime} - ${entryTime} = ${currentTime - entryTime} ?? $ONE_MINUTE"
-                )
-
+                FileLogger.d(TAG, "${currentTime} - ${entryTime} = ${currentTime - entryTime} ?? $ONE_MINUTE")
             }
 
-
+            //check current time and entry time difference is less then one minute then show card already tapped
             if ((currentTime - entryTime) < ONE_MINUTE) {
                 // Ignore the tap as it happened within the double-tap threshold
 
@@ -621,132 +631,110 @@ class RupayDataHandler @Inject constructor(
 
         }
 
-        //last transaction status
-        val lastTrxStatus =
-            extractTrxStatus(csaMasterData.csaUpdatedBinData!!.validationData.trxStatusAndRfu)
 
-        if (((lastTrxStatus == TXN_STATUS_ENTRY)
-                    || (lastTrxStatus == TXN_STATUS_PENALTY) || entryExitOverride)) {
+        // last transaction status check condition
+        if (((lastTrxStatus.toInt() == TXN_STATUS_ENTRY) || (lastTrxStatus.toInt() == TXN_STATUS_PENALTY) || entryExitOverride)) {
 
-
+            //entry date time in specific date format
             val entryDateTime = DateUtils.getTimeInYMDHMS(entryTime)
 
+            //get entry terminal id
             val entryTerminalId= rupayUtils.byteArrayToHex(csaMasterData.csaBinData!!.validationData.terminalID)
 
 
-            val fareRequest = GateFareRequest()
-            fareRequest.fromStationId=entryTerminalId
-            fareRequest.toStationId=spUtils.getPreference(STATION_ID,"")
-            fareRequest.entryDateTime=entryDateTime
-            fareRequest.exitDateTime=entryDateTime
-            fareRequest.equipmentId=spUtils.getPreference(EQUIPMENT_ID,"")
-            fareRequest.equipmentGroupId=spUtils.getPreference(EQUIPMENT_GROUP_ID,"")
+            //TODO REMOVE HARDCODED VALUE FOR EXIT TRANSACTION
+            completeProcessCSA(1.00, TXN_STATUS_EXIT,csaMasterData)
 
-            job?.cancel() // Cancel the previous job if it's still running
-
-            job = CoroutineScope(Dispatchers.IO).launch {
-                try {
-
-                    //TODO Call SC or CC API call needs to be change here, right now only cloud call we are doing
-                    apiRepository.doFareCalculation(fareRequest).collect {
-
-                        when (it) {
-
-                            is ApiResponse.Loading -> {
-
-                            }
-
-                            is ApiResponse.Success -> {
-                                handleFareCalculationData(it.data, csaMasterData)
-                            }
-
-                            is ApiResponse.Error -> {
-
-                                //set error code and error message
-                                csaMasterData.rupayError?.errorCode = FAILURE_FARE_CALC
-                                csaMasterData.rupayError?.errorMessage =
-                                    rupayUtils.getError("FAILURE_FARE_CALC")
-
-                                //publish error message
-                                sharedDataManager.updateCardData(csaMasterData)
-
-                                if (spUtils.getPreference(LOGGING_ON_OFF, false)) {
-                                    FileLogger.e(TAG, "Entry Validation API Error Block Code Executed")
-                                    FileLogger.e(
-                                        TAG,
-                                        "Entry Validation : trx Status :${extractTrxStatus(csaRawData?.validationData?.trxStatusAndRfu!!)}"
-                                    )
-                                    FileLogger.e(
-                                        TAG,
-                                        "Entry Validation : Entry Exit Override :${entryExitOverride}"
-                                    )
-                                    FileLogger.e(
-                                        TAG,
-                                        "Entry Validation : Check Emg Mode :${isCheckEmergencyMode}"
-                                    )
-                                }
-                            }
-
-                            else -> {
-
-                                if (spUtils.getPreference(LOGGING_ON_OFF, false)) {
-                                    FileLogger.e(TAG, "Entry Validation API ELSE Block Code Executed")
-                                    FileLogger.e(
-                                        TAG,
-                                        "Entry Validation : trx Status :${extractTrxStatus(csaRawData?.validationData?.trxStatusAndRfu!!)}"
-                                    )
-                                    FileLogger.e(
-                                        TAG,
-                                        "Entry Validation : Entry Exit Override :${entryExitOverride}"
-                                    )
-                                    FileLogger.e(
-                                        TAG,
-                                        "Entry Validation : Check Emg Mode :${isCheckEmergencyMode}"
-                                    )
-                                }
-
-                                //set error code and error message
-                                csaMasterData.rupayError?.errorCode = FAILURE_FARE_CALC
-                                csaMasterData.rupayError?.errorMessage =
-                                    rupayUtils.getError("FAILURE_FARE_CALC")
-
-                                //publish error message
-                                sharedDataManager.updateCardData(csaMasterData)
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-
-
-                    if (spUtils.getPreference(LOGGING_ON_OFF, false)) {
-                        FileLogger.e(TAG, "Entry Validation API CATCH Block Code Executed")
-                        FileLogger.e(
-                            TAG,
-                            "Entry Validation : trx Status :${csaRawData?.validationData?.trxStatusAndRfu}"
-                        )
-                        FileLogger.e(
-                            TAG,
-                            "Entry Validation : Entry Exit Override :${entryExitOverride}"
-                        )
-                        FileLogger.e(TAG, "Entry Validation : Check Emg Mode :${isCheckEmergencyMode}")
-                    }
-
-                    //set error code and error message
-                    csaMasterData.rupayError?.errorCode = FAILURE_FARE_CALC
-                    csaMasterData.rupayError?.errorMessage =
-                        rupayUtils.getError("FAILURE_FARE_CALC")
-
-                    //publish error message
-                    sharedDataManager.updateCardData(csaMasterData)
-
-                }
-            }
+//            //create Fare Request with the data
+//            val fareRequest = GateFareRequest()
+//            fareRequest.fromStationId=entryTerminalId
+//            fareRequest.toStationId=spUtils.getPreference(STATION_ID,"")
+//            fareRequest.entryDateTime=entryDateTime
+//            fareRequest.exitDateTime=entryDateTime
+//            fareRequest.equipmentId=spUtils.getPreference(EQUIPMENT_ID,"")
+//            fareRequest.equipmentGroupId=spUtils.getPreference(EQUIPMENT_GROUP_ID,"")
+//
+//
+//            job?.cancel() // Cancel the previous job if it's still running
+//
+//            job = CoroutineScope(Dispatchers.IO).launch {
+//                try {
+//
+//                    //TODO Call SC or CC API call needs to be change here, right now only cloud call we are doing
+//                    apiRepository.doFareCalculation(fareRequest).collect {
+//
+//                        when (it) {
+//
+//                            is ApiResponse.Loading -> {
+//
+//                            }
+//
+//                            is ApiResponse.Success -> {
+//                                handleFareCalculationData(it.data, csaMasterData)
+//                            }
+//
+//                            is ApiResponse.Error -> {
+//
+//                                //set error code and error message
+//                                csaMasterData.rupayError?.errorCode = FAILURE_FARE_CALC
+//                                csaMasterData.rupayError?.errorMessage =
+//                                    rupayUtils.getError("FAILURE_FARE_CALC")
+//
+//                                //publish error message
+//                                sharedDataManager.updateCardData(csaMasterData)
+//
+//                                if (spUtils.getPreference(LOGGING_ON_OFF, false)) {
+//                                    FileLogger.e(TAG, "Entry Validation API Error Block Code Executed")
+//                                    FileLogger.e(TAG, "Entry Validation : trx Status :${extractTrxStatus(csaRawData?.validationData?.trxStatusAndRfu!!)}")
+//                                    FileLogger.e(TAG, "Entry Validation : Entry Exit Override :${entryExitOverride}")
+//                                    FileLogger.e(TAG, "Entry Validation : Check Emg Mode :${isCheckEmergencyMode}")
+//                                }
+//                            }
+//
+//                            else -> {
+//
+//                                if (spUtils.getPreference(LOGGING_ON_OFF, false)) {
+//                                    FileLogger.e(TAG, "Entry Validation API ELSE Block Code Executed")
+//                                    FileLogger.e(TAG, "Entry Validation : trx Status :${extractTrxStatus(csaRawData?.validationData?.trxStatusAndRfu!!)}")
+//                                    FileLogger.e(TAG, "Entry Validation : Entry Exit Override :${entryExitOverride}")
+//                                    FileLogger.e(TAG, "Entry Validation : Check Emg Mode :${isCheckEmergencyMode}")
+//                                }
+//
+//                                //set error code and error message
+//                                csaMasterData.rupayError?.errorCode = FAILURE_FARE_CALC
+//                                csaMasterData.rupayError?.errorMessage = rupayUtils.getError("FAILURE_FARE_CALC")
+//
+//                                //publish error message
+//                                sharedDataManager.updateCardData(csaMasterData)
+//                            }
+//                        }
+//                    }
+//                } catch (e: Exception) {
+//
+//
+//                    if (spUtils.getPreference(LOGGING_ON_OFF, false)) {
+//                        FileLogger.e(TAG, "Entry Validation API CATCH Block Code Executed")
+//                        FileLogger.e(TAG, "Entry Validation : trx Status :${csaRawData?.validationData?.trxStatusAndRfu}")
+//                        FileLogger.e(TAG, "Entry Validation : Entry Exit Override :${entryExitOverride}")
+//                        FileLogger.e(TAG, "Entry Validation : Check Emg Mode :${isCheckEmergencyMode}")
+//                    }
+//
+//                    //set error code and error message
+//                    csaMasterData.rupayError?.errorCode = FAILURE_FARE_CALC
+//                    csaMasterData.rupayError?.errorMessage = rupayUtils.getError("FAILURE_FARE_CALC")
+//
+//                    //publish error message
+//                    sharedDataManager.updateCardData(csaMasterData)
+//
+//                }
+//            }
 
         }
 
     }
 
     private fun handleFareCalculationData(response: GateFareResponse,csaMasterData: CSAMasterData){
+
         if(response.returnCode == TIME_EXCEEDED){
 
             //set error code and error message
@@ -816,7 +804,9 @@ class RupayDataHandler @Inject constructor(
         //error code
         csaMasterData.rupayError?.errorCode = NO_ERROR
         csaMasterData.rupayError?.errorMessage = "NO_ERROR"
-        setTrxStatus(csaMasterData.csaUpdatedBinData!!.validationData.trxStatusAndRfu, NO_ERROR)
+
+        //set transaction status
+        csaMasterData.csaUpdatedBinData!!.validationData.trxStatusAndRfu=txnStatus.toByte()
 
 
         //product type
@@ -834,20 +824,15 @@ class RupayDataHandler @Inject constructor(
         csaMasterData.csaUpdatedBinData!!.validationData.acquirerID = acquirerIDBytes
         csaMasterData.csaUpdatedBinData!!.validationData.operatorID = operatorIDBytes
         csaMasterData.csaUpdatedBinData!!.validationData.terminalID = terminalIDBytes
-//        csaMasterData.csaUpdatedRawData?.validationData?.terminalInfo?.acquirerId = acquirerID
-//        csaMasterData.csaUpdatedRawData?.validationData?.terminalInfo?.terminalId = terminalID
-//        csaMasterData.csaUpdatedRawData?.validationData?.terminalInfo?.operatorId = operatorID
 
 
         //date and time
         val trxTimeFromEpoch: Long = System.currentTimeMillis() / 1000
-        val trxTimeFromCardEffDate = calculateTrxTimeFromCardEffectiveDate(
-            csaMasterData.csaDisplayData?.cardEffectiveDate!!,
-            trxTimeFromEpoch
-        )
+        val trxTimeFromCardEffDate = rupayUtils.calculateTrxTimeFromCardEffectiveDate(cardEffectiveDate!!,trxTimeFromEpoch)
+
         Utils.numToBin(
             csaMasterData.csaUpdatedBinData?.validationData?.trxDateTime!!,
-            trxTimeFromCardEffDate,
+            trxTimeFromCardEffDate.toLong(),
             3
         )
 
@@ -858,11 +843,6 @@ class RupayDataHandler @Inject constructor(
             (penaltyAmount / 10).toLong(), 2
         )
 
-        //transaction status
-        setTrxStatus(
-            csaMasterData.csaUpdatedBinData?.validationData?.trxStatusAndRfu!!,
-            txnStatus
-        )
 
         //History Data
         if (fare > 0) {
@@ -886,7 +866,38 @@ class RupayDataHandler @Inject constructor(
             updatedDataWithHeaderFooter!!.set(i, csaSent[i-startIndex])
         }
 
-        //create BaseMessage
+        //first remove last two bytes
+        updatedDataWithHeaderFooter!!.removeLast()
+        updatedDataWithHeaderFooter!!.removeLast()
+
+        // Convert Amount to tag and append to the service data
+        val bcdAmount = ByteArray(6)
+        rupayUtils.convertAmountToBCD(fare.toLong(), bcdAmount)
+
+        //Add tag 9F02
+        updatedDataWithHeaderFooter.add(0x9F.toByte())
+        updatedDataWithHeaderFooter.add(0x02.toByte())
+
+        // Append Length 06
+        updatedDataWithHeaderFooter.add(0x06.toByte())
+
+        // Append Data (Fare Value)
+        for (j in bcdAmount.indices) {
+            updatedDataWithHeaderFooter. add(bcdAmount[j])
+        }
+
+        // Add two bytes status at the end of the response(which we removed earlier)
+        updatedDataWithHeaderFooter.add(0x30.toByte())
+        updatedDataWithHeaderFooter.add(0x30.toByte())
+
+        // Change total Length
+        var totalLen = updatedDataWithHeaderFooter[1].toInt() or (updatedDataWithHeaderFooter[0].toInt() shl 8)
+        totalLen += 9 + 2 // 2 bytes status + 9 byte 9F02
+
+        // Construct 2 byte header lengths
+        updatedDataWithHeaderFooter[0] = ((totalLen shr 8) and 0xFF).toByte()
+        updatedDataWithHeaderFooter[1] = (totalLen and 0xFF).toByte()
+
 
         //send back the message
         communicationService.sendData(MSG_ID_TRANSIT_VALIDATION_RUPAY_NCMC,updatedDataWithHeaderFooter!!.toByteArray().toHexString())

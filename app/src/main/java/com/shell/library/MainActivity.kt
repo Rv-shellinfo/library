@@ -36,7 +36,7 @@ class MainActivity : AppCompatActivity() {
 
 
         shellInfoLibrary.setActivity(this)
-        shellInfoLibrary.init(initData)
+        shellInfoLibrary.start(initData)
 
 
         //shellInfoLibrary.mqttConnect()
@@ -51,6 +51,12 @@ class MainActivity : AppCompatActivity() {
         //shellInfoLibrary.startKafka()
 
         //shellInfoLibrary.sendKafkaMessage("ag_trx_topic","trx_type","QR")
+
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+
 
     }
 }
