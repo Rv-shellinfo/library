@@ -50,6 +50,11 @@ android {
         }
     }
 
+    buildFeatures {
+        dataBinding  = true
+        viewBinding =  true
+    }
+
     kapt {
         correctErrorTypes = true
     }

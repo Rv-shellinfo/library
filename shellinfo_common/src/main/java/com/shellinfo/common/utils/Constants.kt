@@ -181,6 +181,7 @@ object IPCConstants{
     const val MSG_ID_TRANSIT_VALIDATION_RUPAY_NCMC =            0x81
     const val MSG_ID_PAYMENT_APP_VERSION_REQUEST =              0x82
     const val MSG_ID_AMOUNT_RESPONSE =                          0x83
+    const val MSG_ID_CSA_REQUEST =                              0x84
 
     // Message ID for messages from Transit to Payment Application for Reader Commands
     const val MSG_ID_NFC_COMMAND =                               0xF1

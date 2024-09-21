@@ -26,7 +26,18 @@ import com.shellinfo.common.utils.IPCConstants.MSG_ID_TRANSIT_VALIDATION_RUPAY_N
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_TRX_DATA_EMV
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_TRX_DATA_RUPAY_NCMC
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_TRX_STATUS_RUPAY_NCMC
+import com.shellinfo.common.utils.IPCConstants.STYL_CARD_READ_ERROR
+import com.shellinfo.common.utils.IPCConstants.STYL_COMMAND_EXE_FAILED
+import com.shellinfo.common.utils.IPCConstants.STYL_EXPIRED_CARD
+import com.shellinfo.common.utils.IPCConstants.STYL_INVALID_COMMAND_PARAM
+import com.shellinfo.common.utils.IPCConstants.STYL_NOT_ACCEPTED_OUTCOME
+import com.shellinfo.common.utils.IPCConstants.STYL_NO_CARD_DETECTED
 import com.shellinfo.common.utils.IPCConstants.STYL_NO_ERROR
+import com.shellinfo.common.utils.IPCConstants.STYL_NO_RESPONSE
+import com.shellinfo.common.utils.IPCConstants.STYL_NO_USB_PERMISSION
+import com.shellinfo.common.utils.IPCConstants.STYL_ODA_ERROR_1
+import com.shellinfo.common.utils.IPCConstants.STYL_ODA_ERROR_2
+import com.shellinfo.common.utils.IPCConstants.STYL_READER_BUSY
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import timber.log.Timber
@@ -102,7 +113,6 @@ class IPCDataHandler @Inject constructor(
         override fun onServiceDisconnected(name: ComponentName?) {
             bound=false
             communicationService = null
-            rupayDataHandler.setRemoteService(communicationService!!)
             stopIpcService(context)
             Log.e(TAG,">>>>REMOTE SERVICE CONNECTION -> DISCONNECTED")
             startConnection(context)
@@ -200,23 +210,6 @@ class IPCDataHandler @Inject constructor(
                 Log.e(TAG,">>>>MESSAGE SENDING FOR :MSG_ID_TRX_DATA_RUPAY_NCMC")
                 Log.e(TAG,">>>>MESSAGE TRANSIT VALIDATION START")
 
-
-//                //TESTING CSA WRITE
-//                var csaData= baseMessage?.data?.serviceRelatedData!!
-//
-//                Timber.tag("PREVIOUS VALUE>>>>>").e(csaData[27].toString())
-//                Timber.tag("PREVIOUS VALUE>>>>>").e(csaData[28].toString())
-//
-//                baseMessage.data.serviceRelatedData = csaData
-//
-//                for (i in 35..120) {
-//                    csaData[i] = 0x01
-//                }
-//                Timber.tag("AFTER VALUE>>>>>").e(baseMessage.data.serviceRelatedData!![27].toString())
-//                Timber.tag("AFTER VALUE>>>>>").e(baseMessage.data.serviceRelatedData!![28].toString())
-
-
-                //sendMessageToService(MSG_ID_TRANSIT_VALIDATION_RUPAY_NCMC,baseMessage)
 
                 if (baseMessage != null) {
                     handlePaymentAppMessage(baseMessage)
@@ -317,7 +310,61 @@ class IPCDataHandler @Inject constructor(
 
             else ->{
 
-                //TODO handle error message, and display error
+                var errorName =""
+
+                when(baseMessage.messageId){
+
+                    STYL_COMMAND_EXE_FAILED->{
+                        errorName="STYL_COMMAND_EXE_FAILED"
+                    }
+
+                    STYL_INVALID_COMMAND_PARAM->{
+                        errorName="STYL_INVALID_COMMAND_PARAM"
+                    }
+
+                    STYL_NO_CARD_DETECTED->{
+                        errorName="STYL_NO_CARD_DETECTED"
+                    }
+
+                    STYL_NO_RESPONSE->{
+                        errorName="STYL_NO_RESPONSE"
+                    }
+
+                    STYL_NO_USB_PERMISSION->{
+                        errorName="STYL_NO_USB_PERMISSION"
+                    }
+
+                    STYL_ODA_ERROR_1->{
+                        errorName="STYL_ODA_ERROR_1"
+                    }
+
+                    STYL_ODA_ERROR_2->{
+                        errorName="STYL_ODA_ERROR_2"
+                    }
+
+                    STYL_CARD_READ_ERROR->{
+                        errorName="STYL_CARD_READ_ERROR"
+                    }
+
+                    STYL_EXPIRED_CARD->{
+                        errorName="STYL_EXPIRED_CARD"
+                    }
+
+                    STYL_READER_BUSY->{
+                        errorName="STYL_READER_BUSY"
+                    }
+
+                    STYL_NOT_ACCEPTED_OUTCOME->{
+                        errorName="STYL_NOT_ACCEPTED_OUTCOME"
+                    }
+
+                    else->{
+                        errorName = "UNKNOWN_ERROR"
+                    }
+                }
+
+                //handle the STYL error
+                rupayDataHandler.handleStylError(baseMessage.messageId,errorName)
             }
 
         }

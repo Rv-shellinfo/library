@@ -4,9 +4,11 @@ import abbasi.android.filelogger.FileLogger
 import android.util.Log
 import com.shellinfo.IRemoteService
 import com.shellinfo.common.code.NetworkCall
+import com.shellinfo.common.code.enums.EquipmentType
 import com.shellinfo.common.code.enums.TicketType
 import com.shellinfo.common.data.local.data.emv_rupay.CSAMasterData
 import com.shellinfo.common.data.local.data.emv_rupay.binary.csa_bin.HistoryBin
+import com.shellinfo.common.data.local.data.emv_rupay.display.CSADataDisplay
 import com.shellinfo.common.data.local.data.ipc.BF200Data
 import com.shellinfo.common.data.local.data.ipc.RupayTrxData
 import com.shellinfo.common.data.local.data.ipc.base.BaseMessage
@@ -31,6 +33,7 @@ import com.shellinfo.common.utils.IPCConstants.FAILURE_ENTRY_VALIDATION
 import com.shellinfo.common.utils.IPCConstants.FAILURE_FARE_CALC
 import com.shellinfo.common.utils.IPCConstants.LANGUAGE_MASK
 import com.shellinfo.common.utils.IPCConstants.LANG_ENGLISH
+import com.shellinfo.common.utils.IPCConstants.MSG_ID_CSA_REQUEST
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_TRANSIT_VALIDATION_RUPAY_NCMC
 import com.shellinfo.common.utils.IPCConstants.NO_ERROR
 import com.shellinfo.common.utils.IPCConstants.PROD_TYPE_SINGLE_JOURNEY
@@ -43,6 +46,7 @@ import com.shellinfo.common.utils.IPCConstants.TXN_STATUS_EXIT
 import com.shellinfo.common.utils.IPCConstants.TXN_STATUS_ONE_TAP_TICKET
 import com.shellinfo.common.utils.IPCConstants.TXN_STATUS_PENALTY
 import com.shellinfo.common.utils.SpConstants.ACQUIRER_ID
+import com.shellinfo.common.utils.SpConstants.DEVICE_TYPE
 import com.shellinfo.common.utils.SpConstants.ENTRY_EXIT
 import com.shellinfo.common.utils.SpConstants.ENTRY_EXIT_OVERRIDE
 import com.shellinfo.common.utils.SpConstants.ENTRY_SIDE
@@ -116,12 +120,71 @@ class RupayDataHandler @Inject constructor(
 
 
     /**
+     * Method to handle style error
+     */
+    fun handleStylError(errorCode:Int, errorMessage:String){
+
+        //create csa master data error
+        val csaMasterData = CSAMasterData()
+
+        //set error
+        csaMasterData.rupayError!!.errorCode= errorCode
+        csaMasterData.rupayError!!.errorMessage= errorMessage
+
+        //post value to live data to application
+        sharedDataManager.updateCardData(csaMasterData)
+    }
+
+
+    /**
      * Handling Rupay NCMC card data, Sent by the Payment Application
      */
     fun handleRupayCardCSAData(bF200Data: BF200Data) {
 
         //parsing csa master data
-        var csaMasterData = rupayUtils.readCSAData(bF200Data)
+        val csaMasterData = rupayUtils.readCSAData(bF200Data)
+
+
+        //check device type to handle data request
+        val deviceType= spUtils.getPreference(DEVICE_TYPE,"")
+
+        if(deviceType.isNotEmpty()){
+
+            //get enum type from device type
+            val equipmentType= EquipmentType.fromEquipment(deviceType)
+
+            when(equipmentType){
+
+                EquipmentType.TR->{
+
+                    //create no error rupay
+                    csaMasterData.rupayError?.errorCode = NO_ERROR
+                    csaMasterData.rupayError?.errorMessage = "NO_ERROR"
+
+                    //post value to live data
+                    sharedDataManager.updateCardData(csaMasterData)
+
+                    //send back to reader with no update
+                    communicationService.sendData(MSG_ID_CSA_REQUEST,"ONLY_READ")
+
+                    return
+                }
+                EquipmentType.TOM->{}
+                EquipmentType.VALIDATOR->{
+
+                }
+                EquipmentType.TVM->{}
+                EquipmentType.PTD->{}
+                EquipmentType.ALL->{}
+                else -> {}
+            }
+
+        }else{
+
+            Log.e(TAG,">>>> DEVICE TYPE NOT SET")
+            return
+
+        }
 
 
         //calculate card effective date

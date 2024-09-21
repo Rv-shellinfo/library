@@ -65,6 +65,7 @@ object UtilityModule {
         return PermissionsUtils()
     }
 
+    @Singleton
     @Provides
     fun provideSharedDataManager():SharedDataManager{
         return SharedDataManager()

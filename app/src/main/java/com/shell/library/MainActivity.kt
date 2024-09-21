@@ -6,10 +6,12 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Observer
 import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.EquipmentType
 import com.shellinfo.common.data.local.data.InitData
+import com.shellinfo.common.data.shared.SharedDataManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -18,6 +20,9 @@ class MainActivity : AppCompatActivity() {
 
     @Inject
     lateinit var shellInfoLibrary: ShellInfoLibrary
+
+    @Inject
+    lateinit var sharedDataManager: SharedDataManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -30,13 +35,20 @@ class MainActivity : AppCompatActivity() {
         val initData = InitData(BuildConfig.APPLICATION_ID,
             "Transit",BuildConfig.VERSION_CODE.toString(),
             BuildConfig.VERSION_NAME,
-            EquipmentType.VALIDATOR,
+            EquipmentType.TR,
             "Transit",
             Build.SERIAL)
 
 
         shellInfoLibrary.setActivity(this)
         shellInfoLibrary.start(initData)
+
+
+        sharedDataManager.cardData.observe(this, Observer { data ->
+            // Handle the observed data
+            Log.e("Data Got",">>>> Done")
+        })
+
 
 
         //shellInfoLibrary.mqttConnect()

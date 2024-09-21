@@ -169,7 +169,7 @@ class RupayUtils @Inject constructor(
 
             //history log3
             var datentime3: String =
-                getSubString(df33_data, 140, 152)
+                getSubString(df33_data, 186, 192)
             datentime3 =
                 if (emvUtils.getHexatoDecimal(datentime3)
                         .toInt() === 0
