@@ -5,8 +5,10 @@ import com.shellinfo.common.data.local.data.emv_rupay.display.CSADataDisplay
 import com.shellinfo.common.data.local.data.emv_rupay.raw.CSADataRaw
 import com.shellinfo.common.data.local.data.ipc.BF200Data
 import com.shellinfo.common.data.local.data.ipc.RupayCardDataRead
+import com.squareup.moshi.JsonClass
 
 
+@JsonClass(generateAdapter = true)
 data class CSAMasterData(
     var csaBinData: CsaBin?=null,
     var csaUpdatedBinData:CsaBin?=null,

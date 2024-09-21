@@ -1,8 +1,10 @@
 package com.shellinfo.common.data.local.data.ipc
 
 import android.os.Parcelable
+import com.squareup.moshi.JsonClass
 import kotlinx.parcelize.Parcelize
 
+@JsonClass(generateAdapter = true)
 @Parcelize
 class RupayCardDataRead(
     val TAG_5A:String,

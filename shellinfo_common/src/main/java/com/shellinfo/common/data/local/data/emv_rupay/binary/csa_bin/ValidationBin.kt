@@ -1,5 +1,8 @@
 package com.shellinfo.common.data.local.data.emv_rupay.binary.csa_bin
 
+import com.squareup.moshi.JsonClass
+
+@JsonClass(generateAdapter = true)
 data class ValidationBin(
     var errorCode: Byte?,
     var productType: Byte,

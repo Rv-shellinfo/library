@@ -1,5 +1,8 @@
 package com.shellinfo.common.data.local.data.emv_rupay.binary.csa_bin
 
+import com.squareup.moshi.JsonClass
+
+@JsonClass(generateAdapter = true)
 data class HistoryBin(
     var acquirerID: Byte ?=null,             // 1 byte
     var operatorID: ByteArray?=null,         // 2 bytes
