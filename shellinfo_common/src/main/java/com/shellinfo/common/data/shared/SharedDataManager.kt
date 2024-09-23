@@ -22,6 +22,5 @@ class SharedDataManager @Inject constructor(){
     fun updateCardData(value: CSAMasterData) {
         Log.e("DATA",">>> DATA FOUND")
         _cardData.postValue(value)
-        _cardData.value = value
     }
 }

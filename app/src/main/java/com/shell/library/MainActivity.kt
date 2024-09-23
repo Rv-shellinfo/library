@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
         val initData = InitData(BuildConfig.APPLICATION_ID,
             "Transit",BuildConfig.VERSION_CODE.toString(),
             BuildConfig.VERSION_NAME,
-            EquipmentType.TR,
+            EquipmentType.VALIDATOR,
             "Transit",
             Build.SERIAL)
 

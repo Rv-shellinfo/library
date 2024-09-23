@@ -22,6 +22,7 @@ import com.shellinfo.common.utils.IPCConstants
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_AMOUNT_REQUEST
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_ICC_DATA
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_PAYMENT_APP_VERSION_DATA
+import com.shellinfo.common.utils.IPCConstants.MSG_ID_STYL_ERROR
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_TRANSIT_VALIDATION_RUPAY_NCMC
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_TRX_DATA_EMV
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_TRX_DATA_RUPAY_NCMC
@@ -59,7 +60,9 @@ class IPCDataHandler @Inject constructor(
 
     private lateinit var context: Context
 
-    private var isFirstTime =true
+    private var handler: Handler? = null
+    private var connectionRunnable: Runnable? = null
+    private var isConnecting = false // Flag to check if the process is already running
 
     fun startIPCService(context: Context){
 
@@ -215,8 +218,69 @@ class IPCDataHandler @Inject constructor(
                     handlePaymentAppMessage(baseMessage)
                 }
 
+            }
+
+            MSG_ID_STYL_ERROR->{
 
 
+                // Convert JSON string back to BaseMessage object
+                val baseMessage: BaseMessage<String>? = convertFromJson<String>(message,moshi)
+
+                val errorCode= baseMessage?.messageId
+                var errorName =""
+
+                when(errorCode){
+
+                    STYL_COMMAND_EXE_FAILED->{
+                        errorName="STYL_COMMAND_EXE_FAILED"
+                    }
+
+                    STYL_INVALID_COMMAND_PARAM->{
+                        errorName="STYL_INVALID_COMMAND_PARAM"
+                    }
+
+                    STYL_NO_CARD_DETECTED->{
+                        errorName="STYL_NO_CARD_DETECTED"
+                    }
+
+                    STYL_NO_RESPONSE->{
+                        errorName="STYL_NO_RESPONSE"
+                    }
+
+                    STYL_NO_USB_PERMISSION->{
+                        errorName="STYL_NO_USB_PERMISSION"
+                    }
+
+                    STYL_ODA_ERROR_1->{
+                        errorName="STYL_ODA_ERROR_1"
+                    }
+
+                    STYL_ODA_ERROR_2->{
+                        errorName="STYL_ODA_ERROR_2"
+                    }
+
+                    STYL_CARD_READ_ERROR->{
+                        errorName="STYL_CARD_READ_ERROR"
+                    }
+
+                    STYL_EXPIRED_CARD->{
+                        errorName="STYL_EXPIRED_CARD"
+                    }
+
+                    STYL_READER_BUSY->{
+                        errorName="STYL_READER_BUSY"
+                    }
+
+                    STYL_NOT_ACCEPTED_OUTCOME->{
+                        errorName="STYL_NOT_ACCEPTED_OUTCOME"
+                    }
+
+                    else->{
+                        errorName = "UNKNOWN_ERROR"
+                    }
+                }
+
+                rupayDataHandler.handleError(errorCode!!,errorName)
             }
 
             MSG_ID_TRX_STATUS_RUPAY_NCMC->{
@@ -254,7 +318,7 @@ class IPCDataHandler @Inject constructor(
     fun handlePaymentAppMessage(baseMessage: BaseMessage<*>){
 
         //log payment message id
-        FileLogger.i(TAG, "PAYMENT APP MESSAGE ID :>> ${baseMessage.messageId}")
+            FileLogger.i(TAG, "PAYMENT APP MESSAGE ID :>> ${baseMessage.messageId}")
 
 
         when(baseMessage.messageId){
@@ -308,102 +372,7 @@ class IPCDataHandler @Inject constructor(
 
             }
 
-            else ->{
-
-                var errorName =""
-
-                when(baseMessage.messageId){
-
-                    STYL_COMMAND_EXE_FAILED->{
-                        errorName="STYL_COMMAND_EXE_FAILED"
-                    }
-
-                    STYL_INVALID_COMMAND_PARAM->{
-                        errorName="STYL_INVALID_COMMAND_PARAM"
-                    }
-
-                    STYL_NO_CARD_DETECTED->{
-                        errorName="STYL_NO_CARD_DETECTED"
-                    }
-
-                    STYL_NO_RESPONSE->{
-                        errorName="STYL_NO_RESPONSE"
-                    }
-
-                    STYL_NO_USB_PERMISSION->{
-                        errorName="STYL_NO_USB_PERMISSION"
-                    }
-
-                    STYL_ODA_ERROR_1->{
-                        errorName="STYL_ODA_ERROR_1"
-                    }
-
-                    STYL_ODA_ERROR_2->{
-                        errorName="STYL_ODA_ERROR_2"
-                    }
-
-                    STYL_CARD_READ_ERROR->{
-                        errorName="STYL_CARD_READ_ERROR"
-                    }
-
-                    STYL_EXPIRED_CARD->{
-                        errorName="STYL_EXPIRED_CARD"
-                    }
-
-                    STYL_READER_BUSY->{
-                        errorName="STYL_READER_BUSY"
-                    }
-
-                    STYL_NOT_ACCEPTED_OUTCOME->{
-                        errorName="STYL_NOT_ACCEPTED_OUTCOME"
-                    }
-
-                    else->{
-                        errorName = "UNKNOWN_ERROR"
-                    }
-                }
-
-                //handle the STYL error
-                rupayDataHandler.handleStylError(baseMessage.messageId,errorName)
-            }
-
         }
-
-
-//        MSG_ID_TRX_DATA_RUPAY_NCMC->{
-//            val rupayData: RupayCardDataRead = baseMessage.data as RupayCardDataRead
-//
-//            when(rupayData.errorCode){
-//                STYL_NO_ERROR ->{
-//                    rupayDataHandler.handleRupayCardData(rupayData)
-//                }
-//
-//                else ->{
-//                    //TODO show error on the screen based on the error code
-//                }
-//            }
-//
-//        }
-//
-//        MSG_ID_TRX_STATUS_RUPAY_NCMC -> {
-//
-//        }
-//
-//        MSG_ID_TRX_DATA_EMV-> {
-//
-//        }
-//
-//        MSG_ID_PAYMENT_APP_VERSION_DATA->{
-//
-//        }
-//
-//        MSG_ID_ICC_DATA ->{
-//
-//        }
-//
-//        MSG_ID_AMOUNT_REQUEST-> {
-//
-//        }
     }
 
 
@@ -425,25 +394,40 @@ class IPCDataHandler @Inject constructor(
      */
 
      fun startConnection(context: Context){
-        this.context=context
+        this.context = context
 
-        val handler = Handler(Looper.getMainLooper())
-        val runnable = object : Runnable {
-            override fun run() {
-                // Check condition to stop calling
-                if (bound) {
-                    handler.removeCallbacks(this)
-                    return // Exit the runnable
+        // Check if the process is already running
+        if (isConnecting) {
+            return // Skip if already running
+        }
+
+        isConnecting = true
+
+        // Initialize Handler and Runnable if not already initialized
+        if (handler == null) {
+            handler = Handler(Looper.getMainLooper())
+        }
+
+        if (connectionRunnable == null) {
+            connectionRunnable = object : Runnable {
+                override fun run() {
+                    // Check condition to stop calling
+                    if (bound) {
+                        handler?.removeCallbacks(this)
+                        isConnecting = false // Reset the flag when done
+                        return // Exit the runnable
+                    }
+
+                    // Your method to call every 5 seconds
+                    startIPCService(context)
+
+                    // Call again after 2 seconds
+                    handler?.postDelayed(this, 2000)
                 }
-
-                // Your method to call every 5 seconds
-                startIPCService(context)
-
-                // Call again after 5 seconds
-                handler.postDelayed(this, 2000)
             }
         }
 
-        handler.post(runnable)
+        // Start the runnable if it's not already running
+        handler?.post(connectionRunnable!!)
     }
 }

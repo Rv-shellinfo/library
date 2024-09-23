@@ -9,6 +9,7 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
+import com.shellinfo.common.BuildConfig
 import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.HttpType
 import com.shellinfo.common.code.enums.PrinterType
@@ -40,6 +41,7 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import dagger.hilt.android.qualifiers.ApplicationContext
 import org.eclipse.paho.client.mqttv3.MqttMessage
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -169,6 +171,12 @@ class ShellInfoLibrary @Inject constructor(
                 spUtils.savePreference(SpConstants.API_FULL_BASE_URL,spUtils.getPreference(SpConstants.API_BASE_URL,""))
             }
         }
+
+        // Initialize Timber for Debug build
+        if (BuildConfig.DEBUG) {
+            Timber.plant(Timber.DebugTree())
+        }
+
 
         //start ipc service
         activity?.let { startIpcService(it) }

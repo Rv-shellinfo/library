@@ -173,6 +173,8 @@ object IPCConstants{
     const val MSG_ID_PAYMENT_APP_VERSION_DATA =           0x04
     const val MSG_ID_ICC_DATA =                           0x05
     const val MSG_ID_AMOUNT_REQUEST =                     0x06
+    const val MSG_ID_STYL_ERROR =                         0x07
+
 
     //CSA pre-defined values as per NCMC specs
     const val VERSION_NUMBER:Byte =                            0x31
@@ -182,6 +184,7 @@ object IPCConstants{
     const val MSG_ID_PAYMENT_APP_VERSION_REQUEST =              0x82
     const val MSG_ID_AMOUNT_RESPONSE =                          0x83
     const val MSG_ID_CSA_REQUEST =                              0x84
+    const val MSG_ID_ERROR_TRANSACTION =                        0x85
 
     // Message ID for messages from Transit to Payment Application for Reader Commands
     const val MSG_ID_NFC_COMMAND =                               0xF1
