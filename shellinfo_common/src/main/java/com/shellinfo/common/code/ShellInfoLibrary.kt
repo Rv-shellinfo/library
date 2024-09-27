@@ -3,6 +3,7 @@ package com.shellinfo.common.code
 import android.Manifest
 import android.content.Context
 import android.graphics.Bitmap
+import android.service.controls.DeviceTypes
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -11,7 +12,9 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import com.shellinfo.common.BuildConfig
 import com.shellinfo.common.code.enums.ApiMode
+import com.shellinfo.common.code.enums.EquipmentType
 import com.shellinfo.common.code.enums.HttpType
+import com.shellinfo.common.code.enums.NcmcDataType
 import com.shellinfo.common.code.enums.PrinterType
 import com.shellinfo.common.code.ipc.IPCDataHandler
 import com.shellinfo.common.code.logs.LoggerImpl
@@ -35,8 +38,14 @@ import com.shellinfo.common.data.remote.response.model.ticket.TicketRequest
 import com.shellinfo.common.data.remote.response.model.ticket.TicketResponse
 import com.shellinfo.common.utils.BarcodeUtils
 import com.shellinfo.common.utils.DateUtils
+import com.shellinfo.common.utils.IPCConstants.MSG_ID_CREATE_OSA_SERVICE
+import com.shellinfo.common.utils.IPCConstants.MSG_ID_ONE_TIME_READ_CARD_REQUEST
+import com.shellinfo.common.utils.IPCConstants.MSG_ID_REMOVE_PENALTY
+import com.shellinfo.common.utils.IPCConstants.MSG_ID_STOP_CARD_DETECTION
+import com.shellinfo.common.utils.IPCConstants.OPERATOR_ID_MISMATCH
 import com.shellinfo.common.utils.PermissionsUtils
 import com.shellinfo.common.utils.SpConstants
+import com.shellinfo.common.utils.SpConstants.OPERATOR_SERVICE_ID
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -58,11 +67,21 @@ class ShellInfoLibrary @Inject constructor(
     private val permissionsUtils: PermissionsUtils,
 ) :ShellInfoProvider {
 
+    companion object{
+        var isForPenalty=false
+    }
+
     //application activity context
     private var activity: AppCompatActivity? = null
 
+    //tag for logs
+    private val TAG = ShellInfoLibrary::class.java.simpleName
+
     //write permission
     private val REQUEST_WRITE_EXTERNAL_STORAGE = 1
+
+    //penalty amount which needs to deduct
+    private var penaltyAmount = 0.0
 
     @Inject
     lateinit var masterConfig: ConfigMaster
@@ -184,6 +203,9 @@ class ShellInfoLibrary @Inject constructor(
         //handle permissions
         handlePermissions()
 
+        //handle card read service (for TOM and TVM that not need to be continues so stop it)
+        handleCardDetectionService()
+
     }
 
     override fun stop() {
@@ -194,6 +216,44 @@ class ShellInfoLibrary @Inject constructor(
         stopLogging(true,true)
 
         disconnectMqtt()
+    }
+
+    /**
+     * Method will observe the ipc service connection success,
+     * once success it will check device type and stop active card detection service of payment app
+     */
+    private fun handleCardDetectionService(){
+
+        ipcDataHandler.isIpcConnected.observe(activity!!, Observer {
+
+            //check device type to handle data request
+            val deviceType= spUtils.getPreference(SpConstants.DEVICE_TYPE,"")
+
+            if(deviceType.isNotEmpty()){
+
+                //get enum type from device type
+                val equipmentType= EquipmentType.fromEquipment(deviceType)
+
+                when(equipmentType){
+
+                    EquipmentType.TOM,
+                    EquipmentType.TVM->{
+
+                        //create base message
+                        val baseMessage= BaseMessage(MSG_ID_STOP_CARD_DETECTION,NcmcDataType.NONE,"")
+
+                        //stop continues card detection service in Payment application
+                        sendMessageToIpcService(MSG_ID_STOP_CARD_DETECTION,baseMessage)
+                    }
+                    else->{}
+                }
+            }else{
+
+                Timber.e(TAG,"Device Type Not Provided")
+            }
+        })
+
+
     }
 
     /**
@@ -380,7 +440,64 @@ class ShellInfoLibrary @Inject constructor(
         ipcDataHandler.sendMessageToService(messageId,baseMessage)
     }
 
-    
+    override fun readNcmcCardData() {
+
+        //create base message
+        val baseMessage= BaseMessage(MSG_ID_ONE_TIME_READ_CARD_REQUEST,NcmcDataType.ALL,"")
+
+        //send message to payment application to read the card data
+        sendMessageToIpcService(MSG_ID_ONE_TIME_READ_CARD_REQUEST,baseMessage)
+
+    }
+
+    override fun removePenalty(penaltyAmount:Double) {
+        //check if the request came from TOM device
+        val deviceType = spUtils.getPreference(SpConstants.DEVICE_TYPE,"")
+        if(!deviceType.equals(EquipmentType.TOM.name)){
+
+            Timber.e(TAG, "Only TOM Application can Remove Penalty")
+
+            return
+        }
+
+        isForPenalty=true
+
+        //set penalty amount to deduct
+        ipcDataHandler.setPenalty(penaltyAmount)
+
+        //create base message
+        val baseMessage= BaseMessage(MSG_ID_REMOVE_PENALTY,NcmcDataType.CSA,"MSG_ID_REMOVE_PENALTY")
+
+        //send message to payment application to create the OSA service
+        sendMessageToIpcService(MSG_ID_REMOVE_PENALTY,baseMessage)
+    }
+
+    override fun createOsaService() {
+
+        //check if the request came from TOM device
+        val deviceType = spUtils.getPreference(SpConstants.DEVICE_TYPE,"")
+        if(!deviceType.equals(EquipmentType.TOM.name)){
+
+            Timber.e(TAG, "Only TOM Application can create the Operator Service Area")
+
+            return
+        }
+
+        //get osa service id
+        val osaServiceId= spUtils.getPreference(OPERATOR_SERVICE_ID,0x0012)
+
+        //create base message
+        val baseMessage= BaseMessage(MSG_ID_CREATE_OSA_SERVICE,NcmcDataType.OSA,osaServiceId)
+
+        //send message to payment application to create the OSA service
+        sendMessageToIpcService(MSG_ID_CREATE_OSA_SERVICE,baseMessage)
+    }
+
+    override fun updatePassValue() {
+        TODO("Not yet implemented")
+    }
+
+
     fun startSimulation(){
 
         val dataReceived ="{\"messageId\":0,\"dataType\":\"CSA\",\"data\":{\"B\":{\"57\":\"6083263242000066D26126209840000000000F\",\"82\":\"1900\",\"95\":\"0000000000\",\"9F39\":\"07\",\"9F02\":\"000000000000\",\"9F03\":\"000000000000\",\"9F34\":\"\",\"8A\":\"\",\"5F34\":\"01\",\"9F33\":\"0008C8\",\"9F1A\":\"0356\",\"9B\":\"0000\",\"5F2A\":\"0164\",\"9A\":\"240917\",\"9C\":\"00\",\"9F37\":\"3CE7F7DD\",\"9F21\":\"110304\",\"5A\":\"6083263242000066\",\"5F24\":\"261231\",\"9F5B\":\"\",\"9F15\":\"1234\",\"9F16\":\"313233343536373839414243444546\",\"9F35\":\"96\",\"5F25\":\"180101\",\"8E\":\"000000000000000042035E031F03\",\"9F0D\":\"A468FC9800\",\"9F0E\":\"1010000000\",\"9F0F\":\"A468FC9800\",\"9F1C\":\"0000000000000000\",\"DF33\":\"011010AC00C39E9301000000002AE92409121714531E60000000000092035660000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000\"},\"serviceRelatedData\":[0, 121, -1, -127, 2, 115, -1, 3, 112, -33, 22, 2, 16, 16, -33, 84, 5, 8, 16, 16, -111, 0, -33, 23, 96, 24, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 48],\"serviceDataIndex\":25}}"

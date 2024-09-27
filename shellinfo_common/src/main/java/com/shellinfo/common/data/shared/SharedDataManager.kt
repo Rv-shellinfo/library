@@ -11,16 +11,16 @@ import javax.inject.Singleton
 class SharedDataManager @Inject constructor(){
 
     // Private mutable live data
-    private val _cardData = MutableLiveData<CSAMasterData>()
+    private val _responseData = MutableLiveData<CSAMasterData>()
 
     // Public immutable live data
-    val cardData: LiveData<CSAMasterData> get() = _cardData
+    val responseData: LiveData<CSAMasterData> get() = _responseData
 
 
 
     // Function to update card LiveData
-    fun updateCardData(value: CSAMasterData) {
+    fun updateResponseData(value: CSAMasterData) {
         Log.e("DATA",">>> DATA FOUND")
-        _cardData.postValue(value)
+        _responseData.postValue(value)
     }
 }

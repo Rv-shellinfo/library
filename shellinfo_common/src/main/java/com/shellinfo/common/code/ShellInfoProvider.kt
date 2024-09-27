@@ -82,5 +82,10 @@ interface ShellInfoProvider {
 
     fun sendMessageToIpcService(messageId:Int,baseMessage: BaseMessage<*>)
 
+    fun readNcmcCardData()
+    fun removePenalty(penaltyAmount:Double)
+    fun createOsaService()
+    fun updatePassValue()
+
 
 }

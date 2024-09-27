@@ -1,10 +1,10 @@
 package com.shell.library
 
-import android.app.Activity
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import androidx.activity.ComponentActivity
+import android.view.View
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import com.shellinfo.common.code.ShellInfoLibrary
@@ -24,9 +24,16 @@ class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var sharedDataManager: SharedDataManager
 
+    lateinit var btnStart:Button;
+    lateinit var btnRemovePenalty:Button;
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        //set button
+        btnStart= findViewById(R.id.btnStart)
+        btnRemovePenalty= findViewById(R.id.btnRemovePenalty)
 
         shellInfoLibrary.setApiMode(ApiMode.PUBLIC)
         shellInfoLibrary.setBaseUrl("https://app.tsavaari.com/LTProject/")
@@ -44,9 +51,23 @@ class MainActivity : AppCompatActivity() {
         shellInfoLibrary.start(initData)
 
 
-        sharedDataManager.cardData.observe(this, Observer { data ->
+        sharedDataManager.responseData.observe(this, Observer { data ->
             // Handle the observed data
             Log.e("Data Got",">>>> Done")
+        })
+
+
+        btnStart.setOnClickListener(View.OnClickListener {
+
+            //read card passive mode
+            shellInfoLibrary.readNcmcCardData()
+        })
+
+
+        btnRemovePenalty.setOnClickListener(View.OnClickListener {
+
+            //read card passive mode
+            shellInfoLibrary.removePenalty(100.0)
         })
 
 

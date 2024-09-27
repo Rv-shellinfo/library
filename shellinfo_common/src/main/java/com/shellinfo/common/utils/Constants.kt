@@ -88,6 +88,11 @@ object SpConstants{
     const val ECU_IP_ADDRESS ="ecuIpAddr"
     const val DOUBLE_TAP_THRESHOLD  = "doubleTapThreshHold"
 
+
+    //NCMC Service types
+    const val COMMON_SERVICE_ID ="common_service_id"
+    const val OPERATOR_SERVICE_ID ="operator_service_id"
+
 }
 
 object DBConstants{
@@ -159,7 +164,8 @@ object IPCConstants{
     const val APPLICATION_BLOCKED			=		    107			//Application Blocked
     const val CARD_ALREADY_TAPPED			=		    108			//Card already tapped
     const val READER_FUNCTIONALITY_DISABLED			=	109			//Reader in Maintenance mode/Reader Off
-    const val FAILURE_ENTRY_VALIDATION			=		110		//Fail Entry Validation
+    const val FAILURE_ENTRY_VALIDATION			=		110		    //Fail Entry Validation
+    const val FAILURE_FARE_API			=		        111		    //Fail Entry Validation
 
     //CSA pre-defined product type (NCMC Interface Specs)
     const val PROD_TYPE_SINGLE_JOURNEY:Byte  =			    0x00
@@ -174,6 +180,9 @@ object IPCConstants{
     const val MSG_ID_ICC_DATA =                           0x05
     const val MSG_ID_AMOUNT_REQUEST =                     0x06
     const val MSG_ID_STYL_ERROR =                         0x07
+    const val MSG_ID_CREATE_OSA_ACK =                     0x08
+    const val MSG_ID_REMOVE_PENALTY_ACK =                 0x09
+    const val MSG_ID_REMOVE_PENALTY_DATA_ACK =            0x10
 
 
     //CSA pre-defined values as per NCMC specs
@@ -181,10 +190,17 @@ object IPCConstants{
 
     // Message ID for messages from Transit to Payment Application for Transaction
     const val MSG_ID_TRANSIT_VALIDATION_RUPAY_NCMC =            0x81
-    const val MSG_ID_PAYMENT_APP_VERSION_REQUEST =              0x82
+    const val MSG_ID_TRANSIT_VALIDATION_FAIL_RUPAY_NCMC =       0x82
     const val MSG_ID_AMOUNT_RESPONSE =                          0x83
     const val MSG_ID_CSA_REQUEST =                              0x84
     const val MSG_ID_ERROR_TRANSACTION =                        0x85
+    const val MSG_ID_STOP_CARD_DETECTION =                      0x86
+    const val MSG_ID_ONE_TIME_READ_CARD_REQUEST =               0x87
+    const val MSG_ID_ONE_TIME_READ_CARD_REQUEST_ACK =           0x88
+    const val MSG_ID_CONTINUES_READ_CARD_REQUEST_ACK =          0x89
+    const val MSG_ID_CREATE_OSA_SERVICE =                       0x90
+    const val MSG_ID_REMOVE_PENALTY =                           0x91
+    const val MSG_ID_REMOVE_PENALTY_DATA =                      0x92
 
     // Message ID for messages from Transit to Payment Application for Reader Commands
     const val MSG_ID_NFC_COMMAND =                               0xF1

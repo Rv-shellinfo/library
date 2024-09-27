@@ -12,18 +12,23 @@ import android.os.Looper
 import android.os.RemoteException
 import android.util.Log
 import android.widget.Toast
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import com.shellinfo.IRemoteCallback
 import com.shellinfo.IRemoteService
+import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.code.enums.NcmcDataType
+import com.shellinfo.common.data.local.data.emv_rupay.CSAMasterData
 import com.shellinfo.common.data.local.data.ipc.BF200Data
 import com.shellinfo.common.data.local.data.ipc.base.BaseMessage
 import com.shellinfo.common.di.DefaultMoshi
 import com.shellinfo.common.utils.IPCConstants
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_AMOUNT_REQUEST
+import com.shellinfo.common.utils.IPCConstants.MSG_ID_CREATE_OSA_ACK
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_ICC_DATA
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_PAYMENT_APP_VERSION_DATA
+import com.shellinfo.common.utils.IPCConstants.MSG_ID_REMOVE_PENALTY
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_STYL_ERROR
-import com.shellinfo.common.utils.IPCConstants.MSG_ID_TRANSIT_VALIDATION_RUPAY_NCMC
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_TRX_DATA_EMV
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_TRX_DATA_RUPAY_NCMC
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_TRX_STATUS_RUPAY_NCMC
@@ -51,18 +56,31 @@ class IPCDataHandler @Inject constructor(
     @DefaultMoshi private val moshi: Moshi
 ){
 
+    private val _isIpcConnected = MutableLiveData<Boolean>()
+    val isIpcConnected: LiveData<Boolean> get() = _isIpcConnected
 
+
+    //communinaction service stub AIDL
     private var communicationService: IRemoteService? = null
 
-    val TAG =  IPCDataHandler::class.java.simpleName
+    //TAG Name for logging purpose
+    val TAG: String =  IPCDataHandler::class.java.simpleName
 
+    //to check service bounded or not
     private var bound =false
 
+    //application context
     private lateinit var context: Context
 
+    //handler
     private var handler: Handler? = null
     private var connectionRunnable: Runnable? = null
     private var isConnecting = false // Flag to check if the process is already running
+
+    //flag to store requested messageId for NCMC data to make sure handle data accordingly
+    private var requestedMsgId = -1
+
+
 
     fun startIPCService(context: Context){
 
@@ -81,7 +99,7 @@ class IPCDataHandler @Inject constructor(
             context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
         }
 
-        Log.e(TAG,">>>>IPC SERVICE STARTING")
+        Timber.e(TAG,">>>>IPC SERVICE STARTING")
 
     }
 
@@ -89,7 +107,7 @@ class IPCDataHandler @Inject constructor(
         override fun onMessageReceived(messageId:Int,message: String) {
             FileLogger.d(TAG, "Received message from payment service: $message")
 
-            Log.e(TAG,">>>>MESSAGE RECEIVED FROM THE PAYMENT APPLICATION")
+            Timber.e(TAG,">>>>MESSAGE RECEIVED FROM THE PAYMENT APPLICATION")
 
             //handling the message
             handleMessage(messageId,message)
@@ -104,11 +122,13 @@ class IPCDataHandler @Inject constructor(
             bound=true
             try {
 
-                Log.e(TAG,">>>>REMOTE SERVICE CONNECTION -> SUCCESSFUL")
+                _isIpcConnected.postValue(true)
+
+                Timber.e(TAG,">>>>REMOTE SERVICE CONNECTION -> SUCCESSFUL")
                 // Register the callback to receive messages
                 communicationService?.registerCallback(callback)
             } catch (e: RemoteException) {
-                Log.e(TAG,">>>>REMOTE SERVICE CONNECTION ERROR -> REMOTE EXCEPTION")
+                Timber.e(TAG,">>>>REMOTE SERVICE CONNECTION ERROR -> REMOTE EXCEPTION")
                 e.printStackTrace()
             }
         }
@@ -116,8 +136,9 @@ class IPCDataHandler @Inject constructor(
         override fun onServiceDisconnected(name: ComponentName?) {
             bound=false
             communicationService = null
+            _isIpcConnected.postValue(false)
             stopIpcService(context)
-            Log.e(TAG,">>>>REMOTE SERVICE CONNECTION -> DISCONNECTED")
+            Timber.e(TAG,">>>>REMOTE SERVICE CONNECTION -> DISCONNECTED")
             startConnection(context)
         }
 
@@ -125,7 +146,8 @@ class IPCDataHandler @Inject constructor(
             super.onBindingDied(name)
             bound=false
             communicationService = null
-            Log.e(TAG,">>>>REMOTE SERVICE CONNECTION BINDING DIED-> DISCONNECTED")
+            _isIpcConnected.postValue(false)
+            Timber.e(TAG,">>>>REMOTE SERVICE CONNECTION BINDING DIED-> DISCONNECTED")
             startConnection(context)
         }
 
@@ -133,7 +155,8 @@ class IPCDataHandler @Inject constructor(
             super.onNullBinding(name)
             bound=false
             communicationService = null
-            Log.e(TAG,">>>>REMOTE SERVICE CONNECTION NULL BINDING-> DISCONNECTED")
+            _isIpcConnected.postValue(false)
+            Timber.e(TAG,">>>>REMOTE SERVICE CONNECTION NULL BINDING-> DISCONNECTED")
             startConnection(context)
         }
     }
@@ -150,18 +173,23 @@ class IPCDataHandler @Inject constructor(
                 else -> throw IllegalArgumentException("Unsupported data type: ${data?.javaClass}")
             }
 
-            Log.e(TAG,">>>>MESSAGE SENDING TO PAYMENT APPLICATION")
+            Timber.e(TAG,">>>>MESSAGE SENDING TO PAYMENT APPLICATION")
 
             try {
+
+                //set requested msg id
+                requestedMsgId= messageId
+
+                //send data to payment application
                 communicationService?.sendData(messageId,jsonString)
             } catch (e: RemoteException) {
 
-                Log.e(TAG,">>>>MESSAGE SENDING REMOTE EXCEPTION")
+                Timber.e(TAG,">>>>MESSAGE SENDING REMOTE EXCEPTION")
                 FileLogger.e("AppB MainActivity", "Failed to send message to service: ${e.message}")
             }
 
         }catch (ex:Exception){
-            Log.e(TAG,">>>>MESSAGE SENDING OTHER EXCEPTION")
+            Timber.e(TAG,">>>>MESSAGE SENDING OTHER EXCEPTION")
             FileLogger.e("AppB MainActivity", "Failed to send message to service: ${ex.message}")
         }
     }
@@ -172,13 +200,13 @@ class IPCDataHandler @Inject constructor(
         try{
 
             if(bound) {
-                Log.e(TAG, ">>>>IPC SERVICE STOPPED")
+                Timber.e(TAG, ">>>>IPC SERVICE STOPPED")
                 context.unbindService(serviceConnection)
                 bound = false
             }
         }catch (ex:Exception){
 
-            Log.e(TAG, ">>>>IPC SERVICE STOPPED with EXCEPTION")
+            Timber.e(TAG, ">>>>IPC SERVICE STOPPED with EXCEPTION")
         }
     }
 
@@ -196,27 +224,51 @@ class IPCDataHandler @Inject constructor(
         }
     }
 
+    /**
+     * Method to set penalty amount
+     */
+     fun setPenalty(amount:Double){
+        rupayDataHandler.setPenaltyAmount(amount)
+    }
+
 
     fun handleMessage(messageId:Int,message:String){
 
-        Log.e(TAG,">>>>RECEIVED MESSAGE HANDLING STARTED FROM HERE WITH MESSAGE: $messageId")
+        Timber.e(TAG,">>>>RECEIVED MESSAGE HANDLING STARTED FROM HERE WITH MESSAGE: $messageId")
 
         when(messageId){
 
             MSG_ID_TRX_DATA_RUPAY_NCMC->{
 
-                Log.e(TAG,">>>>MESSAGE ID RECEIVED: MSG_ID_TRX_DATA_RUPAY_NCMC")
+                Timber.e(TAG,">>>>MESSAGE ID RECEIVED: MSG_ID_TRX_DATA_RUPAY_NCMC")
 
                 // Convert JSON string back to BaseMessage object
                 val baseMessage: BaseMessage<BF200Data>? = convertFromJson<BF200Data>(message,moshi)
 
-                Log.e(TAG,">>>>MESSAGE SENDING FOR :MSG_ID_TRX_DATA_RUPAY_NCMC")
-                Log.e(TAG,">>>>MESSAGE TRANSIT VALIDATION START")
+                Timber.e(TAG,">>>>MESSAGE SENDING FOR :MSG_ID_TRX_DATA_RUPAY_NCMC")
+                Timber.e(TAG,">>>>MESSAGE TRANSIT VALIDATION START")
 
 
                 if (baseMessage != null) {
+
                     handlePaymentAppMessage(baseMessage)
                 }
+
+            }
+
+            MSG_ID_TRX_STATUS_RUPAY_NCMC->{
+
+                Toast.makeText(context,"GOOD JOB",Toast.LENGTH_LONG).show()
+            }
+
+
+            MSG_ID_CREATE_OSA_ACK->{
+
+                // Convert JSON string back to BaseMessage object
+                val baseMessage: BaseMessage<String>? = convertFromJson<String>(message,moshi)
+
+                //send the response back to the application
+                rupayDataHandler.sendMessageToApp(baseMessage?.messageId,baseMessage?.data)
 
             }
 
@@ -283,10 +335,7 @@ class IPCDataHandler @Inject constructor(
                 rupayDataHandler.handleError(errorCode!!,errorName)
             }
 
-            MSG_ID_TRX_STATUS_RUPAY_NCMC->{
 
-                Toast.makeText(context,"GOOD JOB",Toast.LENGTH_LONG).show()
-            }
 
             MSG_ID_TRX_DATA_EMV->{
 
@@ -310,22 +359,20 @@ class IPCDataHandler @Inject constructor(
     }
 
 
-
-
     /**
      * Method to handle the Payment Application message
      */
     fun handlePaymentAppMessage(baseMessage: BaseMessage<*>){
 
         //log payment message id
-            FileLogger.i(TAG, "PAYMENT APP MESSAGE ID :>> ${baseMessage.messageId}")
+        FileLogger.i(TAG, "PAYMENT APP MESSAGE ID :>> ${baseMessage.messageId}")
 
 
         when(baseMessage.messageId){
 
             STYL_NO_ERROR ->{
 
-                Log.e(TAG,">>>>STYL NO ERROR BLOCK EXECUTED")
+                Timber.e(TAG,">>>>STYL NO ERROR BLOCK EXECUTED")
 
                 //parse STYL reader data
                 val bF200Data = baseMessage.data as BF200Data
@@ -340,7 +387,7 @@ class IPCDataHandler @Inject constructor(
 
                     IPCConstants.RUPAY_PREPAID->{
 
-                        Log.e(TAG,">>>>RUPAY PREPAID BLOCK EXECUTED")
+                        Timber.e(TAG,">>>>RUPAY PREPAID BLOCK EXECUTED")
 
                         //get Rupay data type
                         val dataType = baseMessage.dataType
@@ -349,11 +396,24 @@ class IPCDataHandler @Inject constructor(
                         when(dataType){
                             NcmcDataType.CSA->{
 
-                                //handle ncmc rupay card csa data
-                                rupayDataHandler.handleRupayCardCSAData(bF200Data)
+                                if(ShellInfoLibrary.isForPenalty){
+
+                                    //set flag to false
+                                    ShellInfoLibrary.isForPenalty=false
+
+                                    //remove penalty and send back the data to write
+                                    rupayDataHandler.removePenalty(bF200Data)
+
+                                }else{
+                                    //handle ncmc rupay card csa data
+                                    rupayDataHandler.handleRupayCardCSAData(bF200Data)
+                                }
                             }
 
                             NcmcDataType.OSA->{
+
+                            }
+                            else ->{
 
                             }
                         }

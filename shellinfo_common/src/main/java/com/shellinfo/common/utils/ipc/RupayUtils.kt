@@ -62,10 +62,10 @@ class RupayUtils @Inject constructor(
             val cardbalance = cardBalance_str.toDouble() / 100
             val cardBalanceFormat = emvUtils.df.format(cardbalance)
 
-            //penalty amount
-            val penalty_str: String = getSubString(df33_data, 90, 94)
-            val penalty_amnt = penalty_str.toDouble() / 100
-            val penaltyAmtFormat = emvUtils.df.format(penalty_amnt)
+//            //penalty amount
+//            val penalty_str: String = getSubString(df33_data, 90, 94)
+//            val penalty_amnt = penalty_str.toDouble() / 100
+//            val penaltyAmtFormat = emvUtils.df.format(penalty_amnt)
 
             //error string any
             val error_code: String = getSubString(df33_data, 68, 70)
@@ -297,8 +297,8 @@ class RupayUtils @Inject constructor(
             val csaDataDisplay = CSADataDisplay(
                 cardbalance,
                 cardBalanceFormat,
-                penalty_amnt,
-                penaltyAmtFormat,
+                0.0,
+                "",
                 errorFormat,
                 error_code.toInt(),
                 finaltxndate,

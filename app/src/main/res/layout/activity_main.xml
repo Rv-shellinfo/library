@@ -4,6 +4,25 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:gravity="center_vertical"
+    android:layout_margin="32dp"
+    android:orientation="vertical"
     >
+
+    <Button
+        android:id="@+id/btnStart"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Start Card Detection"/>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="32dp"/>
+
+    <Button
+        android:id="@+id/btnRemovePenalty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Remove Penalty"/>
 
 </LinearLayout>

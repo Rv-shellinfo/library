@@ -15,6 +15,6 @@ data class CSAMasterData(
     var csaDisplayData: CSADataDisplay? = null,
     var tagsData: RupayCardDataRead? =null,
     var bf200Data: BF200Data? =null,
-    var rupayError: RupayError? =RupayError(),
+    var rupayMessage: RupayMessage? =RupayMessage(),
     var csaDataRaw: CSADataRaw?=null
 )
