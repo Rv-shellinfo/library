@@ -1,4 +1,4 @@
-package com.shellinfo.common.data.local.data.emv_rupay.display
+package com.shellinfo.common.data.local.data.emv_rupay.display.csa_display
 
 import com.squareup.moshi.JsonClass
 

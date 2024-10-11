@@ -108,4 +108,36 @@ object DateUtils {
         return dateTime.format(formatter)
     }
 
+    /**
+     * method to get current date as byteArray
+     */
+    fun getCurrentDateAsCustomBytes(): ByteArray {
+        // Format the current date as yyMMdd
+        val dateFormat = SimpleDateFormat("yyMMdd", Locale.getDefault())
+        val currentDate = dateFormat.format(Date())
+
+        // Convert the formatted date string to bytes (each char is 1 byte)
+        return currentDate.toByteArray(Charsets.UTF_8)
+    }
+
+    /**
+     * method to get date from byte array
+     */
+    fun getDateFromByteArray(byteArray: ByteArray): String {
+        // Convert ByteArray back to String (using UTF-8 encoding)
+        return byteArray.toString(Charsets.UTF_8)
+    }
+
+    /**
+     * method to get string date in Date(yyMMdd)
+     */
+    fun getDateFromString(date: String): Date {
+        // Define the expected date format as yyMMdd
+        val dateFormat = SimpleDateFormat("yyMMdd", Locale.getDefault())
+
+        // Parse the string into a Date object
+        return dateFormat.parse(date) ?: throw IllegalArgumentException("Invalid date format")
+    }
+
+
 }

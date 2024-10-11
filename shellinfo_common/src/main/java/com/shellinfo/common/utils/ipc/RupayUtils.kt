@@ -1,14 +1,24 @@
 package com.shellinfo.common.utils.ipc
 
 import android.util.Log
+import com.shellinfo.common.code.enums.PassType
 import com.shellinfo.common.data.local.data.emv_rupay.CSAMasterData
 import com.shellinfo.common.data.local.data.emv_rupay.HistoryQueue
+import com.shellinfo.common.data.local.data.emv_rupay.OSAMasterData
 import com.shellinfo.common.data.local.data.emv_rupay.binary.csa_bin.CsaBin
 import com.shellinfo.common.data.local.data.emv_rupay.binary.csa_bin.GeneralBin
 import com.shellinfo.common.data.local.data.emv_rupay.binary.csa_bin.HistoryBin
 import com.shellinfo.common.data.local.data.emv_rupay.binary.csa_bin.ValidationBin
-import com.shellinfo.common.data.local.data.emv_rupay.display.CSADataDisplay
-import com.shellinfo.common.data.local.data.emv_rupay.display.TxnHistory
+import com.shellinfo.common.data.local.data.emv_rupay.binary.osa_bin.GeneralBinOsa
+import com.shellinfo.common.data.local.data.emv_rupay.binary.osa_bin.HistoryBinOsa
+import com.shellinfo.common.data.local.data.emv_rupay.binary.osa_bin.OsaBin
+import com.shellinfo.common.data.local.data.emv_rupay.binary.osa_bin.PassBin
+import com.shellinfo.common.data.local.data.emv_rupay.binary.osa_bin.ValidationBinOsa
+import com.shellinfo.common.data.local.data.emv_rupay.display.csa_display.CSADataDisplay
+import com.shellinfo.common.data.local.data.emv_rupay.display.csa_display.TxnHistory
+import com.shellinfo.common.data.local.data.emv_rupay.display.osa_display.OSADataDisplay
+import com.shellinfo.common.data.local.data.emv_rupay.display.osa_display.PassData
+import com.shellinfo.common.data.local.data.emv_rupay.display.osa_display.TxnHistoryOsa
 import com.shellinfo.common.data.local.data.emv_rupay.raw.CSADataRaw
 import com.shellinfo.common.data.local.data.emv_rupay.raw.GeneralData
 import com.shellinfo.common.data.local.data.emv_rupay.raw.HistoryData
@@ -17,20 +27,20 @@ import com.shellinfo.common.data.local.data.emv_rupay.raw.TerminalData
 import com.shellinfo.common.data.local.data.emv_rupay.raw.ValidationData
 import com.shellinfo.common.data.local.data.ipc.BF200Data
 import com.shellinfo.common.utils.IPCConstants
-import org.threeten.bp.LocalDateTime
-import org.threeten.bp.ZoneOffset
+import timber.log.Timber
 import java.nio.BufferOverflowException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import javax.inject.Inject
-import kotlin.reflect.full.memberProperties
 
 
 class RupayUtils @Inject constructor(
     private val emvUtils: EMVUtils
 ){
+
+    //============= CSA DATA====================//
 
     //csa master data in which raw and display data combined
     private lateinit var csaMasterData: CSAMasterData
@@ -38,14 +48,407 @@ class RupayUtils @Inject constructor(
     //csa raw data i.e.hex values based on the index
     private lateinit var csaRawData: CSADataRaw
 
-    //csa binary data i.e.byte values based on the index
-    private lateinit var csaBinData: CsaBin
+    //============= OSA DATA ==================//
 
-    //csa display data i.e. actual string values to show on the display
-    private lateinit var csaDisplayData: CSADataDisplay
+    //osa master data
+    private lateinit var osaMasterData: OSAMasterData
+
 
     /**
-     * Method to read tlv data and set the raw and display csa data classes
+     * Method to read tlv data and set the raw and display OSA data classes
+     */
+    fun readOSAData(bF200Data: BF200Data):OSAMasterData{
+
+        val df33_data= bF200Data.b.DF33!!
+        val data_5F25= bF200Data.b.`5F25`!!
+
+        //init master osa data
+        osaMasterData= OSAMasterData()
+
+        try{
+
+        //============================VALIDATION==========================================//
+
+            //error string any
+            val error_code: String = getSubString(df33_data, 68, 70)
+            val errorFormat: String = getError(error_code)
+
+            //product
+            val product: String = getSubString(df33_data, 70, 72)
+            val productValue: Int = PassType.fromPassCode(hexToByte(product)!!)!!.passCode.toInt()
+            val productName: String = PassType.getPassNameByCode(hexToByte(product)!!)!!
+
+
+            //last transaction date time
+            val date: String = getSubString(df33_data, 72, 78)
+            val finaltxndate = if (emvUtils.getHexatoDecimal(date).toInt() == 0) {
+                "--"
+            } else {
+                emvUtils.calculateSecondsOfTxn(
+                    data_5F25 + "000000",
+                    emvUtils.getHexatoDecimal(date)
+                )
+            }
+
+            //status
+            val status: String = getSubString(df33_data, 82, 84)
+            val statusValue: Int = getTxnStatusNCMC(status)
+            val statusFormat: String = getTxnStatus(status)
+
+
+
+       //============================ HISTORY 1 ==========================================//
+
+            //last equipment id, operator id and station id
+            val terminalInfo: String = getSubString(df33_data, 84, 96)
+            val operatorId= terminalInfo.substring(2,5)
+            val lastEquipmentId = getLastEquipmentId(terminalInfo.substring(6, 11))
+            val lastStation = "--"
+
+
+            //date time
+            val dateTimeHex = getSubString(df33_data, 96, 103)
+            val dateTime1 = if (emvUtils.getHexatoDecimal(dateTimeHex).toInt() == 0) {
+                "-- --"
+            } else {
+                emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(dateTimeHex))
+            }
+
+            //trx sequence number
+            val txnSeqNo1 = "" + emvUtils.getHexatoDecimal(getSubString(df33_data, 103, 107))
+
+            //trx amount
+            val txnAmountHex = getSubString(df33_data, 107, 111)
+            val txnAmount1 = emvUtils.getHexatoDecimal(txnAmountHex).toDouble() / 10
+
+
+            //card balance
+            val tripBalance = getSubString(df33_data,111,116)
+            val beforeTrip = tripBalance.substring(0,2)
+            val afterTrip = tripBalance.substring(2,4)
+            val tripCount = tripBalance.substring(4,5)
+
+            //trx status
+            val trxType1 = if (dateTime1 == "-- --") {
+                "--"
+            } else {
+                getHistoryTxnStatus(getSubString(df33_data, 116, 117))
+            }
+
+
+            //product 1
+            val historyProduct1: String = getSubString(df33_data, 117, 119)
+            val historyProductValue1: Int = PassType.fromPassCode(hexToByte(historyProduct1)!!)!!.passCode.toInt()
+            val historyProductName1: String = PassType.getPassNameByCode(hexToByte(historyProduct1)!!)!!
+
+
+
+        //============================ HISTORY 2 ==========================================//
+
+            //last equipment id, operator id and station id
+            val terminalInfo2: String = getSubString(df33_data, 120, 132)
+            val operatorId2= terminalInfo2.substring(2,5)
+            val lastEquipmentId2 = getLastEquipmentId(terminalInfo2.substring(6, 11))
+            val lastStation2 = "--"
+
+
+            //date time
+            val dateTimeHex2 = getSubString(df33_data, 132, 138)
+            val dateTime2 = if (emvUtils.getHexatoDecimal(dateTimeHex2).toInt() == 0) {
+                "-- --"
+            } else {
+                emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(dateTimeHex2))
+            }
+
+            //trx sequence number
+            val txnSeqNo2 = "" + emvUtils.getHexatoDecimal(getSubString(df33_data, 138, 142))
+
+            //trx amount
+            val txnAmountHex2 = getSubString(df33_data, 142, 146)
+            val txnAmount2 = emvUtils.getHexatoDecimal(txnAmountHex2).toDouble() / 10
+
+
+            //card balance
+            val tripBalance2 = getSubString(df33_data,146,151)
+            val beforeTrip2 = tripBalance2.substring(0,2)
+            val afterTrip2 = tripBalance2.substring(2,4)
+            val tripCount2 = tripBalance2.substring(4,5)
+
+            //trx status
+            val trxType2 = if (dateTime1 == "-- --") {
+                "--"
+            } else {
+                getHistoryTxnStatus(getSubString(df33_data, 151, 152))
+            }
+
+
+            //product 1
+            val historyProduct2: String = getSubString(df33_data, 152, 154)
+            val historyProductValue2: Int = PassType.fromPassCode(hexToByte(historyProduct2)!!)!!.passCode.toInt()
+            val historyProductName2: String = PassType.getPassNameByCode(hexToByte(historyProduct2)!!)!!
+
+
+
+        //================================== History List Create ==================================================//
+            //adding the transaction history
+            val transactions = mutableListOf<TxnHistoryOsa>()
+            transactions.add(
+                TxnHistoryOsa(
+                    txnSeqNo1,
+                    dateTime1.split(" ")[0],
+                    dateTime1.split(" ")[1],
+                    emvUtils.df.format(txnAmount1),
+                    trxType1,
+                    historyProductName1,
+                    lastStation
+                )
+            )
+            transactions.add(
+                TxnHistoryOsa(
+                    txnSeqNo2,
+                    dateTime2.split(" ")[0],
+                    dateTime2.split(" ")[1],
+                    emvUtils.df.format(txnAmount2),
+                    trxType2,
+                    historyProductName2,
+                    lastStation2
+                )
+            )
+
+        //===============================    PASS 1 =================================================================//
+
+            //pass id and name
+            val pass1= getSubString(df33_data, 156, 158)
+            val pass1Value= PassType.fromPassCode(hexToByte(pass1)!!)!!.passCode.toInt()
+            val pass1Name= PassType.getPassNameByCode(hexToByte(pass1)!!)!!
+
+            //pass limit
+            val pass1Limit = getSubString(df33_data, 158, 160)
+
+            //pass start time
+            val pass1StartDateTimeHex = getSubString(df33_data, 160, 166)
+            val pass1StartDateTime = if (emvUtils.getHexatoDecimal(pass1StartDateTimeHex).toInt() == 0) {
+                "-- --"
+            } else {
+                emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(pass1StartDateTimeHex))
+            }
+
+            //pass expiry date
+            val pass1ExpiryDateHex = getSubString(df33_data, 166, 170)
+            val pass1ExpiryDate = if (emvUtils.getHexatoDecimal(pass1ExpiryDateHex).toInt() == 0) {
+                "-- --"
+            } else {
+                emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(pass1ExpiryDateHex))
+            }
+
+            //pass zone
+            val pass1ZoneId= getSubString(df33_data, 170, 172)
+
+            //entry station id
+            val pass1EntryStationId= getSubString(df33_data, 172, 174)
+
+            //exit station id
+            val pass1ExitStationId= getSubString(df33_data, 174, 176)
+
+            //trip counts
+            val pass1TripCounts= getSubString(df33_data, 176, 178)
+
+            //daily limit
+            val pass1DailyLimit= getSubString(df33_data, 180, 182)
+
+            //priority
+            val pass1Priority= getSubString(df33_data, 182, 184)
+
+        //===============================    PASS 2 =================================================================//
+
+            //pass id and name
+            val pass2= getSubString(df33_data, 186, 188)
+            val pass2Value= PassType.fromPassCode(hexToByte(pass2)!!)!!.passCode.toInt()
+            val pass2Name= PassType.getPassNameByCode(hexToByte(pass2)!!)!!
+
+            //pass limit
+            val pass2Limit = getSubString(df33_data, 188, 190)
+
+            //pass start time
+            val pass2StartDateTimeHex = getSubString(df33_data, 190, 196)
+            val pass2StartDateTime = if (emvUtils.getHexatoDecimal(pass2StartDateTimeHex).toInt() == 0) {
+                "-- --"
+            } else {
+                emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(pass2StartDateTimeHex))
+            }
+
+            //pass expiry date
+            val pass2ExpiryDateHex = getSubString(df33_data, 196, 200)
+            val pass2ExpiryDate = if (emvUtils.getHexatoDecimal(pass2ExpiryDateHex).toInt() == 0) {
+                "-- --"
+            } else {
+                emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(pass2ExpiryDateHex))
+            }
+
+            //pass zone
+            val pass2ZoneId= getSubString(df33_data, 200, 202)
+
+            //entry station id
+            val pass2EntryStationId= getSubString(df33_data, 202, 204)
+
+            //exit station id
+            val pass2ExitStationId= getSubString(df33_data, 204, 206)
+
+            //trip counts
+            val pass2TripCounts= getSubString(df33_data, 206, 208)
+
+            //daily limit
+            val pass2DailyLimit= getSubString(df33_data, 210, 212)
+
+            //priority
+            val pass2Priority= getSubString(df33_data, 212, 214)
+
+
+        //===============================    PASS 3 =================================================================//
+
+            //pass id and name
+            val pass3= getSubString(df33_data, 216, 218)
+            val pass3Value= PassType.fromPassCode(hexToByte(pass3)!!)!!.passCode.toInt()
+            val pass3Name= PassType.getPassNameByCode(hexToByte(pass3)!!)!!
+
+            //pass limit
+            val pass3Limit = getSubString(df33_data, 218, 220)
+
+            //pass start time
+            val pass3StartDateTimeHex = getSubString(df33_data, 220, 226)
+            val pass3StartDateTime = if (emvUtils.getHexatoDecimal(pass3StartDateTimeHex).toInt() == 0) {
+                "-- --"
+            } else {
+                emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(pass3StartDateTimeHex))
+            }
+
+            //pass expiry date
+            val pass3ExpiryDateHex = getSubString(df33_data, 226, 230)
+            val pass3ExpiryDate = if (emvUtils.getHexatoDecimal(pass3ExpiryDateHex).toInt() == 0) {
+                "-- --"
+            } else {
+                emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(pass3ExpiryDateHex))
+            }
+
+            //pass zone
+            val pass3ZoneId= getSubString(df33_data, 230, 232)
+
+            //entry station id
+            val pass3EntryStationId= getSubString(df33_data, 232, 234)
+
+            //exit station id
+            val pass3ExitStationId= getSubString(df33_data, 234, 236)
+
+            //trip counts
+            val pass3TripCounts= getSubString(df33_data, 236, 238)
+
+            //daily limit
+            val pass3DailyLimit= getSubString(df33_data, 240, 242)
+
+            //priority
+            val pass3Priority= getSubString(df33_data, 242, 244)
+
+
+        //=================================== PASS List Create ==================================================================//
+
+
+            //adding the transaction history
+            val passes = mutableListOf<PassData>()
+
+            //add passes to list
+            passes.add(
+                PassData(
+                    passType = pass1Name,
+                    passLimit = pass1Limit,
+                    startDateTime = pass1StartDateTime,
+                    endDate = pass1ExpiryDate,
+                    validZoneId = pass1ZoneId,
+                    validEntryStationId = pass1EntryStationId,
+                    validExitStationId = pass1ExitStationId,
+                    tripConsumed = pass1TripCounts,
+                    classType = "Normal",
+                    dailyLimit = pass1DailyLimit,
+                    priority = pass1Priority.toInt()
+                ))
+
+            passes.add(
+                PassData(
+                    passType = pass2Name,
+                    passLimit = pass2Limit,
+                    startDateTime = pass2StartDateTime,
+                    endDate = pass2ExpiryDate,
+                    validZoneId = pass2ZoneId,
+                    validEntryStationId = pass2EntryStationId,
+                    validExitStationId = pass2ExitStationId,
+                    tripConsumed = pass2TripCounts,
+                    classType = "Normal",
+                    dailyLimit = pass2DailyLimit,
+                    priority = pass2Priority.toInt()
+                ))
+
+            passes.add(
+                PassData(
+                    passType = pass3Name,
+                    passLimit = pass3Limit,
+                    startDateTime = pass3StartDateTime,
+                    endDate = pass3ExpiryDate,
+                    validZoneId = pass3ZoneId,
+                    validEntryStationId = pass3EntryStationId,
+                    validExitStationId = pass3ExitStationId,
+                    tripConsumed = pass3TripCounts,
+                    classType = "Normal",
+                    dailyLimit = pass3DailyLimit,
+                    priority = pass3Priority.toInt()
+                ))
+
+
+        //==================================  END =========================================================================================//
+
+
+            //card effective date
+            val cardEffectiveDate = data_5F25
+
+
+            //Osa display data
+            val osaDataDisplay = OSADataDisplay(
+                error= errorFormat,
+                errorCode= error_code.toInt(),
+                lastTxnDateTime = finaltxndate,
+                lastTxnStatus =statusFormat,
+                lastStationId=  "",
+                product=productName,
+                txnStatus= statusValue,
+                cardEffectiveDate= cardEffectiveDate,
+                cardHistory = transactions,
+                cardPassesList = passes
+            )
+
+
+            //osa bin data
+            val osaBin = setOsaBinValue(bF200Data.serviceRelatedData!!.toByteArray().sliceArray(bF200Data.serviceDataIndex!!..bF200Data.serviceDataIndex!!+95))
+
+            //now set all values to OSA Master
+            osaMasterData.bf200Data= bF200Data
+            osaMasterData.osaDisplayData= osaDataDisplay
+            osaMasterData.osaBinData=osaBin
+            osaMasterData.osaUpdatedBinData=osaBin
+
+
+
+        }catch (ex:Exception){
+
+            Timber.e("Error",">>> Error in parsing OSA data")
+            ex.printStackTrace()
+        }
+
+
+        return osaMasterData
+    }
+
+
+
+    /**
+     * Method to read tlv data and set the raw and display CSA data classes
      */
     fun readCSAData(bF200Data: BF200Data): CSAMasterData {
 
@@ -114,7 +517,7 @@ class RupayUtils @Inject constructor(
             var datentime1: String = getSubString(df33_data, 118, 124)
             datentime1 =
                 if (emvUtils.getHexatoDecimal(datentime1)
-                        .toInt() === 0
+                        .toInt() == 0
                 ) "-- --" else emvUtils.calculateSecondsOfTxn(
                     data_5F25 + "000000",
                     emvUtils.getHexatoDecimal(datentime1)
@@ -144,7 +547,7 @@ class RupayUtils @Inject constructor(
                 getSubString(df33_data, 152, 158)
             datentime2 =
                 if (emvUtils.getHexatoDecimal(datentime2)
-                        .toInt() === 0
+                        .toInt() == 0
                 ) "-- --" else emvUtils.calculateSecondsOfTxn(
                     data_5F25 + "000000",
                     emvUtils.getHexatoDecimal(datentime2)
@@ -172,7 +575,7 @@ class RupayUtils @Inject constructor(
                 getSubString(df33_data, 186, 192)
             datentime3 =
                 if (emvUtils.getHexatoDecimal(datentime3)
-                        .toInt() === 0
+                        .toInt() == 0
                 ) "-- --" else emvUtils.calculateSecondsOfTxn(
                     data_5F25 + "000000",
                     emvUtils.getHexatoDecimal(datentime3)
@@ -200,7 +603,7 @@ class RupayUtils @Inject constructor(
                 getSubString(df33_data, 220, 226)
             datentime4 =
                 if (emvUtils.getHexatoDecimal(datentime4)
-                        .toInt() === 0
+                        .toInt() == 0
                 ) "-- --" else emvUtils.calculateSecondsOfTxn(
                     data_5F25 + "000000",
                     emvUtils.getHexatoDecimal(datentime4)
@@ -328,6 +731,10 @@ class RupayUtils @Inject constructor(
             return csaMasterData
         }
     }
+
+
+
+
 
 
     /**
@@ -475,8 +882,10 @@ class RupayUtils @Inject constructor(
         return csaRawData
 
     }
-    
-    
+
+    /**
+     * Set CSA Bytes values
+     */
     private fun setCsaBinValue(byteArray: ByteArray):CsaBin{
 
         // Create a ByteBuffer wrapping the byteArray and set it to little-endian order
@@ -548,8 +957,202 @@ class RupayUtils @Inject constructor(
     }
 
 
+    /**
+     * Set OSA Bytes values
+     */
+    fun setOsaBinValue(byteArray: ByteArray): OsaBin {
+        val buffer = ByteBuffer.wrap(byteArray).order(ByteOrder.LITTLE_ENDIAN)
 
-     fun csaToByteArray(csaBin: CsaBin): ByteArray {
+        // Extract GeneralInfo
+        val versionNumber = buffer.get()
+        val languageInfo = buffer.get()
+        val generalInfo = GeneralBinOsa(versionNumber, languageInfo)
+
+        // Extract ValidationData
+        val errorCode = buffer.get()
+        val productType = buffer.get()
+        val trxDateTime = ByteArray(3)
+        buffer.get(trxDateTime)
+        val stationCode = ByteArray(2)
+        buffer.get(stationCode)
+        val trxStatusAndRfu = buffer.get()
+
+        val validationData = ValidationBinOsa(errorCode, productType, trxDateTime, stationCode, trxStatusAndRfu)
+
+        // Extract History (2 entries, each 16 bytes)
+        val history = List(2) {
+            val acquirerID = buffer.get()
+            val operatorID = ByteArray(2)
+            buffer.get(operatorID)
+            val terminalID = ByteArray(3)
+            buffer.get(terminalID)
+            val trxDateTime = ByteArray(3)
+            buffer.get(trxDateTime)
+            val trxSeqNum = ByteArray(2)
+            buffer.get(trxSeqNum)
+            val trxAmt = ByteArray(2)
+            buffer.get(trxAmt)
+            val cardBalance1 = buffer.get()
+            val cardBalance2 = buffer.get()
+            val cardBalance3 = buffer.get()
+            val trxStatus = cardBalance3
+            val productType = buffer.get()
+            val rfu = buffer.get()
+
+            HistoryBinOsa(acquirerID, operatorID, terminalID, trxDateTime, trxSeqNum, trxAmt, cardBalance1, cardBalance2, cardBalance3, trxStatus, productType, rfu)
+        }
+
+        // Extract Passes (3 entries)
+        val passes = List(3) {
+            val productType = buffer.get()
+            val passLimit = buffer.get()
+            val startDateTime = ByteArray(2)
+            buffer.get(startDateTime)
+            val endDateTime = ByteArray(2)
+            buffer.get(endDateTime)
+            val validZoneId = buffer.get()
+            val validEntryStationId = buffer.get()
+            val validExitStationId = buffer.get()
+            val tripCount = buffer.get()
+            val lastConsumedDate = ByteArray(2)
+            buffer.get(lastConsumedDate)
+            val dailyLimit = buffer.get()
+            val priority = buffer.get()
+            val rfu = buffer.get()
+
+            PassBin(productType, passLimit, startDateTime, endDateTime, validZoneId, validEntryStationId, validExitStationId, tripCount, lastConsumedDate, dailyLimit, priority,rfu)
+        }
+
+        val rfu = ByteArray(5)
+        buffer.get(rfu)
+
+        // Create History Queue
+        val historyQueue = HistoryQueue<HistoryBinOsa>(2)
+        historyQueue.add(history[0])
+        historyQueue.add(history[1])
+
+        return OsaBin(generalInfo, validationData, historyQueue, passes,rfu)
+    }
+
+
+
+//    private fun setOsaBinValue(byteArray: ByteArray): OsaBin {
+//        // Create a ByteBuffer wrapping the byteArray and set it to little-endian order
+//        val buffer = ByteBuffer.wrap(byteArray).order(ByteOrder.LITTLE_ENDIAN)
+//
+//        // Extract generalInfo
+//        val versionNumber = buffer.get()
+//        val languageInfo = buffer.get()
+//        val generalInfo = GeneralBinOsa(versionNumber, languageInfo)
+//
+//        // Extract validationData
+//        val errorCode = buffer.get()
+//        val productType = buffer.get()
+//        val trxDateTime = ByteArray(3)
+//        buffer.get(trxDateTime)
+//        val stationCode = ByteArray(2)
+//        buffer.get(stationCode)
+//        val trxStatusAndRfu = buffer.get()
+//
+//        val validationData = ValidationBinOsa(
+//            errorCode = errorCode,
+//            productType = productType,
+//            trxDateTime = trxDateTime,
+//            stationCode = stationCode,
+//            trxStatusAndRfu = trxStatusAndRfu
+//        )
+//
+//        // Extract history (4 entries, each structured as HistoryBin)
+//        val history = List(4) {
+//            val acquirerID = buffer.get()
+//            val operatorID = ByteArray(2)
+//            buffer.get(operatorID)
+//            val terminalID = ByteArray(3)
+//            buffer.get(terminalID)
+//            val trxDateTime = ByteArray(3)
+//            buffer.get(trxDateTime)
+//            val trxSeqNum = ByteArray(2)
+//            buffer.get(trxSeqNum)
+//            val trxAmt = ByteArray(2)
+//            buffer.get(trxAmt)
+//            val cardBalance1 = buffer.get()
+//            val cardBalance2 = buffer.get()
+//            val cardBalance3 = buffer.get() // cardBalance3 and trxStatus share bits
+//            val trxStatus = cardBalance3
+//            val rfu = buffer.get()
+//
+//            HistoryBinOsa(
+//                acquirerID = acquirerID,
+//                operatorID = operatorID,
+//                terminalID = terminalID,
+//                trxDateTime = trxDateTime,
+//                trxSeqNum = trxSeqNum,
+//                trxAmt = trxAmt,
+//                cardBalance1 = cardBalance1,
+//                cardBalance2 = cardBalance2,
+//                cardBalance3 = cardBalance3,
+//                trxStatus = trxStatus,
+//                rfu = rfu
+//            )
+//        }
+//
+//        // Extract passes (assuming there are 2 passes as an example)
+//        val passes = List(2) {
+//            val productType = buffer.get()
+//            val passLimit = buffer.get()
+//            val startDateTime = ByteArray(3)
+//            buffer.get(startDateTime)
+//            val endDateTime = ByteArray(2)
+//            buffer.get(endDateTime)
+//            val validZoneId = ByteArray(2) // 10 bits, so store as 2 bytes (mask later if necessary)
+//            buffer.get(validZoneId)
+//            val validEntryStationId = ByteArray(2) // 10 bits
+//            buffer.get(validEntryStationId)
+//            val validExitStationId = ByteArray(2) // 10 bits
+//            buffer.get(validExitStationId)
+//            val tripCount = ByteArray(2) // 10 bits
+//            buffer.get(tripCount)
+//            val privileges = buffer.get()
+//            val dailyLimit = buffer.get()
+//            val rfu = ByteArray(3) // 18 bits, store as 3 bytes
+//            buffer.get(rfu)
+//
+//            PassBin(
+//                productType = productType,
+//                passLimit = passLimit,
+//                startDateTime = startDateTime,
+//                endDateTime = endDateTime,
+//                validZoneId = validZoneId,
+//                validEntryStationId = validEntryStationId,
+//                validExitStationId = validExitStationId,
+//                tripCount = tripCount,
+//                privileges = privileges,
+//                dailyLimit = dailyLimit,
+//                rfu = rfu
+//            )
+//        }
+//
+//        // Create the history queue
+//        val historyQueue = HistoryQueue<HistoryBinOsa>(4)
+//        historyQueue.add(history[0])
+//        historyQueue.add(history[1])
+//        historyQueue.add(history[2])
+//        historyQueue.add(history[3])
+//
+//        // Return the constructed OsaBin object
+//        return OsaBin(
+//            generalInfo = generalInfo,
+//            validationData = validationData,
+//            history = historyQueue,
+//            passes = passes
+//        )
+//    }
+
+
+    /**
+     * method to convert Csa bin to ByteArray
+     */
+    fun csaToByteArray(csaBin: CsaBin): ByteArray {
         // Create a ByteBuffer of appropriate size and set it to little-endian order
         val buffer = ByteBuffer.allocate(96).order(ByteOrder.LITTLE_ENDIAN) // Adjust the size accordingly
 
@@ -596,6 +1199,65 @@ class RupayUtils @Inject constructor(
         // Return the byte array
         return buffer.array()
     }
+
+    /**
+     * Method to convert Osa bin to ByteArray
+     */
+     fun osaBinToByteArray(osaBin: OsaBin): ByteArray {
+        // Initialize a ByteBuffer with a size large enough to hold the full byte array
+        val buffer = ByteBuffer.allocate(96).order(ByteOrder.LITTLE_ENDIAN)
+
+        // Add generalInfo fields
+        buffer.put(osaBin.generalInfo.versionNumber)
+        buffer.put(osaBin.generalInfo.languageInfo)
+
+        // Add validationData fields
+        buffer.put(osaBin.validationData.errorCode ?: 0) // Handle null case with 0
+        buffer.put(osaBin.validationData.productType)
+        buffer.put(osaBin.validationData.trxDateTime) // 3 bytes
+        buffer.put(osaBin.validationData.stationCode) // 2 bytes
+        buffer.put(osaBin.validationData.trxStatusAndRfu)
+
+
+        // Serialize history (2 entries, each 17 bytes)
+        for (historyBin in osaBin.history) {
+            buffer.put(historyBin.acquirerID!!)
+            buffer.put(historyBin.operatorID!!) // 2 bytes
+            buffer.put(historyBin.terminalID!!) // 3 bytes
+            buffer.put(historyBin.trxDateTime!!) // 3 bytes
+            buffer.put(historyBin.trxSeqNum!!) // 2 bytes
+            buffer.put(historyBin.trxAmt!!) // 2 bytes
+            buffer.put(historyBin.cardBalance1!!)
+            buffer.put(historyBin.cardBalance2!!)
+            buffer.put(historyBin.cardBalance3!!) // cardBalance3 and trxStatus
+            buffer.put(historyBin.productType!!) // cardBalance3 and trxStatus
+            buffer.put(historyBin.rfu!!)
+        }
+
+        for (passBin in osaBin.passes) {
+            buffer.put(passBin.productType ?: 0)
+            buffer.put(passBin.passLimit ?: 0)
+            buffer.put(passBin.startDateTime ?: ByteArray(2)) // 3 bytes
+            buffer.put(passBin.endDateTime ?: ByteArray(2)) // 2 bytes
+            buffer.put(passBin.validZoneId ?: 0) // 1 Byte
+            buffer.put(passBin.validEntryStationId ?: 0) // 1 Byte
+            buffer.put(passBin.validExitStationId ?: 0) // 1 Byte
+            buffer.put(passBin.tripCount ?: 0) // 1 Byte
+            buffer.put(passBin.lastConsumedDate ?: ByteArray(2))
+            buffer.put(passBin.dailyLimit ?: 0)
+            buffer.put(passBin.priority ?: 0)
+            buffer.put(passBin.rfu ?: 0)//2 Bytes
+        }
+
+
+
+        // Serialize rfu (7 bytes)
+        buffer.put(osaBin.rfu)
+
+        // Return the byte array
+        return buffer.array()
+    }
+
 
 
     fun getSubString(originalstring: String, startIndex: Int, endIndex: Int): String {

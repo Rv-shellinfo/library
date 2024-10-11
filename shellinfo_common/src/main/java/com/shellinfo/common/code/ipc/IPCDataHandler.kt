@@ -20,12 +20,14 @@ import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.code.enums.NcmcDataType
 import com.shellinfo.common.data.local.data.emv_rupay.CSAMasterData
 import com.shellinfo.common.data.local.data.ipc.BF200Data
+import com.shellinfo.common.data.local.data.ipc.ServiceInfo
 import com.shellinfo.common.data.local.data.ipc.base.BaseMessage
 import com.shellinfo.common.di.DefaultMoshi
 import com.shellinfo.common.utils.IPCConstants
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_AMOUNT_REQUEST
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_CREATE_OSA_ACK
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_ICC_DATA
+import com.shellinfo.common.utils.IPCConstants.MSG_ID_NO_DATA_ERROR
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_PAYMENT_APP_VERSION_DATA
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_REMOVE_PENALTY
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_STYL_ERROR
@@ -168,6 +170,7 @@ class IPCDataHandler @Inject constructor(
 
             val jsonString = when (val data = baseMessage.data) {
                 is BF200Data -> convertToJson(moshi,baseMessage as BaseMessage<BF200Data>)
+                is ServiceInfo -> convertToJson(moshi,baseMessage as BaseMessage<ServiceInfo>)
                 is String -> convertToJson(moshi,baseMessage as BaseMessage<String>)
                 is Int -> convertToJson(moshi,baseMessage as BaseMessage<Int>)
                 else -> throw IllegalArgumentException("Unsupported data type: ${data?.javaClass}")
@@ -259,6 +262,11 @@ class IPCDataHandler @Inject constructor(
             MSG_ID_TRX_STATUS_RUPAY_NCMC->{
 
                 Toast.makeText(context,"GOOD JOB",Toast.LENGTH_LONG).show()
+            }
+
+            MSG_ID_NO_DATA_ERROR ->{
+
+                rupayDataHandler.handleError(MSG_ID_NO_DATA_ERROR,"MSG_ID_NO_DATA_ERROR")
             }
 
 
@@ -411,6 +419,9 @@ class IPCDataHandler @Inject constructor(
                             }
 
                             NcmcDataType.OSA->{
+
+                                //method to handle the NCMC OSA Data
+                                rupayDataHandler.handleRupayCardOSAData(bF200Data)
 
                             }
                             else ->{

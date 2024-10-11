@@ -100,6 +100,7 @@ object DBConstants{
     const val STATIONS_TABLE = "STATIONS_TABLE"
     const val ORDERS_TABLE = "ORDERS_TABLE"
     const val TICKET_BACKUP_TABLE = "TICKET_BACKUP_TABLE"
+    const val PASS_TABLE = "PASS_TABLE"
 
 }
 
@@ -183,6 +184,8 @@ object IPCConstants{
     const val MSG_ID_CREATE_OSA_ACK =                     0x08
     const val MSG_ID_REMOVE_PENALTY_ACK =                 0x09
     const val MSG_ID_REMOVE_PENALTY_DATA_ACK =            0x10
+    const val MSG_ID_NO_DATA_ERROR =                      0x11
+    const val MSG_ID_CREATE_PASS_ACK =                    0x12
 
 
     //CSA pre-defined values as per NCMC specs
@@ -201,6 +204,10 @@ object IPCConstants{
     const val MSG_ID_CREATE_OSA_SERVICE =                       0x90
     const val MSG_ID_REMOVE_PENALTY =                           0x91
     const val MSG_ID_REMOVE_PENALTY_DATA =                      0x92
+    const val MSG_ID_START_CARD_DETECTION =                     0x93
+    const val MSG_ID_CREATE_PASS =                              0x94
+    const val MSG_ID_CREATE_PASS_DATA =                         0x95
+
 
     // Message ID for messages from Transit to Payment Application for Reader Commands
     const val MSG_ID_NFC_COMMAND =                               0xF1
@@ -217,6 +224,11 @@ object IPCConstants{
 
     const val TRX_STATUS_MASK = 0b11110000 // Mask for the upper 4 bits (trxStatus)
     const val RFU_MASK = 0b00001111 // Mask for the lower 4 bits (RFU)
+
+    // Message for OSA Service creation
+    const val SERVICE_OSA_CREATED_SUCCESS=                      0x00
+    const val SERVICE_OSA_ALREADY_EXIST=                        0x11
+    const val SERVICE_OSA_UNKNOWN_ERROR=                        0x12
 
     //CSA pre-defined LANGUAGE values as per NCMC specs
     const val LANGUAGE_MASK =                           0b00011111

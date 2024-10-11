@@ -6,9 +6,12 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
 import android.os.Messenger
+import com.shellinfo.common.code.DatabaseCall
 import com.shellinfo.common.code.NetworkCall
 import com.shellinfo.common.code.ipc.IPCDataHandler
+import com.shellinfo.common.code.ipc.PassHandler
 import com.shellinfo.common.code.ipc.RupayDataHandler
+import com.shellinfo.common.code.pass.BasePassValidator
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.remote.repository.ApiRepository
 import com.shellinfo.common.data.shared.SharedDataManager
@@ -40,9 +43,21 @@ object ShellIPCModule {
 
     @Singleton
     @Provides
+    fun providePassHandler(databaseCall: DatabaseCall,rupayUtils: RupayUtils):PassHandler{
+        return PassHandler(rupayUtils,databaseCall)
+    }
+
+    @Singleton
+    @Provides
+    fun providePassValidator():BasePassValidator{
+        return BasePassValidator()
+    }
+
+    @Singleton
+    @Provides
     fun provideRupayDataHandler(rupayUtils: RupayUtils, sharedPreferenceUtil: SharedPreferenceUtil, sharedDataManager: SharedDataManager,
-                                apiRepository: ApiRepository, networkCall: NetworkCall)
-    = RupayDataHandler(rupayUtils,sharedPreferenceUtil,sharedDataManager,apiRepository,networkCall)
+                                apiRepository: ApiRepository, networkCall: NetworkCall,passHandler: PassHandler,passValidator: BasePassValidator)
+    = RupayDataHandler(rupayUtils,sharedPreferenceUtil,sharedDataManager,apiRepository,networkCall,passHandler,passValidator)
 
     @Singleton
     @Provides

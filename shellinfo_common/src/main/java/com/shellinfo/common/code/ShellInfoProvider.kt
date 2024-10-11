@@ -5,10 +5,13 @@ import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatActivity
 import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.HttpType
+import com.shellinfo.common.code.enums.NcmcDataType
+import com.shellinfo.common.code.enums.PassType
 import com.shellinfo.common.code.enums.PrinterType
 import com.shellinfo.common.code.printer.PrinterProcessor
 import com.shellinfo.common.data.local.data.InitData
 import com.shellinfo.common.data.local.data.ipc.base.BaseMessage
+import com.shellinfo.common.data.local.data.pass.PassCreateRequest
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
 import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentRequest
 import com.shellinfo.common.data.remote.response.model.ticket.Ticket
@@ -82,9 +85,14 @@ interface ShellInfoProvider {
 
     fun sendMessageToIpcService(messageId:Int,baseMessage: BaseMessage<*>)
 
-    fun readNcmcCardData()
+    fun readNcmcCardData(dataType:NcmcDataType)
+
     fun removePenalty(penaltyAmount:Double)
+
     fun createOsaService()
+
+    fun createPass(request: PassCreateRequest)
+
     fun updatePassValue()
 
 

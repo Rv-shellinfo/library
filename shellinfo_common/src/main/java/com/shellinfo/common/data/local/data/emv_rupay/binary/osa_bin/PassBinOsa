@@ -1,0 +1,95 @@
+package com.shellinfo.common.data.local.data.emv_rupay.binary.osa_bin
+
+import com.squareup.moshi.JsonClass
+
+@JsonClass(generateAdapter = true)
+data class PassBinOsa(
+
+    var productType: Byte?,                      //1 Byte
+    var passLimit: Byte?,                        //1 Byte (Pass Limit or No. of Trips)
+    var startDateTime: ByteArray?,               //3 Bytes (Activation Date and Time)
+    var endDateTime: ByteArray?,                 //2 Bytes (Expiry Date and Time)
+    var validZoneId: ByteArray?,                 //10 bits (Valid Route or Zone ID)
+    var validEntryStationId: ByteArray?,         //10 bits (Valid Entry Station ID)
+    var validExitStationId: ByteArray?,          //10 bits (Valid Exit Station ID)
+    var tripCount: ByteArray?,                   //10 bits (Trip Consumed)
+    var privileges: Byte?,                       //2 bits  (Class or Privileges)
+    var dailyLimit: Byte?,                       //4 bits  (Class or Privileges)
+    var rfu: ByteArray?,                         //18 bits  (Class or Privileges)
+)
+
+//fun parseHexToPassBin(hexString: String): PassBin {
+//    // Convert the hex string to a byte array
+//    val byteArray = hexString.chunked(2).map { it.toInt(16).toByte() }.toByteArray()
+//
+//    // Initialize a bit index to track the current position in the byte array
+//    var bitIndex = 0
+//
+//    // Helper function to extract n bits from the byteArray
+//    fun extractBits(n: Int): Int {
+//        var result = 0
+//        repeat(n) {
+//            val bytePos = bitIndex / 8
+//            val bitPos = 7 - (bitIndex % 8)
+//            val bitValue = (byteArray[bytePos].toInt() shr bitPos) and 1
+//            result = (result shl 1) or bitValue
+//            bitIndex++
+//        }
+//        return result
+//    }
+//
+//    // Parsing the fields
+//    val productType = extractBits(8).toByte()                   // 1 Byte
+//    val passLimit =
+//        extractBits(8).toByte()                     // 1 Byte (Pass Limit or No. of Trips)
+//
+//    // 3 Bytes for startDateTime
+//    val startDateTime = ByteArray(3) { extractBits(8).toByte() }
+//
+//    // 2 Bytes for endDateTime
+//    val endDateTime = ByteArray(2) { extractBits(8).toByte() }
+//
+//    // 10 bits for validZoneId
+//    val validZoneId = ByteArray(2)
+//    validZoneId[0] = extractBits(8).toByte()  // High 8 bits
+//    validZoneId[1] = extractBits(2).toByte()  // Low 2 bits
+//
+//    // 10 bits for validEntryStationId
+//    val validEntryStationId = ByteArray(2)
+//    validEntryStationId[0] = extractBits(8).toByte() // High 8 bits
+//    validEntryStationId[1] = extractBits(2).toByte() // Low 2 bits
+//
+//    // 10 bits for validExitStationId
+//    val validExitStationId = ByteArray(2)
+//    validExitStationId[0] = extractBits(8).toByte()  // High 8 bits
+//    validExitStationId[1] = extractBits(2).toByte()  // Low 2 bits
+//
+//    // 10 bits for tripCount
+//    val tripCount = ByteArray(2)
+//    tripCount[0] = extractBits(8).toByte()    // High 8 bits
+//    tripCount[1] = extractBits(2).toByte()    // Low 2 bits
+//
+//    val privileges = extractBits(2).toByte()                   // 2 bits
+//    val dailyLimit = extractBits(4).toByte()                   // 4 bits
+//
+//    // 18 bits for RFU
+//    val rfu = ByteArray(3)
+//    rfu[0] = extractBits(8).toByte()    // First 8 bits
+//    rfu[1] = extractBits(8).toByte()    // Next 8 bits
+//    rfu[2] = extractBits(2).toByte()    // Last 2 bits of 18
+//
+//    // Create the PassBin object and return it
+//    return PassBin(
+//        productType = productType,
+//        passLimit = passLimit,
+//        startDateTime = startDateTime,
+//        endDateTime = endDateTime,
+//        validZoneId = validZoneId,
+//        validEntryStationId = validEntryStationId,
+//        validExitStationId = validExitStationId,
+//        tripCount = tripCount,
+//        privileges = privileges,
+//        dailyLimit = dailyLimit,
+//        rfu = rfu
+//    )
+//}

@@ -13,7 +13,17 @@
         android:id="@+id/btnStart"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Start Card Detection"/>
+        android:text="Get CSA Data"/>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="32dp"/>
+
+    <Button
+        android:id="@+id/btnGetOsaData"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Get Osa Data"/>
 
     <Space
         android:layout_width="match_parent"
@@ -24,5 +34,50 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Remove Penalty"/>
+
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="32dp"/>
+
+    <Button
+        android:id="@+id/btnCreateOSAService"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Create OSA Service"/>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="32dp"/>
+
+    <Button
+        android:id="@+id/btnCreateHolidayPass"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Create Holiday Pass"/>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="32dp"/>
+
+    <Button
+        android:id="@+id/btnCreateTripPass"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Create Trip Pass"/>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="32dp"/>
+
+    <Button
+        android:id="@+id/btnCreateZonePass"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Create Zone Pass"/>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="32dp"/>
 
 </LinearLayout>

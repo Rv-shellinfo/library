@@ -15,6 +15,7 @@ import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.EquipmentType
 import com.shellinfo.common.code.enums.HttpType
 import com.shellinfo.common.code.enums.NcmcDataType
+import com.shellinfo.common.code.enums.PassType
 import com.shellinfo.common.code.enums.PrinterType
 import com.shellinfo.common.code.ipc.IPCDataHandler
 import com.shellinfo.common.code.logs.LoggerImpl
@@ -24,7 +25,10 @@ import com.shellinfo.common.code.printer.PrinterProcessor
 import com.shellinfo.common.code.printer.SunmiPrinter
 import com.shellinfo.common.data.local.data.InitData
 import com.shellinfo.common.data.local.data.ipc.BF200Data
+import com.shellinfo.common.data.local.data.ipc.ServiceInfo
 import com.shellinfo.common.data.local.data.ipc.base.BaseMessage
+import com.shellinfo.common.data.local.data.pass.PassCreateRequest
+import com.shellinfo.common.data.local.db.entity.PassTable
 import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.remote.response.ApiResponse
@@ -39,12 +43,15 @@ import com.shellinfo.common.data.remote.response.model.ticket.TicketResponse
 import com.shellinfo.common.utils.BarcodeUtils
 import com.shellinfo.common.utils.DateUtils
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_CREATE_OSA_SERVICE
+import com.shellinfo.common.utils.IPCConstants.MSG_ID_CREATE_PASS
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_ONE_TIME_READ_CARD_REQUEST
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_REMOVE_PENALTY
+import com.shellinfo.common.utils.IPCConstants.MSG_ID_START_CARD_DETECTION
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_STOP_CARD_DETECTION
 import com.shellinfo.common.utils.IPCConstants.OPERATOR_ID_MISMATCH
 import com.shellinfo.common.utils.PermissionsUtils
 import com.shellinfo.common.utils.SpConstants
+import com.shellinfo.common.utils.SpConstants.COMMON_SERVICE_ID
 import com.shellinfo.common.utils.SpConstants.OPERATOR_SERVICE_ID
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
@@ -69,6 +76,10 @@ class ShellInfoLibrary @Inject constructor(
 
     companion object{
         var isForPenalty=false
+        var isForPassCreate=false
+        var isForOsaRead=false
+        var isForOsaCreate=false
+        lateinit var passCreateRequest: PassCreateRequest
     }
 
     //application activity context
@@ -154,6 +165,8 @@ class ShellInfoLibrary @Inject constructor(
         //start simulation payment app data
         //startSimulation()
 
+        addDummyPass()
+
         //save application specific data in shared preferences for future use
 //        spUtils.savePreference(SpConstants.APP_ID,initData.appId)
 //        spUtils.savePreference(SpConstants.APP_NAME,initData.appName)
@@ -203,7 +216,7 @@ class ShellInfoLibrary @Inject constructor(
         //handle permissions
         handlePermissions()
 
-        //handle card read service (for TOM and TVM that not need to be continues so stop it)
+        //handle card read service
         handleCardDetectionService()
 
     }
@@ -245,6 +258,24 @@ class ShellInfoLibrary @Inject constructor(
                         //stop continues card detection service in Payment application
                         sendMessageToIpcService(MSG_ID_STOP_CARD_DETECTION,baseMessage)
                     }
+
+                    EquipmentType.TR,
+                    EquipmentType.VALIDATOR->{
+
+                        //get the service ids
+                        val csaServiceId= spUtils.getPreference(COMMON_SERVICE_ID,0x1010)
+                        val osaServiceId= spUtils.getPreference(OPERATOR_SERVICE_ID,0x0012)
+
+                        //create service info object
+                        val serviceInfo= ServiceInfo(commonServiceId = csaServiceId, operatorServiceId = osaServiceId)
+
+                        //create base message
+                        val baseMessage= BaseMessage(MSG_ID_START_CARD_DETECTION,NcmcDataType.ALL,serviceInfo)
+
+                        //start continues card detection service
+                        sendMessageToIpcService(MSG_ID_START_CARD_DETECTION,baseMessage)
+                    }
+
                     else->{}
                 }
             }else{
@@ -440,10 +471,37 @@ class ShellInfoLibrary @Inject constructor(
         ipcDataHandler.sendMessageToService(messageId,baseMessage)
     }
 
-    override fun readNcmcCardData() {
+    override fun readNcmcCardData(dataType:NcmcDataType) {
+
+        //get both service id's i.e. CSA and OSA
+        val csaServiceId = spUtils.getPreference(COMMON_SERVICE_ID,0x1010)
+        val osaServiceId = spUtils.getPreference(OPERATOR_SERVICE_ID,0x0012)
+
+        //base message to send
+        var baseMessage:BaseMessage<*>?=null
 
         //create base message
-        val baseMessage= BaseMessage(MSG_ID_ONE_TIME_READ_CARD_REQUEST,NcmcDataType.ALL,"")
+        when(dataType){
+
+            NcmcDataType.CSA->{
+                baseMessage= BaseMessage(MSG_ID_ONE_TIME_READ_CARD_REQUEST,dataType,csaServiceId)
+            }
+
+            NcmcDataType.OSA ->{
+
+                //make osa data read flag to true
+                isForOsaRead=true
+
+                baseMessage= BaseMessage(MSG_ID_ONE_TIME_READ_CARD_REQUEST,dataType,osaServiceId)
+            }
+
+            else ->{
+                Timber.e(TAG,">>>NO CSA OSA SELECTED TO FETCH THE DATA")
+                return
+            }
+
+        }
+
 
         //send message to payment application to read the card data
         sendMessageToIpcService(MSG_ID_ONE_TIME_READ_CARD_REQUEST,baseMessage)
@@ -460,6 +518,7 @@ class ShellInfoLibrary @Inject constructor(
             return
         }
 
+        //make penalty flag to true
         isForPenalty=true
 
         //set penalty amount to deduct
@@ -486,11 +545,39 @@ class ShellInfoLibrary @Inject constructor(
         //get osa service id
         val osaServiceId= spUtils.getPreference(OPERATOR_SERVICE_ID,0x0012)
 
+        //make osa create flag to true
+        isForOsaCreate=true
+
         //create base message
         val baseMessage= BaseMessage(MSG_ID_CREATE_OSA_SERVICE,NcmcDataType.OSA,osaServiceId)
 
         //send message to payment application to create the OSA service
         sendMessageToIpcService(MSG_ID_CREATE_OSA_SERVICE,baseMessage)
+    }
+
+    override fun createPass(request: PassCreateRequest){
+
+        //check if the request came from TOM device
+        val deviceType = spUtils.getPreference(SpConstants.DEVICE_TYPE,"")
+        if(!deviceType.equals(EquipmentType.TOM.name)){
+
+            Timber.e(TAG, "Only TOM Application can create the Operator Service Area")
+
+            return
+        }
+
+        //get osa service id
+        val osaServiceId= spUtils.getPreference(OPERATOR_SERVICE_ID,0x0012)
+
+        //create base message
+        val baseMessage= BaseMessage(MSG_ID_CREATE_PASS,NcmcDataType.OSA,osaServiceId)
+
+        //make pass create flag to true and assign pass request data
+        isForPassCreate=true
+        passCreateRequest=request
+
+        //send message to payment application to create the OSA service
+        sendMessageToIpcService(MSG_ID_CREATE_PASS,baseMessage)
     }
 
     override fun updatePassValue() {
@@ -509,6 +596,52 @@ class ShellInfoLibrary @Inject constructor(
 
 
         ipcDataHandler.handlePaymentAppMessage(baseMessage!!)
+    }
+
+    private fun addDummyPass(){
+
+        val pass1 = PassTable(
+            passCode = PassType.getPassCodeHex(PassType.TRIPS_30.passCode),
+            passName = PassType.TRIPS_30.name,
+            passPriority = 2,
+            passDuration = 30,
+            dailyLimit = 5,
+            passAmount = 100,
+            version = 1,
+            isActive = true
+
+        )
+
+        val pass2 = PassTable(
+            passCode = PassType.getPassCodeHex(PassType.HOLIDAY.passCode),
+            passName = PassType.HOLIDAY.name,
+            passPriority = 1,
+            passDuration = 30,
+            dailyLimit = 50,
+            passAmount = 50,
+            version = 1,
+            isActive = true
+
+        )
+
+        val pass3 = PassTable(
+            passCode = PassType.getPassCodeHex(PassType.ZONE_1.passCode),
+            passName = PassType.ZONE_1.name,
+            passPriority = 3,
+            passDuration = 30,
+            dailyLimit = 2,
+            passAmount = 100,
+            version = 1,
+            isActive = true
+
+        )
+
+        var passList= mutableListOf<PassTable>()
+        passList.add(pass1)
+        passList.add(pass2)
+        passList.add(pass3)
+
+        databaseCall.addPassList(passList)
     }
 
     inline fun <reified T> convertFromJson(json: String, moshi: Moshi): BaseMessage<T>? {

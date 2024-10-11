@@ -10,6 +10,9 @@ import com.shellinfo.common.utils.DBConstants
 @Dao
 interface StationsDao{
 
+    @Query("DELETE FROM STATIONS_TABLE")
+    suspend fun deleteAll()
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(stations: List<StationsTable>)
 

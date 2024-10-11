@@ -4,6 +4,7 @@ import android.content.Context
 import com.shellinfo.common.code.DatabaseCall
 import com.shellinfo.common.data.local.db.DatabaseConfig
 import com.shellinfo.common.data.local.db.dao.OrderDao
+import com.shellinfo.common.data.local.db.dao.PassDao
 import com.shellinfo.common.data.local.db.dao.StationsDao
 import com.shellinfo.common.data.local.db.dao.TicketBackupDao
 import com.shellinfo.common.data.local.db.repository.DbRepository
@@ -41,11 +42,16 @@ object ShellDatabaseModule {
         return database.ticketBackupDao()
     }
 
+    @Provides
+    fun providePassDao(database: DatabaseConfig):PassDao{
+        return database.passDao()
+    }
+
 
     @Provides
     @Singleton
-    fun provideDbRepository(stationsDao: StationsDao, orderDao: OrderDao, ticketBackupDao: TicketBackupDao): DbRepository  {
-        return DbRepository(stationsDao,orderDao, ticketBackupDao)
+    fun provideDbRepository(stationsDao: StationsDao, orderDao: OrderDao, ticketBackupDao: TicketBackupDao,passDao: PassDao): DbRepository  {
+        return DbRepository(stationsDao,orderDao, ticketBackupDao,passDao)
     }
 
 

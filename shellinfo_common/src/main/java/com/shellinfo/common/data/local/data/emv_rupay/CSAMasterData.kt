@@ -1,7 +1,7 @@
 package com.shellinfo.common.data.local.data.emv_rupay
 
 import com.shellinfo.common.data.local.data.emv_rupay.binary.csa_bin.CsaBin
-import com.shellinfo.common.data.local.data.emv_rupay.display.CSADataDisplay
+import com.shellinfo.common.data.local.data.emv_rupay.display.csa_display.CSADataDisplay
 import com.shellinfo.common.data.local.data.emv_rupay.raw.CSADataRaw
 import com.shellinfo.common.data.local.data.ipc.BF200Data
 import com.shellinfo.common.data.local.data.ipc.RupayCardDataRead

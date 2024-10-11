@@ -94,4 +94,15 @@ object Utils {
         return len
     }
 
+    fun binToNum(bin: ByteArray, len: Int): Long {
+        var num: Long = 0
+
+        for (i in 0 until len) {
+            // Combine the bytes back into a long
+            num = (num shl 8) or (bin[i].toLong() and 0xFF)
+        }
+
+        return num
+    }
+
 }

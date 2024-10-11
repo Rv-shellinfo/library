@@ -45,33 +45,7 @@ class EMVUtils @Inject constructor() {
     }
 
 
-    fun calculateSecondsOfTxn2(
-        cardactiveDate: String?,
-        millis: Long,
-        sizeOfIntInHalfBytes: Int
-    ): String? {
-        var date: String? = ""
-        try {
-            val epoch =
-                SimpleDateFormat("yyMMddHHmmss", Locale.UK).parse(cardactiveDate).time / 1000
-            val millistoseconds = millis / 1000
-            var finalepoch = millistoseconds - epoch
-            finalepoch = finalepoch / 60 // finalepoch is in minutes
-            date = decToHex(finalepoch.toInt(), sizeOfIntInHalfBytes)
-//            /*
-//            Log.e("epoch", "" + epoch);
-//            Log.e("mintoseconds", "" + millistoseconds);
-//            Log.e("final epoch", "" + finalepoch);*/EMVUtils.Logger(
-//                "final date conversion" + calculateSecondsOfTxn(
-//                    cardactiveDate,
-//                    finalepoch
-//                )
-//            )
-        } catch (e: ParseException) {
-            e.printStackTrace()
-        }
-        return date
-    }
+
 
 
     fun decToHex(dec: Int, sizeOfIntInHalfBytes: Int): String? {

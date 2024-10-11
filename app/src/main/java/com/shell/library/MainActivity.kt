@@ -10,7 +10,10 @@ import androidx.lifecycle.Observer
 import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.EquipmentType
+import com.shellinfo.common.code.enums.NcmcDataType
+import com.shellinfo.common.code.enums.PassType
 import com.shellinfo.common.data.local.data.InitData
+import com.shellinfo.common.data.local.data.pass.PassCreateRequest
 import com.shellinfo.common.data.shared.SharedDataManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -25,7 +28,12 @@ class MainActivity : AppCompatActivity() {
     lateinit var sharedDataManager: SharedDataManager
 
     lateinit var btnStart:Button;
+    lateinit var btnGetOsaData:Button;
     lateinit var btnRemovePenalty:Button;
+    lateinit var btnCreateOSAService:Button;
+    lateinit var btnCreateHolidayPass:Button;
+    lateinit var btnCreateTripPass:Button;
+    lateinit var btnCreateZonePass:Button;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +42,11 @@ class MainActivity : AppCompatActivity() {
         //set button
         btnStart= findViewById(R.id.btnStart)
         btnRemovePenalty= findViewById(R.id.btnRemovePenalty)
+        btnGetOsaData= findViewById(R.id.btnGetOsaData)
+        btnCreateOSAService= findViewById(R.id.btnCreateOSAService)
+        btnCreateHolidayPass= findViewById(R.id.btnCreateHolidayPass)
+        btnCreateTripPass= findViewById(R.id.btnCreateTripPass)
+        btnCreateZonePass= findViewById(R.id.btnCreateZonePass)
 
         shellInfoLibrary.setApiMode(ApiMode.PUBLIC)
         shellInfoLibrary.setBaseUrl("https://app.tsavaari.com/LTProject/")
@@ -42,7 +55,7 @@ class MainActivity : AppCompatActivity() {
         val initData = InitData(BuildConfig.APPLICATION_ID,
             "Transit",BuildConfig.VERSION_CODE.toString(),
             BuildConfig.VERSION_NAME,
-            EquipmentType.VALIDATOR,
+            EquipmentType.TOM,
             "Transit",
             Build.SERIAL)
 
@@ -51,7 +64,7 @@ class MainActivity : AppCompatActivity() {
         shellInfoLibrary.start(initData)
 
 
-        sharedDataManager.responseData.observe(this, Observer { data ->
+        sharedDataManager.csaData.observe(this, Observer { data ->
             // Handle the observed data
             Log.e("Data Got",">>>> Done")
         })
@@ -60,7 +73,7 @@ class MainActivity : AppCompatActivity() {
         btnStart.setOnClickListener(View.OnClickListener {
 
             //read card passive mode
-            shellInfoLibrary.readNcmcCardData()
+            shellInfoLibrary.readNcmcCardData(NcmcDataType.OSA)
         })
 
 
@@ -68,6 +81,30 @@ class MainActivity : AppCompatActivity() {
 
             //read card passive mode
             shellInfoLibrary.removePenalty(100.0)
+        })
+
+
+        btnCreateOSAService.setOnClickListener(View.OnClickListener {
+
+            shellInfoLibrary.createOsaService()
+        })
+
+        btnGetOsaData.setOnClickListener(View.OnClickListener {
+
+            //read card passive mode
+            shellInfoLibrary.readNcmcCardData(NcmcDataType.OSA)
+        })
+
+        btnCreateHolidayPass.setOnClickListener(View.OnClickListener {
+
+            val passRequest = PassCreateRequest(PassType.HOLIDAY)
+            shellInfoLibrary.createPass(passRequest)
+        })
+
+        btnCreateTripPass.setOnClickListener(View.OnClickListener {
+
+            val passRequest = PassCreateRequest(PassType.TRIPS_30)
+            shellInfoLibrary.createPass(passRequest)
         })
 
 
