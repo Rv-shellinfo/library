@@ -419,8 +419,18 @@ class RupayDataHandler @Inject constructor(
                         //reset the flag
                         ShellInfoLibrary.isForPassCreate=false
 
-                        //get the pass data
-                        osaMasterData = passHandler.createPass(osaMasterData)
+
+                        if (ShellInfoLibrary.isForOsaDelete){
+                            ShellInfoLibrary.isForOsaDelete=false
+
+                            //delete the passes
+                            osaMasterData = passHandler.deletePasses(osaMasterData)
+                        }else{
+                            //get the pass data
+                            osaMasterData = passHandler.createPass(osaMasterData)
+                        }
+
+
 
                         //convert the updated csa bin to byte array
                         val osaSent =  rupayUtils.osaBinToByteArray(osaMasterData.osaUpdatedBinData!!)

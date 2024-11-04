@@ -93,6 +93,8 @@ interface ShellInfoProvider {
 
     fun createPass(request: PassCreateRequest)
 
+    fun deletePasses()
+
     fun updatePassValue()
 
 

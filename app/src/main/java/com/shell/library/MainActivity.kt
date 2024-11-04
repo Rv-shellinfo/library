@@ -34,6 +34,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var btnCreateHolidayPass:Button;
     lateinit var btnCreateTripPass:Button;
     lateinit var btnCreateZonePass:Button;
+    lateinit var btnClearOSA:Button;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,6 +48,7 @@ class MainActivity : AppCompatActivity() {
         btnCreateHolidayPass= findViewById(R.id.btnCreateHolidayPass)
         btnCreateTripPass= findViewById(R.id.btnCreateTripPass)
         btnCreateZonePass= findViewById(R.id.btnCreateZonePass)
+        btnClearOSA= findViewById(R.id.btnClearOSA)
 
         shellInfoLibrary.setApiMode(ApiMode.PUBLIC)
         shellInfoLibrary.setBaseUrl("https://app.tsavaari.com/LTProject/")
@@ -67,6 +69,13 @@ class MainActivity : AppCompatActivity() {
         sharedDataManager.csaData.observe(this, Observer { data ->
             // Handle the observed data
             Log.e("Data Got",">>>> Done")
+        })
+
+        sharedDataManager.osaData.observe(this, Observer { data ->
+            // Handle the observed data
+            Log.e("Data OSA Got",">>>> Done")
+
+            val osaData= data
         })
 
 
@@ -97,17 +106,26 @@ class MainActivity : AppCompatActivity() {
 
         btnCreateHolidayPass.setOnClickListener(View.OnClickListener {
 
-            val passRequest = PassCreateRequest(PassType.HOLIDAY)
-            shellInfoLibrary.createPass(passRequest)
+//            val passRequest = PassCreateRequest(PassType.HOLIDAY)
+//            shellInfoLibrary.createPass(passRequest)
         })
 
         btnCreateTripPass.setOnClickListener(View.OnClickListener {
 
-            val passRequest = PassCreateRequest(PassType.TRIPS_30)
-            shellInfoLibrary.createPass(passRequest)
+//            val passRequest = PassCreateRequest(PassType.TRIPS_30)
+//            shellInfoLibrary.createPass(passRequest)
+        })
+
+        btnCreateZonePass.setOnClickListener(View.OnClickListener {
+
+//            val passRequest = PassCreateRequest(PassType.ZONE_1)
+//            shellInfoLibrary.createPass(passRequest)
         })
 
 
+        btnClearOSA.setOnClickListener(View.OnClickListener {
+            shellInfoLibrary.deletePasses()
+        })
 
         //shellInfoLibrary.mqttConnect()
         //shellInfoLibrary.subscribeMqttTopic("APP_UPDATE")

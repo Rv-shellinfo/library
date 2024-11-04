@@ -69,4 +69,17 @@ class EMVUtils @Inject constructor() {
     fun getStationIdFromStationDetailList(stationId:String):String{
         return "name"
     }
+
+    fun hexStringToByteArray(hexString: String): ByteArray {
+        val length = hexString.length
+        val byteArray = ByteArray(length / 2)
+
+        for (i in 0 until length step 2) {
+            val hex = hexString.substring(i, i + 2)
+            byteArray[i / 2] = hex.toInt(16).toByte()
+        }
+
+        return byteArray
+    }
+
 }

@@ -26,6 +26,7 @@ import com.shellinfo.common.data.local.data.emv_rupay.raw.ServiceData
 import com.shellinfo.common.data.local.data.emv_rupay.raw.TerminalData
 import com.shellinfo.common.data.local.data.emv_rupay.raw.ValidationData
 import com.shellinfo.common.data.local.data.ipc.BF200Data
+import com.shellinfo.common.utils.DateUtils
 import com.shellinfo.common.utils.IPCConstants
 import timber.log.Timber
 import java.nio.BufferOverflowException
@@ -223,7 +224,7 @@ class RupayUtils @Inject constructor(
             val pass1Name= PassType.getPassNameByCode(hexToByte(pass1)!!)!!
 
             //pass limit
-            val pass1Limit = getSubString(df33_data, 158, 160)
+            val pass1Limit = emvUtils.getHexatoDecimal(getSubString(df33_data, 158, 160)).toString()
 
             //pass start time
             val pass1StartDateTimeHex = getSubString(df33_data, 160, 166)
@@ -238,26 +239,36 @@ class RupayUtils @Inject constructor(
             val pass1ExpiryDate = if (emvUtils.getHexatoDecimal(pass1ExpiryDateHex).toInt() == 0) {
                 "-- --"
             } else {
-                emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(pass1ExpiryDateHex))
+                DateUtils.getDateFromByteArrayPass(emvUtils.hexStringToByteArray(pass1ExpiryDateHex))
+                //emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(pass1ExpiryDateHex))
             }
 
             //pass zone
-            val pass1ZoneId= getSubString(df33_data, 170, 172)
+            val pass1ZoneId= emvUtils.getHexatoDecimal(getSubString(df33_data, 170, 172)).toString()
 
             //entry station id
-            val pass1EntryStationId= getSubString(df33_data, 172, 174)
+            val pass1EntryStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 172, 174)).toString()
 
             //exit station id
-            val pass1ExitStationId= getSubString(df33_data, 174, 176)
+            val pass1ExitStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 174, 176)).toString()
 
             //trip counts
-            val pass1TripCounts= getSubString(df33_data, 176, 178)
+            val pass1TripCounts= emvUtils.getHexatoDecimal(getSubString(df33_data, 176, 178)).toString()
+
+            //last consumed date
+            val pass1LastConsumedDateHex= getSubString(df33_data, 178, 182)
+            val pass1LastConsumedDate = if (emvUtils.getHexatoDecimal(pass1LastConsumedDateHex).toInt() == 0) {
+                "-- --"
+            } else {
+                DateUtils.getDateFromByteArrayPass(emvUtils.hexStringToByteArray(pass1LastConsumedDateHex))
+                //emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(pass1LastConsumedDateHex))
+            }
 
             //daily limit
-            val pass1DailyLimit= getSubString(df33_data, 180, 182)
+            val pass1DailyLimit= emvUtils.getHexatoDecimal(getSubString(df33_data, 182, 184)).toString()
 
             //priority
-            val pass1Priority= getSubString(df33_data, 182, 184)
+            val pass1Priority= emvUtils.getHexatoDecimal(getSubString(df33_data, 184, 186))
 
         //===============================    PASS 2 =================================================================//
 
@@ -267,7 +278,7 @@ class RupayUtils @Inject constructor(
             val pass2Name= PassType.getPassNameByCode(hexToByte(pass2)!!)!!
 
             //pass limit
-            val pass2Limit = getSubString(df33_data, 188, 190)
+            val pass2Limit = emvUtils.getHexatoDecimal(getSubString(df33_data, 188, 190)).toString()
 
             //pass start time
             val pass2StartDateTimeHex = getSubString(df33_data, 190, 196)
@@ -282,26 +293,36 @@ class RupayUtils @Inject constructor(
             val pass2ExpiryDate = if (emvUtils.getHexatoDecimal(pass2ExpiryDateHex).toInt() == 0) {
                 "-- --"
             } else {
-                emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(pass2ExpiryDateHex))
+                DateUtils.getDateFromByteArrayPass(emvUtils.hexStringToByteArray(pass2ExpiryDateHex))
+                //emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(pass2ExpiryDateHex))
             }
 
             //pass zone
-            val pass2ZoneId= getSubString(df33_data, 200, 202)
+            val pass2ZoneId= emvUtils.getHexatoDecimal(getSubString(df33_data, 200, 202)).toString()
 
             //entry station id
-            val pass2EntryStationId= getSubString(df33_data, 202, 204)
+            val pass2EntryStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 202, 204)).toString()
 
             //exit station id
-            val pass2ExitStationId= getSubString(df33_data, 204, 206)
+            val pass2ExitStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 204, 206)).toString()
 
             //trip counts
-            val pass2TripCounts= getSubString(df33_data, 206, 208)
+            val pass2TripCounts= emvUtils.getHexatoDecimal(getSubString(df33_data, 206, 208)).toString()
+
+            //last consumed date
+            val pass2LastConsumedDateHex= getSubString(df33_data, 208, 212)
+            val pass2LastConsumedDate = if (emvUtils.getHexatoDecimal(pass2LastConsumedDateHex).toInt() == 0) {
+                "-- --"
+            } else {
+                DateUtils.getDateFromByteArrayPass(emvUtils.hexStringToByteArray(pass2LastConsumedDateHex))
+                //emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(pass2LastConsumedDateHex))
+            }
 
             //daily limit
-            val pass2DailyLimit= getSubString(df33_data, 210, 212)
+            val pass2DailyLimit= emvUtils.getHexatoDecimal(getSubString(df33_data, 212, 214)).toString()
 
             //priority
-            val pass2Priority= getSubString(df33_data, 212, 214)
+            val pass2Priority= emvUtils.getHexatoDecimal(getSubString(df33_data, 214, 216))
 
 
         //===============================    PASS 3 =================================================================//
@@ -312,7 +333,7 @@ class RupayUtils @Inject constructor(
             val pass3Name= PassType.getPassNameByCode(hexToByte(pass3)!!)!!
 
             //pass limit
-            val pass3Limit = getSubString(df33_data, 218, 220)
+            val pass3Limit = emvUtils.getHexatoDecimal(getSubString(df33_data, 218, 220)).toString()
 
             //pass start time
             val pass3StartDateTimeHex = getSubString(df33_data, 220, 226)
@@ -327,26 +348,36 @@ class RupayUtils @Inject constructor(
             val pass3ExpiryDate = if (emvUtils.getHexatoDecimal(pass3ExpiryDateHex).toInt() == 0) {
                 "-- --"
             } else {
-                emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(pass3ExpiryDateHex))
+                DateUtils.getDateFromByteArrayPass(emvUtils.hexStringToByteArray(pass3ExpiryDateHex))
+                //emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(pass3ExpiryDateHex))
             }
 
             //pass zone
-            val pass3ZoneId= getSubString(df33_data, 230, 232)
+            val pass3ZoneId= emvUtils.getHexatoDecimal(getSubString(df33_data, 230, 232)).toString()
 
             //entry station id
-            val pass3EntryStationId= getSubString(df33_data, 232, 234)
+            val pass3EntryStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 232, 234)).toString()
 
             //exit station id
-            val pass3ExitStationId= getSubString(df33_data, 234, 236)
+            val pass3ExitStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 234, 236)).toString()
 
             //trip counts
-            val pass3TripCounts= getSubString(df33_data, 236, 238)
+            val pass3TripCounts= emvUtils.getHexatoDecimal(getSubString(df33_data, 236, 238)).toString()
+
+            //last consumed date
+            val pass3LastConsumedDateHex= getSubString(df33_data, 238, 242)
+            val pass3LastConsumedDate = if (emvUtils.getHexatoDecimal(pass3LastConsumedDateHex).toInt() == 0) {
+                "-- --"
+            } else {
+                DateUtils.getDateFromByteArrayPass(emvUtils.hexStringToByteArray(pass3LastConsumedDateHex))
+                //emvUtils.calculateSecondsOfTxn(data_5F25 + "000000", emvUtils.getHexatoDecimal(pass3LastConsumedDateHex))
+            }
 
             //daily limit
-            val pass3DailyLimit= getSubString(df33_data, 240, 242)
+            val pass3DailyLimit= emvUtils.getHexatoDecimal(getSubString(df33_data, 242, 244)).toString()
 
             //priority
-            val pass3Priority= getSubString(df33_data, 242, 244)
+            val pass3Priority= emvUtils.getHexatoDecimal(getSubString(df33_data, 244, 246)).toString()
 
 
         //=================================== PASS List Create ==================================================================//
@@ -367,6 +398,7 @@ class RupayUtils @Inject constructor(
                     validExitStationId = pass1ExitStationId,
                     tripConsumed = pass1TripCounts,
                     classType = "Normal",
+                    lastConsumedDate = pass1LastConsumedDate,
                     dailyLimit = pass1DailyLimit,
                     priority = pass1Priority.toInt()
                 ))
@@ -382,6 +414,7 @@ class RupayUtils @Inject constructor(
                     validExitStationId = pass2ExitStationId,
                     tripConsumed = pass2TripCounts,
                     classType = "Normal",
+                    lastConsumedDate = pass2LastConsumedDate,
                     dailyLimit = pass2DailyLimit,
                     priority = pass2Priority.toInt()
                 ))
@@ -397,6 +430,7 @@ class RupayUtils @Inject constructor(
                     validExitStationId = pass3ExitStationId,
                     tripConsumed = pass3TripCounts,
                     classType = "Normal",
+                    lastConsumedDate = pass3LastConsumedDate,
                     dailyLimit = pass3DailyLimit,
                     priority = pass3Priority.toInt()
                 ))
@@ -1006,7 +1040,7 @@ class RupayUtils @Inject constructor(
         val passes = List(3) {
             val productType = buffer.get()
             val passLimit = buffer.get()
-            val startDateTime = ByteArray(2)
+            val startDateTime = ByteArray(3)
             buffer.get(startDateTime)
             val endDateTime = ByteArray(2)
             buffer.get(endDateTime)
@@ -1018,9 +1052,8 @@ class RupayUtils @Inject constructor(
             buffer.get(lastConsumedDate)
             val dailyLimit = buffer.get()
             val priority = buffer.get()
-            val rfu = buffer.get()
 
-            PassBin(productType, passLimit, startDateTime, endDateTime, validZoneId, validEntryStationId, validExitStationId, tripCount, lastConsumedDate, dailyLimit, priority,rfu)
+            PassBin(productType, passLimit, startDateTime, endDateTime, validZoneId, validEntryStationId, validExitStationId, tripCount, lastConsumedDate, dailyLimit, priority)
         }
 
         val rfu = ByteArray(5)
@@ -1036,117 +1069,7 @@ class RupayUtils @Inject constructor(
 
 
 
-//    private fun setOsaBinValue(byteArray: ByteArray): OsaBin {
-//        // Create a ByteBuffer wrapping the byteArray and set it to little-endian order
-//        val buffer = ByteBuffer.wrap(byteArray).order(ByteOrder.LITTLE_ENDIAN)
-//
-//        // Extract generalInfo
-//        val versionNumber = buffer.get()
-//        val languageInfo = buffer.get()
-//        val generalInfo = GeneralBinOsa(versionNumber, languageInfo)
-//
-//        // Extract validationData
-//        val errorCode = buffer.get()
-//        val productType = buffer.get()
-//        val trxDateTime = ByteArray(3)
-//        buffer.get(trxDateTime)
-//        val stationCode = ByteArray(2)
-//        buffer.get(stationCode)
-//        val trxStatusAndRfu = buffer.get()
-//
-//        val validationData = ValidationBinOsa(
-//            errorCode = errorCode,
-//            productType = productType,
-//            trxDateTime = trxDateTime,
-//            stationCode = stationCode,
-//            trxStatusAndRfu = trxStatusAndRfu
-//        )
-//
-//        // Extract history (4 entries, each structured as HistoryBin)
-//        val history = List(4) {
-//            val acquirerID = buffer.get()
-//            val operatorID = ByteArray(2)
-//            buffer.get(operatorID)
-//            val terminalID = ByteArray(3)
-//            buffer.get(terminalID)
-//            val trxDateTime = ByteArray(3)
-//            buffer.get(trxDateTime)
-//            val trxSeqNum = ByteArray(2)
-//            buffer.get(trxSeqNum)
-//            val trxAmt = ByteArray(2)
-//            buffer.get(trxAmt)
-//            val cardBalance1 = buffer.get()
-//            val cardBalance2 = buffer.get()
-//            val cardBalance3 = buffer.get() // cardBalance3 and trxStatus share bits
-//            val trxStatus = cardBalance3
-//            val rfu = buffer.get()
-//
-//            HistoryBinOsa(
-//                acquirerID = acquirerID,
-//                operatorID = operatorID,
-//                terminalID = terminalID,
-//                trxDateTime = trxDateTime,
-//                trxSeqNum = trxSeqNum,
-//                trxAmt = trxAmt,
-//                cardBalance1 = cardBalance1,
-//                cardBalance2 = cardBalance2,
-//                cardBalance3 = cardBalance3,
-//                trxStatus = trxStatus,
-//                rfu = rfu
-//            )
-//        }
-//
-//        // Extract passes (assuming there are 2 passes as an example)
-//        val passes = List(2) {
-//            val productType = buffer.get()
-//            val passLimit = buffer.get()
-//            val startDateTime = ByteArray(3)
-//            buffer.get(startDateTime)
-//            val endDateTime = ByteArray(2)
-//            buffer.get(endDateTime)
-//            val validZoneId = ByteArray(2) // 10 bits, so store as 2 bytes (mask later if necessary)
-//            buffer.get(validZoneId)
-//            val validEntryStationId = ByteArray(2) // 10 bits
-//            buffer.get(validEntryStationId)
-//            val validExitStationId = ByteArray(2) // 10 bits
-//            buffer.get(validExitStationId)
-//            val tripCount = ByteArray(2) // 10 bits
-//            buffer.get(tripCount)
-//            val privileges = buffer.get()
-//            val dailyLimit = buffer.get()
-//            val rfu = ByteArray(3) // 18 bits, store as 3 bytes
-//            buffer.get(rfu)
-//
-//            PassBin(
-//                productType = productType,
-//                passLimit = passLimit,
-//                startDateTime = startDateTime,
-//                endDateTime = endDateTime,
-//                validZoneId = validZoneId,
-//                validEntryStationId = validEntryStationId,
-//                validExitStationId = validExitStationId,
-//                tripCount = tripCount,
-//                privileges = privileges,
-//                dailyLimit = dailyLimit,
-//                rfu = rfu
-//            )
-//        }
-//
-//        // Create the history queue
-//        val historyQueue = HistoryQueue<HistoryBinOsa>(4)
-//        historyQueue.add(history[0])
-//        historyQueue.add(history[1])
-//        historyQueue.add(history[2])
-//        historyQueue.add(history[3])
-//
-//        // Return the constructed OsaBin object
-//        return OsaBin(
-//            generalInfo = generalInfo,
-//            validationData = validationData,
-//            history = historyQueue,
-//            passes = passes
-//        )
-//    }
+
 
 
     /**
@@ -1237,7 +1160,7 @@ class RupayUtils @Inject constructor(
         for (passBin in osaBin.passes) {
             buffer.put(passBin.productType ?: 0)
             buffer.put(passBin.passLimit ?: 0)
-            buffer.put(passBin.startDateTime ?: ByteArray(2)) // 3 bytes
+            buffer.put(passBin.startDateTime ?: ByteArray(3)) // 3 bytes
             buffer.put(passBin.endDateTime ?: ByteArray(2)) // 2 bytes
             buffer.put(passBin.validZoneId ?: 0) // 1 Byte
             buffer.put(passBin.validEntryStationId ?: 0) // 1 Byte
@@ -1246,7 +1169,6 @@ class RupayUtils @Inject constructor(
             buffer.put(passBin.lastConsumedDate ?: ByteArray(2))
             buffer.put(passBin.dailyLimit ?: 0)
             buffer.put(passBin.priority ?: 0)
-            buffer.put(passBin.rfu ?: 0)//2 Bytes
         }
 
 

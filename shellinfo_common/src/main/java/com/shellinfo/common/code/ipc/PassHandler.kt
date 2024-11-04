@@ -11,9 +11,12 @@ import com.shellinfo.common.utils.Utils
 import com.shellinfo.common.utils.Utils.binToNum
 import com.shellinfo.common.utils.ipc.RupayUtils
 import kotlinx.coroutines.runBlocking
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
+import org.threeten.bp.Instant
+import org.threeten.bp.LocalDate
+import org.threeten.bp.LocalDateTime
+import org.threeten.bp.ZoneId
+import org.threeten.bp.format.DateTimeFormatter
+import org.threeten.bp.format.DateTimeParseException
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -37,8 +40,9 @@ class PassHandler @Inject constructor(
         //get new pass
         val pass= getPassData(osaMasterData)
 
+
         // Remove expired or exhausted passes
-        passList.removeIf { pass -> pass.priority?.toInt() !=0 && (isExpired(pass.endDateTime!!) || pass.passLimit!!.toInt() <= 0) }
+        passList.removeIf { passData -> (isExpired(passData.endDateTime) || passData.passLimit!!.toInt() <= 0) }
 
         // If less than 3 passes are present after removal, add default passes back
         while (passList.size < 3) {
@@ -52,8 +56,29 @@ class PassHandler @Inject constructor(
         }
 
 
-        // Add the new pass, sort by priority, and handle same-priority scenario
-        passList.add(pass)
+        // Find the existing pass with the same id
+        val existingPass = passList.find { it.productType!!.toInt() == pass.productType!!.toInt() }
+
+        //if already pass present then change expiry date of existing pass and increase the trips
+        if(existingPass!=null){
+
+            //update expiry date of existing pass
+            existingPass.endDateTime = pass.endDateTime
+
+            //increase pass limit old+new
+            val newPassLimit = existingPass.passLimit!!.toInt()+pass.passLimit!!.toInt()
+
+            //update pass limit
+            existingPass.passLimit = newPassLimit.toByte()
+
+        }else{
+
+            // Add the new pass, sort by priority, and handle same-priority scenario
+            passList.add(pass)
+        }
+
+
+
         passList.sortWith(compareBy { if (it.priority?.toInt() == 0) Int.MAX_VALUE else it.priority?.toInt() })
 
         // Ensure that we have exactly 3 passes
@@ -98,12 +123,12 @@ class PassHandler @Inject constructor(
         passBin.productType = passInfo.passCode.removePrefix("0x").toInt(16).toByte()
         passBin.passLimit = passInfo.dailyLimit.toByte()
         passBin.dailyLimit = 10.toByte()
-        Utils.numToBin(passBin.startDateTime,trxTimeFromCardEffDate,2)
+        Utils.numToBin(passBin.startDateTime,trxTimeFromCardEffDate,3)
 
         //TODO expiry date needs to be set dynamic from the API
-        Utils.numToBin(passBin.endDateTime,getExpiryDate(trxTimeFromCardEffDate,30),2)
+        passBin.endDateTime= DateUtils.saveFutureDateInTwoBytes(30)
+        passBin.lastConsumedDate=DateUtils.saveFutureDateInTwoBytes(0)
         passBin.priority = passInfo.passPriority.toByte()
-        passBin.lastConsumedDate = DateUtils.getCurrentDateAsCustomBytes()
 
         return passBin
     }
@@ -126,15 +151,55 @@ class PassHandler @Inject constructor(
     // Checks if the pass is expired (assuming expiryDate is until 12PM)
     private fun isExpired(expiryDate:ByteArray): Boolean {
 
-        val expiryDateTime= binToNum(expiryDate,2)
+        val expiryDatePass = DateUtils.getDateFromByteArrayPass(expiryDate)  //format (dd-mm-yyyy)
 
-        return LocalDateTime.now().isAfter(longToLocalDateTime(expiryDateTime).truncatedTo(
-            ChronoUnit.HOURS).withHour(12))
+
+        try {
+            // Define the date format
+            val formatter = DateTimeFormatter.ofPattern("dd-MM-yy")
+
+            // Parse the input date
+            val inputDate = LocalDate.parse(expiryDatePass, formatter)
+
+            // Get the current date
+            val currentDate = LocalDate.now()
+
+            // Check if the input date is before the current date
+            return inputDate.isBefore(currentDate)
+
+        } catch (e: DateTimeParseException) {
+            // Handle invalid date formats
+            e.printStackTrace()
+            return false
+        }
     }
 
     fun longToLocalDateTime(epochMillis: Long): LocalDateTime {
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), ZoneId.systemDefault())
     }
 
+    fun deletePasses(osaMasterData: OSAMasterData):OSAMasterData{
+
+        val osaBin = osaMasterData.osaUpdatedBinData
+
+        for(pass in osaBin!!.passes){
+            pass.productType = 0x0.toByte()
+            pass.passLimit = 0x0.toByte()
+            pass.startDateTime = byteArrayOf(0x0.toByte(),0x0.toByte(),0x0.toByte())
+            pass.endDateTime = byteArrayOf(0x0.toByte(),0x0.toByte())
+            pass.validZoneId = 0x0.toByte()
+            pass.validEntryStationId = 0x0.toByte()
+            pass.validExitStationId = 0x0.toByte()
+            pass.tripCount = 0x0.toByte()
+            pass.lastConsumedDate = byteArrayOf(0x0.toByte(),0x0.toByte())
+            pass.dailyLimit = 0x0.toByte()
+            pass.priority = 0x0.toByte()
+
+        }
+
+        osaMasterData.osaUpdatedBinData = osaBin
+
+        return osaMasterData
+    }
 
 }

@@ -10,6 +10,7 @@ import androidx.core.app.ActivityCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
+import com.jakewharton.threetenabp.AndroidThreeTen
 import com.shellinfo.common.BuildConfig
 import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.EquipmentType
@@ -79,6 +80,7 @@ class ShellInfoLibrary @Inject constructor(
         var isForPassCreate=false
         var isForOsaRead=false
         var isForOsaCreate=false
+        var isForOsaDelete=false
         lateinit var passCreateRequest: PassCreateRequest
     }
 
@@ -161,6 +163,9 @@ class ShellInfoLibrary @Inject constructor(
 
 
     override fun start(initData: InitData) {
+
+        //Date time library init for backward comatibility
+        AndroidThreeTen.init(activity)
 
         //start simulation payment app data
         //startSimulation()
@@ -561,7 +566,7 @@ class ShellInfoLibrary @Inject constructor(
         val deviceType = spUtils.getPreference(SpConstants.DEVICE_TYPE,"")
         if(!deviceType.equals(EquipmentType.TOM.name)){
 
-            Timber.e(TAG, "Only TOM Application can create the Operator Service Area")
+            Timber.e(TAG, "Only TOM Application can create The Passes")
 
             return
         }
@@ -575,6 +580,34 @@ class ShellInfoLibrary @Inject constructor(
         //make pass create flag to true and assign pass request data
         isForPassCreate=true
         passCreateRequest=request
+
+
+        //send message to payment application to create the OSA service
+        sendMessageToIpcService(MSG_ID_CREATE_PASS,baseMessage)
+    }
+
+    override fun deletePasses() {
+
+        //TODO only for test
+        isForOsaDelete=true
+
+        //check if the request came from TOM device
+        val deviceType = spUtils.getPreference(SpConstants.DEVICE_TYPE,"")
+        if(!deviceType.equals(EquipmentType.TOM.name)){
+
+            Timber.e(TAG, "Only TOM Application can create the Operator Service Area")
+
+            return
+        }
+
+        //get osa service id
+        val osaServiceId= spUtils.getPreference(OPERATOR_SERVICE_ID,0x0012)
+
+        //create base message
+        val baseMessage= BaseMessage(MSG_ID_CREATE_PASS,NcmcDataType.OSA,osaServiceId)
+
+        //make pass create flag to true and assign pass request data
+        isForPassCreate=true
 
         //send message to payment application to create the OSA service
         sendMessageToIpcService(MSG_ID_CREATE_PASS,baseMessage)

@@ -101,6 +101,9 @@ object DBConstants{
     const val ORDERS_TABLE = "ORDERS_TABLE"
     const val TICKET_BACKUP_TABLE = "TICKET_BACKUP_TABLE"
     const val PASS_TABLE = "PASS_TABLE"
+    const val TRIP_LIMITS_TABLE = "TRIP_LIMITS_TABLE"
+    const val DAILY_LIMITS_TABLE = "DAILY_LIMITS_TABLE"
+    const val ZONE_TABLE = "ZONE_TABLE"
 
 }
 

@@ -5,39 +5,30 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.shellinfo.common.utils.DBConstants
 
-@Entity(tableName = DBConstants.PASS_TABLE)
-data class PassTable(
+@Entity(tableName = DBConstants.TRIP_LIMITS_TABLE)
+data class TripLimitTable(
 
     @PrimaryKey
-    @ColumnInfo(name = "PASS_ID")
-    val passId: Int,
-
-    @ColumnInfo(name = "PASS_CODE")
-    val passCode: String,
+    @ColumnInfo(name = "TRIP_LIMIT_ID")
+    val tripLimitId: Int,
 
     @ColumnInfo(name = "OPERATOR_NAME_ID")
     val operatorNameId: Int,
 
-    @ColumnInfo(name = "PASS_NAME")
-    val passName: String,
+    @ColumnInfo(name = "TRIP_LIMIT_VALUE")
+    val tripLimitValue: String,
 
-    @ColumnInfo(name = "PASS_PRIORITY")
-    val passPriority: Int,
+    @ColumnInfo(name = "ACTIVE_STATUS")
+    val activeStatus: Boolean,
 
     @ColumnInfo(name = "PASS_DURATION_DAYS")
     val passDuration: Int,
 
     @ColumnInfo(name = "DAILY_LIMIT_DEFAULT")
-    val dailyLimitDefault: Int,
+    val dailyLimit: Int,
 
     @ColumnInfo(name = "PASS_LIMIT_DEFAULT")
-    val passLimitDefault: Int,
-
-    @ColumnInfo(name = "IS_DAILY_LIMIT_ACTIVE")
-    val isDailyLimitActive: Boolean,
-
-    @ColumnInfo(name = "IS_PASS_LIMIT_ACTIVE")
-    val isPassLimitActive: Boolean,
+    val passLimit: Int,
 
     @ColumnInfo(name = "VERSION")
     val version: Int,

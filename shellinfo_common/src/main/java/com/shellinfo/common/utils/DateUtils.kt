@@ -140,4 +140,42 @@ object DateUtils {
     }
 
 
+    // Method to add n days to the current date and return in 4 bytes
+    // Method to add 'n' number of days to the current date and return the new date in 2 bytes
+    fun saveFutureDateInTwoBytes(n: Int): ByteArray {
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.DAY_OF_MONTH, n) // Add 'n' days
+
+        val year = calendar.get(Calendar.YEAR) - 2000
+        val month = calendar.get(Calendar.MONTH) + 1
+        val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+        // Pack the date: year (7 bits), month (4 bits), and day (5 bits)
+        val packedValue = (year shl 9) or (month shl 5) or day
+
+        // Convert to byte array
+        return byteArrayOf(
+            ((packedValue shr 8) and 0xFF).toByte(),  // High byte
+            (packedValue and 0xFF).toByte()           // Low byte
+        )
+
+    }
+
+    fun getDateFromByteArrayPass(dateBytes: ByteArray): String {
+        if (dateBytes.size != 2) {
+            throw IllegalArgumentException("Invalid byte array size. Must be exactly 2 bytes.")
+        }
+
+        // Combine the two bytes into one integer
+        val packedValue = (dateBytes[0].toInt() shl 8) or (dateBytes[1].toInt() and 0xFF)
+
+        // Extract day (5 bits), month (4 bits), and year (7 bits)
+        val day = packedValue and 0b11111
+        val month = (packedValue shr 5) and 0b1111
+        val year = (packedValue shr 9) and 0b1111111
+
+        // Format the result into DD-MM-YY
+        return String.format("%02d-%02d-%02d",day,month, year % 100)
+    }
+
 }

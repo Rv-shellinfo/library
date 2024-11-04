@@ -12,6 +12,9 @@ data class StationsTable(
     @ColumnInfo(name = "STATION_ID")
     val stationId: String,
 
+    @ColumnInfo(name = "OPERATOR_NAME_ID")
+    val operatorNameId: Int,
+
     @ColumnInfo(name = "STATION_NAME")
     val stationName: String?,
 

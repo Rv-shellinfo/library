@@ -12,6 +12,7 @@ data class PassData(
     var validEntryStationId:String,
     var validExitStationId:String,
     var tripConsumed:String,
+    var lastConsumedDate:String,
     var classType:String,
     var dailyLimit:String,
     var priority:Int
