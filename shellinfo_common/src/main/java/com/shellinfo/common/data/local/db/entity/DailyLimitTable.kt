@@ -10,28 +10,16 @@ data class DailyLimitTable(
 
     @PrimaryKey
     @ColumnInfo(name = "DAILY_LIMIT_ID")
-    val tripLimitId: Int,
+    val dailyLimitId: Int,
 
     @ColumnInfo(name = "OPERATOR_NAME_ID")
     val operatorNameId: Int,
 
     @ColumnInfo(name = "DAILY_LIMIT_VALUE")
-    val tripLimitValue: String,
-
-    @ColumnInfo(name = "ACTIVE_STATUS")
-    val activeStatus: Boolean,
-
-    @ColumnInfo(name = "PASS_DURATION_DAYS")
-    val passDuration: Int,
-
-    @ColumnInfo(name = "DAILY_LIMIT_DEFAULT")
-    val dailyLimit: Int,
-
-    @ColumnInfo(name = "PASS_LIMIT_DEFAULT")
-    val passLimit: Int,
+    val dailyLimitValue: Int,
 
     @ColumnInfo(name = "VERSION")
-    val version: Int,
+    val version: Double,
 
     @ColumnInfo(name = "IS_ACTIVE")
     val isActive: Boolean

@@ -1,16 +1,14 @@
 package com.shellinfo.common.data.remote.services
 
+import com.shellinfo.common.data.remote.response.model.pass.GetPassResponse
 import com.shellinfo.common.data.remote.ApiEndPoints
+import com.shellinfo.common.data.remote.response.model.daily_limit.DailyLimitResponse
 import com.shellinfo.common.data.remote.response.model.entry_validation.EntryValidationRequest
 import com.shellinfo.common.data.remote.response.model.entry_validation.EntryValidationResponse
-import com.shellinfo.common.data.remote.response.model.exit_validation.ExitValidationRequest
-import com.shellinfo.common.data.remote.response.model.exit_validation.ExitValidationResponse
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
 import com.shellinfo.common.data.remote.response.model.fare.FareResponse
 import com.shellinfo.common.data.remote.response.model.gate_fare.GateFareRequest
 import com.shellinfo.common.data.remote.response.model.gate_fare.GateFareResponse
-import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentRequest
-import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentResponse
 import com.shellinfo.common.data.remote.response.model.payment_gateway.ChecksumRequest
 import com.shellinfo.common.data.remote.response.model.payment_gateway.ChecksumResponse
 import com.shellinfo.common.data.remote.response.model.payment_gateway.TrackTransactionRequest
@@ -22,13 +20,17 @@ import com.shellinfo.common.data.remote.response.model.server.ServerDateTimeRequ
 import com.shellinfo.common.data.remote.response.model.server.ServerDateTimeResponse
 import com.shellinfo.common.data.remote.response.model.stations.StationRequest
 import com.shellinfo.common.data.remote.response.model.stations.StationsResponse
+import com.shellinfo.common.data.remote.response.model.stations_new.StationDataResponse
 import com.shellinfo.common.data.remote.response.model.ticket.TicketRequest
 import com.shellinfo.common.data.remote.response.model.ticket.TicketResponse
+import com.shellinfo.common.data.remote.response.model.trip_limit.TripLimitResponse
+import com.shellinfo.common.data.remote.response.model.zone.ZoneDataResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
+import retrofit2.http.Query
 import retrofit2.http.Url
 
 interface ApiService {
@@ -78,5 +80,22 @@ interface ApiService {
 
     @POST
     suspend fun doGetFare(@Url url: String, @Body body: GateFareRequest):Response<GateFareResponse>
+
+    @GET
+    suspend fun doGetPassTypes(@Url url: String,@Query("operatorId") operatorId:String):Response<GetPassResponse>
+
+    @GET
+    suspend fun doGetTripLimits(@Url url: String,@Query("operatorId") operatorId:String):Response<TripLimitResponse>
+
+    @GET
+    suspend fun doGetDailyLimits(@Url url: String,@Query("operatorId") operatorId:String):Response<DailyLimitResponse>
+
+    @GET
+    suspend fun doGetStations(@Url url: String,@Query("operatorId") operatorId:String):Response<StationDataResponse>
+
+    @GET
+    suspend fun doGetZones(@Url url: String,@Query("operatorId") operatorId:String):Response<ZoneDataResponse>
+
+
 
 }

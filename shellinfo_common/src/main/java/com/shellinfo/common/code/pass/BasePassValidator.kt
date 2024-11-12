@@ -12,6 +12,8 @@ open class BasePassValidator @Inject constructor(){
 
     lateinit var passBin: PassBin
 
+    var validPassIndex= -1
+
     /**
      *
      */
@@ -35,9 +37,32 @@ open class BasePassValidator @Inject constructor(){
     }
 
     /**
+     * Method to check if all pass expired
+     */
+    open fun isAllPassExpired(passList: List<PassBin>):Boolean{
+
+        for(pass in passList){
+
+            //get expiry date
+            val endDateTimeEpoch = Utils.binToNum(pass.endDateTime,2)
+
+            //current date time from epoch
+            val currentTimeFromEpoch: Long = System.currentTimeMillis() / 1000
+
+            // Check if the current time is greater than or equal to endDateTime (meaning the pass is expired)
+            if(currentTimeFromEpoch >= endDateTimeEpoch){
+                return false
+            }
+        }
+
+        return true
+    }
+
+
+    /**
      * Method to validate trips
      */
-    open fun validateTrips():Boolean{
+    open fun validateDailyLimit(passBin:PassBin){
 
         //last date when pass consumed
         val lastDate= DateUtils.getDateFromString(DateUtils.getDateFromByteArray(passBin.lastConsumedDate))
@@ -51,20 +76,6 @@ open class BasePassValidator @Inject constructor(){
             passBin.tripCount= 0 // Reset for the new day
             passBin.lastConsumedDate = DateUtils.getCurrentDateAsCustomBytes() // Update the last consumed date
         }
-
-        // Check if today's limit is exceeded
-        if(passBin.tripCount!!.toInt() >= passBin.dailyLimit!!.toInt() ){
-            return false
-        }
-
-        // Check if pass limit finished
-        if(passBin.passLimit!!.toInt() <= 0){
-            return false
-        }
-
-
-
-        return true
     }
 
     /**
@@ -91,4 +102,6 @@ open class BasePassValidator @Inject constructor(){
         passBin.tripCount = (passBin.tripCount!!.toInt()+1).toByte()
         passBin.passLimit = (passBin.passLimit!!.toInt()-1).toByte()
     }
+
+
 }

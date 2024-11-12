@@ -5,6 +5,7 @@ import com.shellinfo.IRemoteService
 import com.shellinfo.common.code.NetworkCall
 import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.code.enums.EquipmentType
+import com.shellinfo.common.code.enums.PassType
 import com.shellinfo.common.code.pass.BasePassValidator
 import com.shellinfo.common.data.local.data.emv_rupay.CSAMasterData
 import com.shellinfo.common.data.local.data.emv_rupay.OSAMasterData
@@ -13,6 +14,8 @@ import com.shellinfo.common.data.local.data.emv_rupay.binary.osa_bin.HistoryBinO
 import com.shellinfo.common.data.local.data.emv_rupay.binary.osa_bin.PassBin
 import com.shellinfo.common.data.local.data.emv_rupay.display.csa_display.CSADataDisplay
 import com.shellinfo.common.data.local.data.ipc.BF200Data
+import com.shellinfo.common.data.local.db.entity.ZoneTable
+import com.shellinfo.common.data.local.db.repository.DbRepository
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.remote.repository.ApiRepository
 import com.shellinfo.common.data.remote.response.ApiResponse
@@ -57,6 +60,8 @@ import com.shellinfo.common.utils.SpConstants.ENTRY_SIDE
 import com.shellinfo.common.utils.SpConstants.EQUIPMENT_GROUP_ID
 import com.shellinfo.common.utils.SpConstants.EQUIPMENT_ID
 import com.shellinfo.common.utils.SpConstants.EXIT_SIDE
+import com.shellinfo.common.utils.SpConstants.IS_TODAY_EVENT
+import com.shellinfo.common.utils.SpConstants.IS_TODAY_HOLIDAY
 import com.shellinfo.common.utils.SpConstants.LOGGING_ON_OFF
 import com.shellinfo.common.utils.SpConstants.MINIMUM_BALANCE
 import com.shellinfo.common.utils.SpConstants.OPERATOR_ID
@@ -86,7 +91,8 @@ class RupayDataHandler @Inject constructor(
     private val apiRepository: ApiRepository,
     private val networkCall: NetworkCall,
     private val passHandler: PassHandler,
-    private val passValidator: BasePassValidator
+    private val passValidator: BasePassValidator,
+    private val dbRepository: DbRepository
 ) {
 
     lateinit var communicationService: IRemoteService
@@ -1311,7 +1317,7 @@ class RupayDataHandler @Inject constructor(
 
             //complete the OSA process
             completeProcessOSA(TXN_STATUS_EXIT,osaMasterData)
-//
+
         }else{
 
             //return error to payment app, not to the UI
@@ -1327,6 +1333,9 @@ class RupayDataHandler @Inject constructor(
 
     }
 
+    /**
+     * Method to handle Fare calculation for CSA
+     */
     private fun handleFareCalculationData(response: GateFareResponse,csaMasterData: CSAMasterData){
 
         if(response.returnCode == TIME_EXCEEDED){
@@ -1389,6 +1398,61 @@ class RupayDataHandler @Inject constructor(
 
             //complete the CSA process
             completeProcessCSA(response.fare.toDouble(),TXN_STATUS_EXIT,csaMasterData)
+        }
+    }
+
+    /**
+     * Method to handle Fare calculation for Zone Pass
+     */
+    private fun handleZoneFareOSA(response: GateFareResponse,osaMasterData: OSAMasterData,zoneTable: ZoneTable){
+
+        if(response.returnCode == TIME_EXCEEDED){
+
+            //set error code and error message
+            osaMasterData.rupayMessage?.returnCode = TIME_EXCEEDED
+            osaMasterData.rupayMessage?.returnMessage =
+                rupayUtils.getError("TIME_EXCEEDED")
+
+            //return error to payment app, not to the UI
+            handleError(
+                TIME_EXCEEDED,
+                rupayUtils.getError("TIME_EXCEEDED"),
+                false
+            )
+
+            errorWriteOSA(TIME_EXCEEDED,"TIME_EXCEEDED",osaMasterData)
+
+            return
+
+        }else if(response.returnCode == READER_FUNCTIONALITY_DISABLED){
+
+            //return error to payment app and UI
+            handleError(
+                READER_FUNCTIONALITY_DISABLED,
+                rupayUtils.getError("READER_FUNCTIONALITY_DISABLED")
+            )
+
+            return
+
+        }else if(response.returnCode == NO_ERROR){
+
+            val fare= response.fare.toDouble()
+
+
+            if(fare == zoneTable.zoneAmount){
+
+                //error code
+                osaMasterData.rupayMessage?.returnCode = NO_ERROR
+                osaMasterData.rupayMessage?.returnMessage = "NO_ERROR"
+
+                //complete the CSA process
+                completeProcessOSA(TXN_STATUS_EXIT,osaMasterData)
+
+            }else{
+                return
+            }
+
+
         }
     }
 
@@ -1564,61 +1628,240 @@ class RupayDataHandler @Inject constructor(
 
 
     /**
+     * method to validate pass list
+     */
+    private fun validatePassList(passList: List<PassBin>, currentStationId: Byte):Pair<Boolean, Int?>{
+
+        //Holiday flag
+        val isTodayHoliday = spUtils.getPreference(IS_TODAY_HOLIDAY,false)
+
+        //Event flag
+        val isTodayEvent = spUtils.getPreference(IS_TODAY_EVENT,false)
+
+
+        passList.forEachIndexed { index, pass ->
+
+            //set pass for validation
+            passValidator.setPass(pass)
+
+            // 1. Check Pass Expiry (endDateTime)
+            if (passValidator.validateExpiry()) {
+                return@forEachIndexed // Skip expired pass and move to the next one
+            }
+
+            // 2. Check if today is a holiday
+            if(isTodayHoliday){
+                // If it's a holiday, only proceed if the pass type is HOLIDAY
+                if (PassType.fromPassCode(pass.productType!!) != PassType.HOLIDAY) {
+                    return@forEachIndexed // Skip this pass and move to the next one
+                }
+            }
+
+            // 3.Check if today is Event
+            if(isTodayEvent){
+                // If it's a holiday, only proceed if the pass type is HOLIDAY
+                if (PassType.fromPassCode(pass.productType!!) != PassType.EVENT) {
+                    return@forEachIndexed // Skip this pass and move to the next one
+                }
+            }
+
+            // 4. Check Pass Limit
+            val passLimit = pass.passLimit ?: 0
+            if (passLimit == 0.toByte()) return@forEachIndexed // Move to next pass if pass limit is 0
+            if (passLimit != 99.toByte() && (pass.tripCount ?: 0) >= passLimit) return@forEachIndexed // Exceed limit, move to next pass
+
+            // 5. Check Daily Limit
+            passValidator.validateDailyLimit(pass)
+            val dailyLimit = pass.dailyLimit ?: 0
+            if (dailyLimit == 0.toByte()) return@forEachIndexed // Move to next pass if daily limit is 0
+            if (dailyLimit != 99.toByte() && (pass.tripCount ?: 0) >= dailyLimit) return@forEachIndexed // Exceed limit, move to next pass
+
+            // 6. Check Source Station
+            val validEntryStationId = pass.validEntryStationId ?: 0
+            if (validEntryStationId != 99.toByte() && validEntryStationId != currentStationId) return@forEachIndexed // Move to next pass if source ID mismatch
+
+            // If none of the conditions fail, we found a valid pass
+            return Pair(true, index)
+        }
+        return Pair(false, null) // No valid pass found
+    }
+
+    /**
+     * Method for validation at Exit side
+     */
+    fun checkExitValidation(currentStation:Byte, passBin:PassBin,osaMasterData: OSAMasterData):Boolean{
+
+        //check if pass is without zone
+        if(passBin.validZoneId == 99.toByte()){
+
+            if(passBin.validExitStationId != 99.toByte()){
+                return currentStation == passBin.validExitStationId
+            }else{
+                return true
+            }
+
+        }else{
+
+            //validate with zone id
+            val zoneId= passBin.validZoneId!!.toInt()
+
+            //code to calculate entry time from card effective date
+            var trxTimeFromCardEffDate: Long = 0
+            var entryTime: Long=0
+            var lastTrxTime:Long=0
+            val currentTime: Long = System.currentTimeMillis() / 1000 // Get current time in seconds from epoch
+
+            //entry date time in specific date format
+            val entryDateTime = rupayUtils.byteArrayToHex(osaMasterData.osaBinData!!.validationData.trxDateTime)
+
+            val exitDateTime =DateUtils.getTimeInYMDHMS(currentTime)
+
+            //get entry terminal id
+            val entryTerminalId= rupayUtils.byteArrayToHex(osaMasterData.osaBinData!!.validationData.stationCode)
+
+            //create Fare Request with the data
+            val fareRequest = GateFareRequest()
+            fareRequest.fromStationId=entryTerminalId
+            fareRequest.toStationId=spUtils.getPreference(STATION_ID,"")
+            fareRequest.entryDateTime=entryDateTime
+            fareRequest.exitDateTime=exitDateTime
+            fareRequest.equipmentId=spUtils.getPreference(EQUIPMENT_ID,"")
+            fareRequest.equipmentGroupId=spUtils.getPreference(EQUIPMENT_GROUP_ID,"")
+
+            //zone data to get
+            var zoneTable:ZoneTable
+
+            runBlocking {
+
+                zoneTable= dbRepository.getZoneById(zoneId)
+
+                val result = calculateFare(fareRequest)
+
+                if(result.isSuccess){
+
+                    val response= result.getOrNull()
+
+                    if(response!=null){
+
+                        if(response.returnCode == TIME_EXCEEDED){
+
+                            //set error code and error message
+                            osaMasterData.rupayMessage?.returnCode = TIME_EXCEEDED
+                            osaMasterData.rupayMessage?.returnMessage =
+                                rupayUtils.getError("TIME_EXCEEDED")
+
+                            //return error to payment app, not to the UI
+                            handleError(
+                                TIME_EXCEEDED,
+                                rupayUtils.getError("TIME_EXCEEDED"),
+                                false
+                            )
+
+                            errorWriteOSA(TIME_EXCEEDED,"TIME_EXCEEDED",osaMasterData)
+
+                            return@runBlocking
+
+                        }else if(response.returnCode == READER_FUNCTIONALITY_DISABLED){
+
+                            //return error to payment app and UI
+                            handleError(
+                                READER_FUNCTIONALITY_DISABLED,
+                                rupayUtils.getError("READER_FUNCTIONALITY_DISABLED")
+                            )
+
+                            return@runBlocking
+
+                        }else if(response.returnCode == NO_ERROR) {
+
+                            val fare = response.fare.toDouble()
+
+                            if(zoneTable.zoneAmount == fare){
+                                return@runBlocking
+                            }
+
+                            return@runBlocking
+
+                        }
+                    }else{
+
+                        //return error to payment app and UI
+                        handleError(
+                            FAILURE_FARE_API,
+                            rupayUtils.getError("FAILURE_FARE_API")
+                        )
+                        return@runBlocking
+                    }
+
+                }else{
+                    return@runBlocking
+                }
+            }
+
+        }
+
+        return false
+    }
+
+
+    /**
      * Method to complete the OSA process, where
      */
     private fun completeProcessOSA(txnStatus: Int, osaMasterData: OSAMasterData) {
 
         //get pass list
-        var passList= osaMasterData.osaUpdatedBinData!!.passes
+        val passList= osaMasterData.osaUpdatedBinData!!.passes
 
         //Entry side validation
         if(txnStatus == TXN_STATUS_ENTRY){
 
-            var isPassValid=false
-
-            for (pass in passList){
-
-                passValidator.setPass(pass)
-
-                if(passValidator.validateExpiry() && passValidator.validateTrips()){
-
-                    //TODO Zone pass validation also needs to check
-                    passValidator.updatePassData()
-
-                    //error code
-                    osaMasterData.rupayMessage?.returnCode = NO_ERROR
-                    osaMasterData.rupayMessage?.returnMessage = "NO_ERROR"
-
-                    //set osa validation data
-                    osaMasterData.osaUpdatedBinData!!.validationData.productType=pass.productType!!
-                    osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = txnStatus.toByte()
-
-                    //date and time
-                    val trxTimeFromEpoch: Long = System.currentTimeMillis() / 1000
-                    val trxTimeFromCardEffDate = rupayUtils.calculateTrxTimeFromCardEffectiveDate(cardEffectiveDate!!,trxTimeFromEpoch)
-
-                    Utils.numToBin(
-                        osaMasterData.osaUpdatedBinData?.validationData?.trxDateTime!!,
-                        trxTimeFromCardEffDate.toLong(),
-                        3
-                    )
-
-                    //terminal id
-                    val terminalID = spUtils.getPreference(TERMINAL_ID, "001081")
-                    val terminalIDBytes = rupayUtils.hexToByteArray(terminalID)!!
-                    osaMasterData.osaUpdatedBinData?.validationData?.stationCode= terminalIDBytes
-
-                    //make pass valid flag to true
-                    isPassValid=true
-
-                    break
-                }
-
+            //1. check if osa service is inactive
+            if(osaMasterData.osaBinData!!.generalInfo.getServiceStatus()){
+                //TODO go for CSA transaction
+                return
             }
 
-            if(isPassValid){
+            //2. check if all pass expired
+            if(passValidator.isAllPassExpired(passList)){
 
-                //send data back to payment app to write on the card
+                //set osa service inactive
+                osaMasterData.osaBinData!!.generalInfo.setServiceStatus(false)
+
+                //TODO go for CSA transaction
+                return
+            }
+
+            //3. Get valid pass data
+            val passValidData=validatePassList(passList,1.toByte())
+
+            //check if any pass valid
+            if(passValidData.first){
+
+                //set pass index
+                passValidator.validPassIndex= passValidData.second!!
+
+                //error code
+                osaMasterData.rupayMessage?.returnCode = NO_ERROR
+                osaMasterData.rupayMessage?.returnMessage = "NO_ERROR"
+
+                //set osa validation data
+                osaMasterData.osaUpdatedBinData!!.validationData.productType=passValidator.passBin.productType!!
+                osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = txnStatus.toByte()
+
+                //date and time
+                val trxTimeFromEpoch: Long = System.currentTimeMillis() / 1000
+                val trxTimeFromCardEffDate = rupayUtils.calculateTrxTimeFromCardEffectiveDate(cardEffectiveDate!!,trxTimeFromEpoch)
+
+                Utils.numToBin(
+                    osaMasterData.osaUpdatedBinData?.validationData?.trxDateTime!!,
+                    trxTimeFromCardEffDate.toLong(),
+                    3
+                )
+
+                //terminal id
+                val terminalID = spUtils.getPreference(TERMINAL_ID, "001081")
+                val terminalIDBytes = rupayUtils.hexToByteArray(terminalID)!!
+                osaMasterData.osaUpdatedBinData?.validationData?.stationCode= terminalIDBytes
+
 
                 //convert the updated csa bin to byte array
                 val osaSent =  rupayUtils.osaBinToByteArray(osaMasterData.osaUpdatedBinData!!)
@@ -1635,6 +1878,13 @@ class RupayDataHandler @Inject constructor(
 
                 //send back the message
                 communicationService.sendData(MSG_ID_TRANSIT_VALIDATION_RUPAY_NCMC,updatedDataWithHeaderFooter!!.toByteArray().toHexString())
+
+
+            }else{
+
+                //no valid pass set
+                //TODO go for CSA transaction
+                return
             }
 
         }else if(txnStatus == TXN_STATUS_EXIT){
@@ -1642,20 +1892,32 @@ class RupayDataHandler @Inject constructor(
             //get pass list
             val passList= osaMasterData.osaBinData!!.passes
 
-            //previous pass in which pass was validated
+            // 1. get previous pass in which pass was validated at Entry
             var previousPass:PassBin ? =null
 
-            //check validation data to get the previous pass data
-            for(pass in passList){
+            // 2. check validation data to get the previous pass data
+            for(index in passList.indices){
+
+                //get each pass to check entry pass
+                val pass= passList[index]
+
+                //3. pass which was validated at Entry
                 if(pass.productType == osaMasterData.osaBinData!!.validationData!!.productType){
                     previousPass = pass
 
-                    //TODO ZONE PASS EXIT VALIDATION NEEDS TO CHECK BEFORE EXIT
                     passValidator.setPass(pass)
+                    passValidator.validPassIndex= index
+
+
+
                 }
             }
 
+            // 3. do trip validation if without zone
+            if(previousPass!!.validZoneId == 99.toByte()){
 
+
+            }
             //update exit validation data
             //error code
             osaMasterData.rupayMessage?.returnCode = NO_ERROR

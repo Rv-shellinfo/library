@@ -189,6 +189,9 @@ dependencies {
     //date time library for backward comaptibility
     implementation("com.jakewharton.threetenabp:threetenabp:1.3.1")
 
+    //debug database library
+    debugImplementation("com.github.amitshekhariitbhu.Android-Debug-Database:debug-db:1.0.7")
+
 }
 
 

@@ -6,13 +6,12 @@ import androidx.appcompat.app.AppCompatActivity
 import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.HttpType
 import com.shellinfo.common.code.enums.NcmcDataType
-import com.shellinfo.common.code.enums.PassType
 import com.shellinfo.common.code.enums.PrinterType
 import com.shellinfo.common.code.printer.PrinterProcessor
 import com.shellinfo.common.data.local.data.InitData
 import com.shellinfo.common.data.local.data.ipc.base.BaseMessage
-import com.shellinfo.common.data.local.data.pass.PassCreateRequest
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
+import com.shellinfo.common.data.remote.response.model.pass.PassRequest
 import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentRequest
 import com.shellinfo.common.data.remote.response.model.ticket.Ticket
 import com.shellinfo.common.data.remote.response.model.ticket.TicketRequest
@@ -34,8 +33,6 @@ interface ShellInfoProvider {
     fun stop()
 
     fun setHttpProtocol(protocol: HttpType)
-
-    fun setStations()
 
     fun getStations()
 
@@ -91,7 +88,7 @@ interface ShellInfoProvider {
 
     fun createOsaService()
 
-    fun createPass(request: PassCreateRequest)
+    fun createPass(request: PassRequest)
 
     fun deletePasses()
 

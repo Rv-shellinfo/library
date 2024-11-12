@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.shellinfo.common.data.local.db.entity.PassTable
 import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.data.local.db.repository.DbRepository
+import com.shellinfo.common.data.shared.SharedDataManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -17,7 +18,8 @@ import kotlin.coroutines.suspendCoroutine
 
 @HiltViewModel
 class DatabaseCall @Inject constructor(
-    private val dbRepository: DbRepository
+    private val dbRepository: DbRepository,
+    private val sharedDataManager: SharedDataManager
 ):ViewModel(){
 
 
@@ -31,14 +33,14 @@ class DatabaseCall @Inject constructor(
     fun getAllStations(){
         viewModelScope.launch {
             val stations = dbRepository.getAllStations()
-            _stationsLiveData.value=stations
+            sharedDataManager.sendStationsData(stations)
         }
     }
 
     fun getStationsByCorridorId(id:Int){
         viewModelScope.launch {
             val stations = dbRepository.getAllStationsByCorridorId(id)
-            _stationsLiveData.value=stations
+            sharedDataManager.sendStationsData(stations)
         }
     }
 
@@ -46,40 +48,49 @@ class DatabaseCall @Inject constructor(
     fun getStationsByCorridorName(name:String){
         viewModelScope.launch {
             val stations = dbRepository.getAllStationsByCorridorName(name)
-            _stationsLiveData.value=stations
+            sharedDataManager.sendStationsData(stations)
         }
     }
 
     fun searchStation(keyword:String){
         viewModelScope.launch {
             val stations = dbRepository.searchStation(keyword)
-            _stationsLiveData.value=stations
+            sharedDataManager.sendStationsData(stations)
         }
     }
 
     fun getStationByStationId(id:String){
         viewModelScope.launch {
             val station = dbRepository.getStationById(id)
-            _stationLiveData.value=station
+           sharedDataManager.sendSingleStationData(station)
         }
     }
 
-    fun addPassList(passList:List<PassTable>){
+    fun getPassData(){
         viewModelScope.launch {
-            dbRepository.insertPasses(passList)
+            val passData = dbRepository.getAllPasses()
+            sharedDataManager.sendPassData(passData)
         }
     }
 
-    suspend fun getPassList():List<PassTable>{
-        return withContext(Dispatchers.IO) {
-            dbRepository.getAllPasses()
+    fun getDailyLimits(){
+        viewModelScope.launch {
+            val dailyLimitData = dbRepository.getAllDailyLimits()
+            sharedDataManager.sendDailyLimitsData(dailyLimitData)
         }
     }
 
+    fun getTripLimits(){
+        viewModelScope.launch {
+            val tripLimitData = dbRepository.getAllTripLimits()
+            sharedDataManager.sendTripLimitData(tripLimitData)
+        }
+    }
 
-    suspend fun getPassInfo(passId:String):PassTable{
-        return withContext(Dispatchers.IO) {
-            dbRepository.getPassById(passId)
+    fun getZoneData(){
+        viewModelScope.launch {
+            val zoneData = dbRepository.getAllZones()
+            sharedDataManager.sendZoneData(zoneData)
         }
     }
 

@@ -87,6 +87,13 @@ class NetworkCall @Inject constructor(
     }
 
     /**
+     * Method to call all the initial data and save in db
+     */
+    suspend fun getAllData():Result<Unit>{
+        return apiRepository.fetchAllData()
+    }
+
+    /**
      * Station list getting
      */
     fun fetchStationsList(){
@@ -106,20 +113,7 @@ class NetworkCall @Inject constructor(
                             //loop api station list
                             response.data.stations?.forEach { station ->
 
-                                stationList.add( StationsTable(
-                                    stationId = station.stationId,
-                                    name = station.name,
-                                    shortName = station.shortName,
-                                    corridorId = station.corridorId,
-                                    corridorName = station.corridorName,
-                                    latitude = station.lattitude,
-                                    longitude=station.longitude,
-                                    stationName = station.stationName,
-                                    isJunction = station.isJunction,
-                                    routeColorCode = station.routeColorCode,
-                                    mstId = station.mstId,
-                                    status = station.status
-                                ))
+                               //TODO remove this api call
                             }
 
                             //save in the database
@@ -162,20 +156,23 @@ class NetworkCall @Inject constructor(
                             //loop api station list
                             response.data.stations?.forEach { station ->
 
-                                stationList.add( StationsTable(
-                                    stationId = station.stationId,
-                                    name = station.name,
-                                    shortName = station.shortName,
-                                    corridorId = station.corridorId,
-                                    corridorName = station.corridorName,
-                                    latitude = station.lattitude,
-                                    longitude=station.longitude,
-                                    stationName = station.stationName,
-                                    isJunction = station.isJunction,
-                                    routeColorCode = station.routeColorCode,
-                                    mstId = station.mstId,
-                                    status = station.status
-                                ))
+//                                stationList.add( StationsTable(
+//                                    stationId = station.stationId,
+//                                    operatorNameId=1,
+//                                    name = station.name,
+//                                    shortName = station.shortName,
+//                                    corridorId = station.corridorId,
+//                                    corridorName = station.corridorName,
+//                                    latitude = station.lattitude,
+//                                    longitude=station.longitude,
+//                                    stationName = station.stationName,
+//                                    isJunction = station.isJunction,
+//                                    routeColorCode = station.routeColorCode,
+//                                    mstId = station.mstId,
+//                                    status = station.status
+//                                ))
+
+                                //TODO remove this api call
                             }
 
                             //save in the database
@@ -460,6 +457,7 @@ class NetworkCall @Inject constructor(
         paymentProcessor.processPayment(payRequest, context)
 
     }
+
 
 
 }

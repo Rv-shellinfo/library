@@ -39,8 +39,11 @@ data class PassTable(
     @ColumnInfo(name = "IS_PASS_LIMIT_ACTIVE")
     val isPassLimitActive: Boolean,
 
+    @ColumnInfo(name = "IS_ZONE_ACTIVE")
+    val isZoneActive: Boolean,
+
     @ColumnInfo(name = "VERSION")
-    val version: Int,
+    val version: String,
 
     @ColumnInfo(name = "IS_ACTIVE")
     val isActive: Boolean

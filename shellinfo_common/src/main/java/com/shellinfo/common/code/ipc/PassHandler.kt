@@ -104,7 +104,7 @@ class PassHandler @Inject constructor(
 
         //get pass information from database
         runBlocking {
-            passInfo = databaseCall.getPassInfo(PassType.getPassCodeHex(passRequest.passType.passCode))
+            passInfo = databaseCall.getPassInfo(passRequest.productType.toString())
         }
 
         //calculate card effective date
@@ -121,7 +121,7 @@ class PassHandler @Inject constructor(
         //pass data set
         val passBin = PassBin()
         passBin.productType = passInfo.passCode.removePrefix("0x").toInt(16).toByte()
-        passBin.passLimit = passInfo.dailyLimit.toByte()
+        passBin.passLimit = passInfo.dailyLimitDefault.toByte()
         passBin.dailyLimit = 10.toByte()
         Utils.numToBin(passBin.startDateTime,trxTimeFromCardEffDate,3)
 

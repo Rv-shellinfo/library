@@ -14,7 +14,7 @@ interface DailyLimitDao {
     suspend fun deleteAll()
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(tripLimitTable: List<DailyLimitTable>)
+    suspend fun insert(dailLimitList: List<DailyLimitTable>)
 
     @Query("SELECT * FROM DAILY_LIMITS_TABLE")
     suspend fun getAllDailyLimits(): List<DailyLimitTable>

@@ -3,7 +3,6 @@ package com.shellinfo.common.code
 import android.Manifest
 import android.content.Context
 import android.graphics.Bitmap
-import android.service.controls.DeviceTypes
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -16,7 +15,6 @@ import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.EquipmentType
 import com.shellinfo.common.code.enums.HttpType
 import com.shellinfo.common.code.enums.NcmcDataType
-import com.shellinfo.common.code.enums.PassType
 import com.shellinfo.common.code.enums.PrinterType
 import com.shellinfo.common.code.ipc.IPCDataHandler
 import com.shellinfo.common.code.logs.LoggerImpl
@@ -28,19 +26,19 @@ import com.shellinfo.common.data.local.data.InitData
 import com.shellinfo.common.data.local.data.ipc.BF200Data
 import com.shellinfo.common.data.local.data.ipc.ServiceInfo
 import com.shellinfo.common.data.local.data.ipc.base.BaseMessage
-import com.shellinfo.common.data.local.data.pass.PassCreateRequest
-import com.shellinfo.common.data.local.db.entity.PassTable
 import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.remote.response.ApiResponse
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
 import com.shellinfo.common.data.remote.response.model.fare.FareResponse
+import com.shellinfo.common.data.remote.response.model.pass.PassRequest
 import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentRequest
 import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentResponse
 import com.shellinfo.common.data.remote.response.model.server.ServerDateTimeResponse
 import com.shellinfo.common.data.remote.response.model.ticket.Ticket
 import com.shellinfo.common.data.remote.response.model.ticket.TicketRequest
 import com.shellinfo.common.data.remote.response.model.ticket.TicketResponse
+import com.shellinfo.common.data.shared.SharedDataManager
 import com.shellinfo.common.utils.BarcodeUtils
 import com.shellinfo.common.utils.DateUtils
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_CREATE_OSA_SERVICE
@@ -49,7 +47,6 @@ import com.shellinfo.common.utils.IPCConstants.MSG_ID_ONE_TIME_READ_CARD_REQUEST
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_REMOVE_PENALTY
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_START_CARD_DETECTION
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_STOP_CARD_DETECTION
-import com.shellinfo.common.utils.IPCConstants.OPERATOR_ID_MISMATCH
 import com.shellinfo.common.utils.PermissionsUtils
 import com.shellinfo.common.utils.SpConstants
 import com.shellinfo.common.utils.SpConstants.COMMON_SERVICE_ID
@@ -57,6 +54,7 @@ import com.shellinfo.common.utils.SpConstants.OPERATOR_SERVICE_ID
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.runBlocking
 import org.eclipse.paho.client.mqttv3.MqttMessage
 import timber.log.Timber
 import javax.inject.Inject
@@ -73,6 +71,7 @@ class ShellInfoLibrary @Inject constructor(
     private val mqttManager: MQTTManager,
     private val ipcDataHandler: IPCDataHandler,
     private val permissionsUtils: PermissionsUtils,
+    private val sharedDataManager: SharedDataManager
 ) :ShellInfoProvider {
 
     companion object{
@@ -81,7 +80,7 @@ class ShellInfoLibrary @Inject constructor(
         var isForOsaRead=false
         var isForOsaCreate=false
         var isForOsaDelete=false
-        lateinit var passCreateRequest: PassCreateRequest
+        lateinit var passCreateRequest: PassRequest
     }
 
     //application activity context
@@ -161,16 +160,27 @@ class ShellInfoLibrary @Inject constructor(
     }
 
 
-
     override fun start(initData: InitData) {
 
-        //Date time library init for backward comatibility
+        //Date time library init for backward compatibility
         AndroidThreeTen.init(activity)
+
+        //fetch the dependant initial data
+        runBlocking {
+
+            val fetchData= networkCall.getAllData()
+
+            if(fetchData.isSuccess){
+               sharedDataManager.sendLibraryInit(true)
+            }else{
+                sharedDataManager.sendLibraryInit(false)
+            }
+        }
 
         //start simulation payment app data
         //startSimulation()
 
-        addDummyPass()
+        //addDummyPass()
 
         //save application specific data in shared preferences for future use
 //        spUtils.savePreference(SpConstants.APP_ID,initData.appId)
@@ -347,19 +357,6 @@ class ShellInfoLibrary @Inject constructor(
         }
 
 
-    }
-
-
-
-
-    override fun setStations() {
-        if(spUtils.getPreference(SpConstants.API_MODE, ApiMode.DEFAULT.name).equals(ApiMode.PRIVATE.name)){
-            networkCall.fetchStationsList()
-        }else if(spUtils.getPreference(SpConstants.API_MODE, ApiMode.DEFAULT.name).equals(ApiMode.PUBLIC.name)){
-            networkCall.fetchStationsListPublic()
-        }else{
-            Toast.makeText(context,"Please set API MODE", Toast.LENGTH_LONG).show()
-        }
     }
 
     override fun getStations() {
@@ -560,7 +557,7 @@ class ShellInfoLibrary @Inject constructor(
         sendMessageToIpcService(MSG_ID_CREATE_OSA_SERVICE,baseMessage)
     }
 
-    override fun createPass(request: PassCreateRequest){
+    override fun createPass(request: PassRequest){
 
         //check if the request came from TOM device
         val deviceType = spUtils.getPreference(SpConstants.DEVICE_TYPE,"")
@@ -629,52 +626,6 @@ class ShellInfoLibrary @Inject constructor(
 
 
         ipcDataHandler.handlePaymentAppMessage(baseMessage!!)
-    }
-
-    private fun addDummyPass(){
-
-        val pass1 = PassTable(
-            passCode = PassType.getPassCodeHex(PassType.TRIPS_30.passCode),
-            passName = PassType.TRIPS_30.name,
-            passPriority = 2,
-            passDuration = 30,
-            dailyLimit = 5,
-            passAmount = 100,
-            version = 1,
-            isActive = true
-
-        )
-
-        val pass2 = PassTable(
-            passCode = PassType.getPassCodeHex(PassType.HOLIDAY.passCode),
-            passName = PassType.HOLIDAY.name,
-            passPriority = 1,
-            passDuration = 30,
-            dailyLimit = 50,
-            passAmount = 50,
-            version = 1,
-            isActive = true
-
-        )
-
-        val pass3 = PassTable(
-            passCode = PassType.getPassCodeHex(PassType.ZONE_1.passCode),
-            passName = PassType.ZONE_1.name,
-            passPriority = 3,
-            passDuration = 30,
-            dailyLimit = 2,
-            passAmount = 100,
-            version = 1,
-            isActive = true
-
-        )
-
-        var passList= mutableListOf<PassTable>()
-        passList.add(pass1)
-        passList.add(pass2)
-        passList.add(pass3)
-
-        databaseCall.addPassList(passList)
     }
 
     inline fun <reified T> convertFromJson(json: String, moshi: Moshi): BaseMessage<T>? {

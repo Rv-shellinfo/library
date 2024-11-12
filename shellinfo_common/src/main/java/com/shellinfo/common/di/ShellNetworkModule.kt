@@ -19,6 +19,7 @@ import com.shellinfo.common.data.remote.repository.ApiRepository
 import com.shellinfo.common.data.local.db.repository.DbRepository
 import com.shellinfo.common.data.remote.services.ApiService
 import com.shellinfo.common.data.remote.services.provider.ApiServiceProvider
+import com.shellinfo.common.data.remote.services.provider.NullOrMissingToEmptyStringAdapter
 import com.shellinfo.common.data.remote.services.provider.RetrofitClientProvider
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
@@ -57,7 +58,7 @@ object ShellNetworkModule {
     @Singleton
     @Provides
     fun provideMoshi(): Moshi{
-        return Moshi.Builder().build()
+        return Moshi.Builder().add(NullOrMissingToEmptyStringAdapter()).build()
     }
 
     @MqttMoshi
@@ -87,9 +88,9 @@ object ShellNetworkModule {
 
     @Singleton
     @Provides
-    fun provideApiRepository(apiService:ApiService,networkUtils: NetworkUtils,spUtils: SharedPreferenceUtil) : ApiRepository
+    fun provideApiRepository(apiService:ApiService,networkUtils: NetworkUtils,spUtils: SharedPreferenceUtil,dbRepository: DbRepository) : ApiRepository
     {
-        return ApiRepository(apiService,networkUtils,spUtils)
+        return ApiRepository(apiService,networkUtils,spUtils,dbRepository)
     }
 
 

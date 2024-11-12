@@ -39,9 +39,11 @@ object RetrofitClientProvider {
             .addConverterFactory(ScalarsConverterFactory.create())
             .addConverterFactory(
                 MoshiConverterFactory.create(
-                Moshi.Builder().add(
-                    KotlinJsonAdapterFactory()
-                ).build()))
+                Moshi.Builder()
+                    .add(NullOrMissingToEmptyStringAdapter())
+                    .add(KotlinJsonAdapterFactory())
+
+                    .build()))
             .client(okHttpClient)
     }
 }

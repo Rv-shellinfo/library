@@ -8,6 +8,7 @@ import com.shellinfo.common.code.ipc.IPCDataHandler
 import com.shellinfo.common.code.logs.LoggerImpl
 import com.shellinfo.common.code.mqtt.MQTTManager
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
+import com.shellinfo.common.data.shared.SharedDataManager
 import com.shellinfo.common.utils.BarcodeUtils
 import com.shellinfo.common.utils.PermissionsUtils
 import com.squareup.moshi.Moshi
@@ -33,9 +34,10 @@ object LibraryModule {
         loggerImpl: LoggerImpl,
         mqttManager: MQTTManager,
         ipcDataHandler: IPCDataHandler,
-        permissionsUtils: PermissionsUtils
+        permissionsUtils: PermissionsUtils,
+        sharedDataManager: SharedDataManager
     ):ShellInfoLibrary{
-        return ShellInfoLibrary(context,spUtils,networkCall,databaseCall,barcodeUtils,loggerImpl,mqttManager,ipcDataHandler,permissionsUtils)
+        return ShellInfoLibrary(context,spUtils,networkCall,databaseCall,barcodeUtils,loggerImpl,mqttManager,ipcDataHandler,permissionsUtils,sharedDataManager)
     }
 
 

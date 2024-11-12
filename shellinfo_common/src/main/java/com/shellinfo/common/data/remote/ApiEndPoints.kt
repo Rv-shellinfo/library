@@ -2,6 +2,8 @@ package com.shellinfo.common.data.remote
 
 object ApiEndPoints {
 
+    const val BASE_URL_1= "https://maas.ts-afc.com"
+
     //private endpoints
     const val ENDPOINT_GET_STATIONS =  "/api/pos/v1/Station/getStations"
     const val ENDPOINT_GET_FARE =  "/api/pos/v1/Fare/GetFare"
@@ -20,6 +22,11 @@ object ApiEndPoints {
     const val ENDPOINT_HEALTH_URL =  "/api/v1/Equipment/UpdateEquipHealthData"
     const val ENDPOINT_ENTRY_TRX_URL =  "/api/v1/Transaction/AddEntryTxnDetails"
     const val ENDPOINT_EXIT_TRX_URL =  "/api/v1/Transaction/AddExitTxnDetails"
+    const val ENDPOINT_STATIONS =  "/api/v1/Station/GetStations"
+    const val ENDPOINT_DAILY_LIMITS =  "/api/v1/Pass/Dailylimits"
+    const val ENDPOINT_TRIP_LIMITS =  "/api/v1/Pass/Triplimits"
+    const val ENDPOINT_ZONES =  "api/v1/Station/GetStations"
+    const val ENDPOINT_PASS_TYPES =  "/api/v1/Pass/ProductTypes"
 
 
 

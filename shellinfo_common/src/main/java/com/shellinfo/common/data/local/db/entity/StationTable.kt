@@ -36,16 +36,31 @@ data class StationsTable(
     @ColumnInfo(name = "LONGITUDE")
     val longitude: Double?,
 
+    @ColumnInfo(name = "POS_X")
+    val posX: Double?,
+
+    @ColumnInfo(name = "POS_Y")
+    val posY: Double?,
+
     @ColumnInfo(name = "IS_JUNCTION")
     val isJunction: Boolean?,
 
     @ColumnInfo(name = "ROUTE_COLOR_CODE")
     val routeColorCode: String?,
 
-    @ColumnInfo(name = "MST_ID")
-    val mstId: String?,
+    @ColumnInfo(name = "VALID_FROM_DATE")
+    val validFromDate: String?,
+
+    @ColumnInfo(name = "VALID_TO_DATE")
+    val validToDate: String?,
+
+    @ColumnInfo(name = "CC_IP")
+    val ccIp: String?,
+
+    @ColumnInfo(name = "SC_IP")
+    val scIp: String?,
 
     @ColumnInfo(name = "STATUS")
-    val status: String?
+    val status: Boolean?
 
 )

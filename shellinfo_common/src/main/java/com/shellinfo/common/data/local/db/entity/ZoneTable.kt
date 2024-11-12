@@ -18,8 +18,12 @@ data class ZoneTable(
     @ColumnInfo(name = "ZONE_NAME")
     val zoneName: String,
 
+    @ColumnInfo(name = "ZONE_AMOUNT")
+    val zoneAmount: Double,
+
     @ColumnInfo(name = "ACTIVE_STATUS")
     val activeStatus: Boolean,
+
 
     @ColumnInfo(name = "VERSION")
     val version: Int

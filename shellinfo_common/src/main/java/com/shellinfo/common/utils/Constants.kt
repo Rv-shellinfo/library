@@ -9,8 +9,6 @@ object Constants {
 
 object SpConstants{
 
-
-
     //App's related constants
     const val APP_NAME="APPLICATION_NAME"
     const val APP_ID="APPLICATION_ID"
@@ -92,6 +90,10 @@ object SpConstants{
     //NCMC Service types
     const val COMMON_SERVICE_ID ="common_service_id"
     const val OPERATOR_SERVICE_ID ="operator_service_id"
+
+    //PASS Constants
+    const val IS_TODAY_HOLIDAY= "is_today_holiday"
+    const val IS_TODAY_EVENT = "is_today_event"
 
 }
 

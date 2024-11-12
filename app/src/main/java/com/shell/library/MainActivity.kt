@@ -11,9 +11,7 @@ import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.EquipmentType
 import com.shellinfo.common.code.enums.NcmcDataType
-import com.shellinfo.common.code.enums.PassType
 import com.shellinfo.common.data.local.data.InitData
-import com.shellinfo.common.data.local.data.pass.PassCreateRequest
 import com.shellinfo.common.data.shared.SharedDataManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject

@@ -12,6 +12,7 @@ import com.shellinfo.common.code.ipc.IPCDataHandler
 import com.shellinfo.common.code.ipc.PassHandler
 import com.shellinfo.common.code.ipc.RupayDataHandler
 import com.shellinfo.common.code.pass.BasePassValidator
+import com.shellinfo.common.data.local.db.repository.DbRepository
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.remote.repository.ApiRepository
 import com.shellinfo.common.data.shared.SharedDataManager
@@ -56,8 +57,9 @@ object ShellIPCModule {
     @Singleton
     @Provides
     fun provideRupayDataHandler(rupayUtils: RupayUtils, sharedPreferenceUtil: SharedPreferenceUtil, sharedDataManager: SharedDataManager,
-                                apiRepository: ApiRepository, networkCall: NetworkCall,passHandler: PassHandler,passValidator: BasePassValidator)
-    = RupayDataHandler(rupayUtils,sharedPreferenceUtil,sharedDataManager,apiRepository,networkCall,passHandler,passValidator)
+                                apiRepository: ApiRepository, networkCall: NetworkCall,passHandler: PassHandler,passValidator: BasePassValidator,
+                                dbRepository: DbRepository)
+    = RupayDataHandler(rupayUtils,sharedPreferenceUtil,sharedDataManager,apiRepository,networkCall,passHandler,passValidator,dbRepository)
 
     @Singleton
     @Provides

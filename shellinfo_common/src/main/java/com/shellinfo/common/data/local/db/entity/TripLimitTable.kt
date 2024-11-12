@@ -16,22 +16,10 @@ data class TripLimitTable(
     val operatorNameId: Int,
 
     @ColumnInfo(name = "TRIP_LIMIT_VALUE")
-    val tripLimitValue: String,
-
-    @ColumnInfo(name = "ACTIVE_STATUS")
-    val activeStatus: Boolean,
-
-    @ColumnInfo(name = "PASS_DURATION_DAYS")
-    val passDuration: Int,
-
-    @ColumnInfo(name = "DAILY_LIMIT_DEFAULT")
-    val dailyLimit: Int,
-
-    @ColumnInfo(name = "PASS_LIMIT_DEFAULT")
-    val passLimit: Int,
+    val tripLimitValue: Int,
 
     @ColumnInfo(name = "VERSION")
-    val version: Int,
+    val version: Double,
 
     @ColumnInfo(name = "IS_ACTIVE")
     val isActive: Boolean
