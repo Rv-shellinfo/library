@@ -104,7 +104,7 @@ class PassHandler @Inject constructor(
 
         //get pass information from database
         runBlocking {
-            passInfo = databaseCall.getPassInfo(passRequest.productType.toString())
+            passInfo = databaseCall.getPassById(passRequest.productType)
         }
 
         //calculate card effective date

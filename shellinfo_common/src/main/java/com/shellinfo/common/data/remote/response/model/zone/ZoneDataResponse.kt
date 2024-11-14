@@ -6,5 +6,5 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class ZoneDataResponse(
-    @Json(name ="zones") val zones: List<ZoneData>
+    @Json(name ="zone") val zones: List<ZoneData>
 )

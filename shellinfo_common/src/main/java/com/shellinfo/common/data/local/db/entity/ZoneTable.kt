@@ -26,5 +26,5 @@ data class ZoneTable(
 
 
     @ColumnInfo(name = "VERSION")
-    val version: Int
+    val version: Double
 )

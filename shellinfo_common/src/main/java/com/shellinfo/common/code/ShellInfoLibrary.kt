@@ -363,6 +363,22 @@ class ShellInfoLibrary @Inject constructor(
         databaseCall.getAllStations()
     }
 
+    override fun getPassZones() {
+        databaseCall.getZoneData()
+    }
+
+    override fun getTripLimits() {
+        databaseCall.getTripLimits()
+    }
+
+    override fun getDailyLimits() {
+        databaseCall.getDailyLimits()
+    }
+
+    override fun getPassTypes() {
+        databaseCall.getPassData()
+    }
+
     override fun getStationsByCorridorId(id: Int) {
         databaseCall.getStationsByCorridorId(id)
     }

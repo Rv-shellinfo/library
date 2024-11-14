@@ -36,6 +36,14 @@ interface ShellInfoProvider {
 
     fun getStations()
 
+    fun getPassZones()
+
+    fun getTripLimits()
+
+    fun getDailyLimits()
+
+    fun getPassTypes()
+
     fun getStationsByCorridorId(id:Int)
 
     fun getStationsByCorridorName(name:String)

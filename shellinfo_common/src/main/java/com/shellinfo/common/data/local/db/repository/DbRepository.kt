@@ -69,7 +69,7 @@ class DbRepository @Inject constructor(
         passDao.insert(passList)
     }
 
-    suspend fun getPassById(passId:String):PassTable{
+    suspend fun getPassById(passId:Int):PassTable{
         return passDao.getPassById(passId)
     }
 

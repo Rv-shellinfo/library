@@ -5,6 +5,6 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class ZoneData(
-    @Json(name ="zoneId") val zoneId: Int,
-    @Json(name ="zoneAmount") val zoneAmount: Int,
+    @Json(name ="zoneFare") val zoneId: Int,
+    @Json(name ="zoneFareValue") val zoneAmount: Double,
 )

@@ -5,6 +5,7 @@ import com.shellinfo.common.data.local.db.entity.DailyLimitTable
 import com.shellinfo.common.data.local.db.entity.PassTable
 import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.data.local.db.entity.TripLimitTable
+import com.shellinfo.common.data.local.db.entity.ZoneTable
 import com.shellinfo.common.data.local.db.repository.DbRepository
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.remote.ApiEndPoints
@@ -34,6 +35,7 @@ import com.shellinfo.common.data.remote.response.model.stations_new.StationDataR
 import com.shellinfo.common.data.remote.response.model.ticket.TicketRequest
 import com.shellinfo.common.data.remote.response.model.ticket.TicketResponse
 import com.shellinfo.common.data.remote.response.model.trip_limit.TripLimitResponse
+import com.shellinfo.common.data.remote.response.model.zone.ZoneDataResponse
 import com.shellinfo.common.data.remote.services.ApiService
 import com.shellinfo.common.utils.SpConstants
 import kotlinx.coroutines.Dispatchers
@@ -210,9 +212,10 @@ class ApiRepository @Inject constructor(
             val call2= async { retryWithBackoff { apiService.doGetStations(ApiEndPoints.BASE_URL_1+ApiEndPoints.ENDPOINT_STATIONS,"1000") } }
             val call3= async { retryWithBackoff { apiService.doGetDailyLimits(ApiEndPoints.BASE_URL_1+ApiEndPoints.ENDPOINT_DAILY_LIMITS,"1000") } }
             val call4= async { retryWithBackoff { apiService.doGetTripLimits(ApiEndPoints.BASE_URL_1+ApiEndPoints.ENDPOINT_TRIP_LIMITS,"1000") } }
+            val call5= async { retryWithBackoff { apiService.doGetZones(ApiEndPoints.BASE_URL_1+ApiEndPoints.ENDPOINT_ZONES,"1000") } }
 
             // Wait for all calls to complete and check if each is successful
-            val results = awaitAll(call1, call2, call3, call4)
+            val results = awaitAll(call1, call2, call3, call4,call5)
 
             if (results.all { it.isSuccessful }) {
 
@@ -302,6 +305,24 @@ class ApiRepository @Inject constructor(
                     }
 
                     dbRepository.insertTripLimits(tripLimitsList)
+
+                }
+
+                // Cast zone data response and save in db
+                (results[4].body() as? ZoneDataResponse)?.let { data ->
+
+                    val zoneList = data.zones.map { zone ->
+                        ZoneTable(
+                            zoneId = zone.zoneId,
+                            operatorNameId = 1000,
+                            zoneName = "",
+                            zoneAmount = zone.zoneAmount,
+                            activeStatus = true,
+                            version= 1.0
+                        )
+                    }
+
+                    dbRepository.insertZones(zoneList)
 
                 }
                 Result.success(Unit)

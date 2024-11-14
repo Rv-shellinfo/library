@@ -48,20 +48,44 @@ class MainActivity : AppCompatActivity() {
         btnCreateZonePass= findViewById(R.id.btnCreateZonePass)
         btnClearOSA= findViewById(R.id.btnClearOSA)
 
-        shellInfoLibrary.setApiMode(ApiMode.PUBLIC)
-        shellInfoLibrary.setBaseUrl("https://app.tsavaari.com/LTProject/")
-        shellInfoLibrary.seAuthToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJDbGllbnRJZCI6IjUwMDA4ODYxMDMzNDQiLCJDbGllbnRTZWNyZXQiOiI2MjdDRkE2OTMzNDU4QzI4MEUwMjc4NTY1REE2OEE5QUExODUyMzI4IiwiR3JhbnRUeXBlIjoicGFzc3dvcmQiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoidHNhdmFhcmlfbWVyY2hhbnQiLCJVc2VySWQiOiI1MDAwIiwiQ2xpZW50RW1haWwiOiJ0c2F2YWFyaUBnbWFpbC5jb20iLCJDbGllbnROdW1iZXIiOiI5OTk5OTk5OTk5IiwiQXBwbGljYXRpb25JZCI6IjIwMCIsIk93bmVySW5mbyI6IjIwMCIsImp0aSI6ImY2MTIwYWIzLWNhMTEtNDg0Ni04YzM1LTcxZmI5NTYxMmM5MCIsImV4cCI6MTcxMzYzNjYyOCwiaXNzIjoiTCZUIE1ldHJvIFJhaWwgKEh5ZGVyYWJhZCkgTGltaXRlZCIsImF1ZCI6IkwmVCBNZXRybyBSYWlsIChIeWRlcmFiYWQpIExpbWl0ZWQifQ.xiZCR1LniCGKBokbzh7jHMLpK8w0-X_S3uhVcZoQKcE")
+        //shellInfoLibrary.setApiMode(ApiMode.PUBLIC)
+        //shellInfoLibrary.setBaseUrl("https://app.tsavaari.com/LTProject/")
+        //shellInfoLibrary.seAuthToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJDbGllbnRJZCI6IjUwMDA4ODYxMDMzNDQiLCJDbGllbnRTZWNyZXQiOiI2MjdDRkE2OTMzNDU4QzI4MEUwMjc4NTY1REE2OEE5QUExODUyMzI4IiwiR3JhbnRUeXBlIjoicGFzc3dvcmQiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoidHNhdmFhcmlfbWVyY2hhbnQiLCJVc2VySWQiOiI1MDAwIiwiQ2xpZW50RW1haWwiOiJ0c2F2YWFyaUBnbWFpbC5jb20iLCJDbGllbnROdW1iZXIiOiI5OTk5OTk5OTk5IiwiQXBwbGljYXRpb25JZCI6IjIwMCIsIk93bmVySW5mbyI6IjIwMCIsImp0aSI6ImY2MTIwYWIzLWNhMTEtNDg0Ni04YzM1LTcxZmI5NTYxMmM5MCIsImV4cCI6MTcxMzYzNjYyOCwiaXNzIjoiTCZUIE1ldHJvIFJhaWwgKEh5ZGVyYWJhZCkgTGltaXRlZCIsImF1ZCI6IkwmVCBNZXRybyBSYWlsIChIeWRlcmFiYWQpIExpbWl0ZWQifQ.xiZCR1LniCGKBokbzh7jHMLpK8w0-X_S3uhVcZoQKcE")
 
         val initData = InitData(BuildConfig.APPLICATION_ID,
             "Transit",BuildConfig.VERSION_CODE.toString(),
             BuildConfig.VERSION_NAME,
             EquipmentType.TOM,
             "Transit",
-            Build.SERIAL)
+            Build.SERIAL,
+            ApiMode.PUBLIC,
+            "")
 
 
         shellInfoLibrary.setActivity(this)
         shellInfoLibrary.start(initData)
+
+        shellInfoLibrary.getPassZones()
+
+        sharedDataManager.zoneData.observe(this,Observer { data ->
+            // Handle the observed data
+            Log.e("Data Got",">>>> Done")
+        })
+
+
+
+        sharedDataManager.isLibraryInit.observe(this, Observer { data ->
+            // Handle the observed data
+            Log.e("Data Got",">>>> Done")
+        })
+
+
+        shellInfoLibrary.getStations()
+
+        sharedDataManager.stationData.observe(this, Observer { data ->
+            // Handle the observed data
+            Log.e("Data Got",">>>> Done")
+        })
 
 
         sharedDataManager.csaData.observe(this, Observer { data ->

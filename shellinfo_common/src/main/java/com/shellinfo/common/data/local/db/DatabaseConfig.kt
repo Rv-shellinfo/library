@@ -21,7 +21,7 @@ import com.shellinfo.common.data.local.db.entity.ZoneTable
 import com.shellinfo.common.utils.DBConstants
 
 @Database(entities = [StationsTable::class,OrdersTable::class,TicketBackupTable::class, PassTable::class,
-                     DailyLimitTable::class,TripLimitTable::class,ZoneTable::class] , version = 4, exportSchema = false)
+                     DailyLimitTable::class,TripLimitTable::class,ZoneTable::class] , version = 5, exportSchema = false)
 abstract class DatabaseConfig : RoomDatabase(){
 
     abstract fun stationsDao() : StationsDao

@@ -25,7 +25,7 @@ object ApiEndPoints {
     const val ENDPOINT_STATIONS =  "/api/v1/Station/GetStations"
     const val ENDPOINT_DAILY_LIMITS =  "/api/v1/Pass/Dailylimits"
     const val ENDPOINT_TRIP_LIMITS =  "/api/v1/Pass/Triplimits"
-    const val ENDPOINT_ZONES =  "api/v1/Station/GetStations"
+    const val ENDPOINT_ZONES =  "/api/v1/Zone/GetZoneList"
     const val ENDPOINT_PASS_TYPES =  "/api/v1/Pass/ProductTypes"
 
 

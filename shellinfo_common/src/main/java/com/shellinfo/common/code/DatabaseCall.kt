@@ -73,6 +73,10 @@ class DatabaseCall @Inject constructor(
         }
     }
 
+    suspend fun getPassById(id:Int):PassTable{
+        return dbRepository.getPassById(id)
+    }
+
     fun getDailyLimits(){
         viewModelScope.launch {
             val dailyLimitData = dbRepository.getAllDailyLimits()

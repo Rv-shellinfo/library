@@ -19,6 +19,6 @@ interface PassDao {
     @Query("SELECT * FROM PASS_TABLE")
     suspend fun getAllPasses(): List<PassTable>
 
-    @Query("SELECT * FROM PASS_TABLE WHERE PASS_CODE = :passId LIMIT 1")
-    suspend fun getPassById(passId: String): PassTable
+    @Query("SELECT * FROM PASS_TABLE WHERE PASS_ID = :passId LIMIT 1")
+    suspend fun getPassById(passId: Int): PassTable
 }
