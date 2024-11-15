@@ -19,3 +19,7 @@ annotation class MqttMoshi
 @Retention(AnnotationRetention.RUNTIME)
 @JsonQualifier
 annotation class NullToDefault
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class LibraryRetrofit

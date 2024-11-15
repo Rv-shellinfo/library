@@ -595,7 +595,7 @@ class ShellInfoLibrary @Inject constructor(
         passCreateRequest=request
 
 
-        //send message to payment application to create the OSA service
+        //send message to payment application to create the pass
         sendMessageToIpcService(MSG_ID_CREATE_PASS,baseMessage)
     }
 

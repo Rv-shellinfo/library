@@ -36,6 +36,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object ShellNetworkModule {
 
+    @LibraryRetrofit
     @Singleton
     @Provides
     fun provideRetrofit(): Retrofit = RetrofitClientProvider.getRetrofitBuilder(
@@ -50,7 +51,7 @@ object ShellNetworkModule {
 
     @Singleton
     @Provides
-    fun provideApiService(retrofit: Retrofit): ApiService {
+    fun provideApiService(@LibraryRetrofit retrofit: Retrofit): ApiService {
         return ApiServiceProvider.getApiService(retrofit)
     }
 
