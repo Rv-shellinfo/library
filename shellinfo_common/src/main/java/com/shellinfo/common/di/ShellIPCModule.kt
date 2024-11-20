@@ -38,8 +38,8 @@ object ShellIPCModule {
 
     @Singleton
     @Provides
-    fun provideCSAUtils(emvUtils: EMVUtils):RupayUtils{
-        return RupayUtils(emvUtils)
+    fun provideCSAUtils(emvUtils: EMVUtils,databaseCall: DatabaseCall):RupayUtils{
+        return RupayUtils(emvUtils,databaseCall)
     }
 
     @Singleton

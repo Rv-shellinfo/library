@@ -172,6 +172,7 @@ object IPCConstants{
     const val READER_FUNCTIONALITY_DISABLED			=	109			//Reader in Maintenance mode/Reader Off
     const val FAILURE_ENTRY_VALIDATION			=		110		    //Fail Entry Validation
     const val FAILURE_FARE_API			=		        111		    //Fail Entry Validation
+    const val ALL_PASSES_VALID                  =       112         //All passes valid
 
     //CSA pre-defined product type (NCMC Interface Specs)
     const val PROD_TYPE_SINGLE_JOURNEY:Byte  =			    0x00

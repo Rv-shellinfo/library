@@ -1,6 +1,7 @@
 package com.shellinfo.common.utils.ipc
 
 import android.util.Log
+import com.shellinfo.common.code.DatabaseCall
 import com.shellinfo.common.code.enums.PassType
 import com.shellinfo.common.data.local.data.emv_rupay.CSAMasterData
 import com.shellinfo.common.data.local.data.emv_rupay.HistoryQueue
@@ -26,8 +27,10 @@ import com.shellinfo.common.data.local.data.emv_rupay.raw.ServiceData
 import com.shellinfo.common.data.local.data.emv_rupay.raw.TerminalData
 import com.shellinfo.common.data.local.data.emv_rupay.raw.ValidationData
 import com.shellinfo.common.data.local.data.ipc.BF200Data
+import com.shellinfo.common.data.local.db.entity.PassTable
 import com.shellinfo.common.utils.DateUtils
 import com.shellinfo.common.utils.IPCConstants
+import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import java.nio.BufferOverflowException
 import java.nio.ByteBuffer
@@ -38,7 +41,8 @@ import javax.inject.Inject
 
 
 class RupayUtils @Inject constructor(
-    private val emvUtils: EMVUtils
+    private val emvUtils: EMVUtils,
+    private val databaseCall: DatabaseCall
 ){
 
     //============= CSA DATA====================//
@@ -218,10 +222,17 @@ class RupayUtils @Inject constructor(
 
         //===============================    PASS 1 =================================================================//
 
+            var passInfo:PassTable?
+
             //pass id and name
             val pass1= getSubString(df33_data, 156, 158)
-            val pass1Value= PassType.fromPassCode(hexToByte(pass1)!!)!!.passCode.toInt()
-            val pass1Name= PassType.getPassNameByCode(hexToByte(pass1)!!)!!
+
+            //get pass information from database
+            runBlocking {
+                passInfo = databaseCall.getPassById(hexToByte(pass1)!!.toInt())
+            }
+
+            val pass1Name= passInfo?.passName ?:""
 
             //pass limit
             val pass1Limit = emvUtils.getHexatoDecimal(getSubString(df33_data, 158, 160)).toString()
@@ -274,8 +285,12 @@ class RupayUtils @Inject constructor(
 
             //pass id and name
             val pass2= getSubString(df33_data, 186, 188)
-            val pass2Value= PassType.fromPassCode(hexToByte(pass2)!!)!!.passCode.toInt()
-            val pass2Name= PassType.getPassNameByCode(hexToByte(pass2)!!)!!
+            //get pass information from database
+            runBlocking {
+                passInfo = databaseCall.getPassById(hexToByte(pass2)!!.toInt())
+            }
+
+            val pass2Name= passInfo?.passName ?:""
 
             //pass limit
             val pass2Limit = emvUtils.getHexatoDecimal(getSubString(df33_data, 188, 190)).toString()
@@ -329,8 +344,12 @@ class RupayUtils @Inject constructor(
 
             //pass id and name
             val pass3= getSubString(df33_data, 216, 218)
-            val pass3Value= PassType.fromPassCode(hexToByte(pass3)!!)!!.passCode.toInt()
-            val pass3Name= PassType.getPassNameByCode(hexToByte(pass3)!!)!!
+            //get pass information from database
+            runBlocking {
+                passInfo = databaseCall.getPassById(hexToByte(pass3)!!.toInt())
+            }
+
+            val pass3Name= passInfo?.passName ?:""
 
             //pass limit
             val pass3Limit = emvUtils.getHexatoDecimal(getSubString(df33_data, 218, 220)).toString()

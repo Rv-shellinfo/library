@@ -5,8 +5,11 @@ import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.code.enums.PassType
 import com.shellinfo.common.data.local.data.emv_rupay.OSAMasterData
 import com.shellinfo.common.data.local.data.emv_rupay.binary.osa_bin.PassBin
+import com.shellinfo.common.data.local.db.entity.DailyLimitTable
 import com.shellinfo.common.data.local.db.entity.PassTable
+import com.shellinfo.common.utils.Constants
 import com.shellinfo.common.utils.DateUtils
+import com.shellinfo.common.utils.IPCConstants
 import com.shellinfo.common.utils.Utils
 import com.shellinfo.common.utils.Utils.binToNum
 import com.shellinfo.common.utils.ipc.RupayUtils
@@ -49,15 +52,23 @@ class PassHandler @Inject constructor(
             passList.add(PassBin())
         }
 
+        // Find the existing pass with the same id and same parameters (if any param is not same then treat as new pass)
+        val existingPass = passList.find { it.productType!!.toInt() == pass.productType!!.toInt()
+                && it.dailyLimit!!.toInt() == pass.dailyLimit!!.toInt()
+                && it.validZoneId!!.toInt() == pass.validZoneId!!.toInt()
+                && it.validEntryStationId!!.toInt() == pass.validEntryStationId!!.toInt()
+                && it.validEntryStationId!!.toInt() == pass.validEntryStationId!!.toInt()}
+
         // Check if new pass can be added based on the number of valid passes
-        if (passList.size == 3 && passList.none { it.priority!!.toInt() == 0 }) {
-            // If there are already 3 active passes, and no blank passes left
-            throw IllegalStateException("All valid passes are already present.")
+        if (existingPass ==null && passList.size == 3 && passList.none { it.priority!!.toInt() == 0 }) {
+            // If there are already 3 active passes, and no blank passes left and already this type of pass is not available then throw error
+            osaMasterData.rupayMessage?.returnCode = IPCConstants.ALL_PASSES_VALID
+            osaMasterData.rupayMessage?.returnMessage = "ALL_PASSES_VALID"
+            osaMasterData.rupayMessage?.isSuccess =false
+
+            return osaMasterData
         }
 
-
-        // Find the existing pass with the same id
-        val existingPass = passList.find { it.productType!!.toInt() == pass.productType!!.toInt() }
 
         //if already pass present then change expiry date of existing pass and increase the trips
         if(existingPass!=null){
@@ -120,13 +131,13 @@ class PassHandler @Inject constructor(
 
         //pass data set
         val passBin = PassBin()
-        passBin.productType = passInfo.passCode.removePrefix("0x").toInt(16).toByte()
-        passBin.passLimit = passInfo.dailyLimitDefault.toByte()
-        passBin.dailyLimit = 10.toByte()
+        passBin.productType = passInfo.passId.toByte()
+        passBin.passLimit = passRequest.passLimitValue?.toByte()
+        passBin.dailyLimit = passRequest.dailyLimitValue?.toByte()
         Utils.numToBin(passBin.startDateTime,trxTimeFromCardEffDate,3)
+        passBin.validZoneId = passRequest.zoneId?.toByte()
 
-        //TODO expiry date needs to be set dynamic from the API
-        passBin.endDateTime= DateUtils.saveFutureDateInTwoBytes(30)
+        passBin.endDateTime= DateUtils.saveFutureDateInTwoBytes(passInfo.passDuration)
         passBin.lastConsumedDate=DateUtils.saveFutureDateInTwoBytes(0)
         passBin.priority = passInfo.passPriority.toByte()
 

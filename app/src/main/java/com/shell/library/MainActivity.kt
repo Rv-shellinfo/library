@@ -12,6 +12,7 @@ import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.EquipmentType
 import com.shellinfo.common.code.enums.NcmcDataType
 import com.shellinfo.common.data.local.data.InitData
+import com.shellinfo.common.data.remote.response.model.pass.PassRequest
 import com.shellinfo.common.data.shared.SharedDataManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -65,7 +66,6 @@ class MainActivity : AppCompatActivity() {
         shellInfoLibrary.setActivity(this)
         shellInfoLibrary.start(initData)
 
-        shellInfoLibrary.getPassZones()
 
         sharedDataManager.zoneData.observe(this,Observer { data ->
             // Handle the observed data
@@ -104,7 +104,7 @@ class MainActivity : AppCompatActivity() {
         btnStart.setOnClickListener(View.OnClickListener {
 
             //read card passive mode
-            shellInfoLibrary.readNcmcCardData(NcmcDataType.OSA)
+            shellInfoLibrary.readNcmcCardData(NcmcDataType.CSA)
         })
 
 
@@ -128,20 +128,20 @@ class MainActivity : AppCompatActivity() {
 
         btnCreateHolidayPass.setOnClickListener(View.OnClickListener {
 
-//            val passRequest = PassCreateRequest(PassType.HOLIDAY)
-//            shellInfoLibrary.createPass(passRequest)
+            val passRequest = PassRequest(100)
+            shellInfoLibrary.createPass(passRequest)
         })
 
         btnCreateTripPass.setOnClickListener(View.OnClickListener {
 
-//            val passRequest = PassCreateRequest(PassType.TRIPS_30)
-//            shellInfoLibrary.createPass(passRequest)
+            val passRequest = PassRequest(103, passLimitValue = 30, zoneId = 40)
+            shellInfoLibrary.createPass(passRequest)
         })
 
         btnCreateZonePass.setOnClickListener(View.OnClickListener {
 
-//            val passRequest = PassCreateRequest(PassType.ZONE_1)
-//            shellInfoLibrary.createPass(passRequest)
+            val passRequest = PassRequest(105, passLimitValue = 30, zoneId = 1, zoneAmount = 10.0)
+            shellInfoLibrary.createPass(passRequest)
         })
 
 
