@@ -33,17 +33,24 @@ data class PassTable(
     @ColumnInfo(name = "PASS_LIMIT_DEFAULT")
     val passLimitDefault: Int,
 
-    @ColumnInfo(name = "IS_DAILY_LIMIT_ACTIVE")
-    val isDailyLimitActive: Boolean,
-
-    @ColumnInfo(name = "IS_PASS_LIMIT_ACTIVE")
-    val isPassLimitActive: Boolean,
-
-    @ColumnInfo(name = "IS_ZONE_ACTIVE")
-    val isZoneActive: Boolean,
 
     @ColumnInfo(name = "VERSION")
     val version: String,
+
+    @ColumnInfo(name = "IS_DAILY_LIMIT_ENABLE")
+    val isDailyLimitEnable: Boolean,
+
+    @ColumnInfo(name = "IS_PASS_LIMIT_ENABLE")
+    val isPassLimitEnable: Boolean,
+
+    @ColumnInfo(name = "IS_ZONE_ENABLE")
+    val isZoneEnable: Boolean,
+
+    @ColumnInfo(name = "IS_TRIP_LIMIT_ENABLE")
+    val isTripEnable: Boolean,
+
+    @ColumnInfo(name = "IS_STATION_ENABLE")
+    val isStationEnable: Boolean,
 
     @ColumnInfo(name = "IS_ACTIVE")
     val isActive: Boolean

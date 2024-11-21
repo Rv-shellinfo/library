@@ -232,9 +232,11 @@ class ApiRepository @Inject constructor(
                             passDuration = pass.passDurationDays,
                             dailyLimitDefault = pass.dailyLimitDefault,
                             passLimitDefault = pass.passLimitDefault,
-                            isDailyLimitActive = pass.isDailyLimitActive.lowercase() == "y",
-                            isPassLimitActive = pass.isPassLimitActive.lowercase() == "y",
-                            isZoneActive = pass.isZoneActive.lowercase() == "y",
+                            isDailyLimitEnable = pass.isDailyLimitEnable.lowercase() == "y",
+                            isPassLimitEnable = pass.isPassLimitEnable.lowercase() == "y",
+                            isZoneEnable = pass.isZoneEnable.lowercase() == "y",
+                            isTripEnable = pass.isTripLimitEnable.lowercase() == "y",
+                            isStationEnable = pass.isStationsEnable.lowercase() == "y",
                             isActive = true,
                             version = pass.version.toString()
                         )

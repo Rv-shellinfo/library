@@ -12,8 +12,10 @@ data class PassTypeData(
     @Json(name ="passDurationDays") val passDurationDays: Int,
     @Json(name ="passLimitDefault") val passLimitDefault: Int,
     @Json(name ="dailyLimitDefault") val dailyLimitDefault: Int,
-    @Json(name ="isDailyLimitActive") val isDailyLimitActive: String,
-    @Json(name ="isPassLimitActive") val isPassLimitActive: String,
-    @Json(name ="isZoneActive") val isZoneActive: String,
+    @Json(name ="isDailyLimitEnable") val isDailyLimitEnable: String,
+    @Json(name ="isPassLimitEnable") val isPassLimitEnable: String,
+    @Json(name ="isZoneEnable") val isZoneEnable: String,
+    @Json(name ="isStationsEnable") val isStationsEnable: String,
+    @Json(name ="isTripLimitEnable") val isTripLimitEnable: String,
     @Json(name ="version") val version: String
 )
