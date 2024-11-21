@@ -3,6 +3,7 @@ package com.shellinfo.common.data.local.db.repository
 import com.shellinfo.common.data.local.db.dao.DailyLimitDao
 import com.shellinfo.common.data.local.db.dao.OrderDao
 import com.shellinfo.common.data.local.db.dao.PassDao
+import com.shellinfo.common.data.local.db.dao.PurchasePassDao
 import com.shellinfo.common.data.local.db.dao.StationsDao
 import com.shellinfo.common.data.local.db.dao.TicketBackupDao
 import com.shellinfo.common.data.local.db.dao.TripLimitDao
@@ -10,6 +11,7 @@ import com.shellinfo.common.data.local.db.dao.ZoneDao
 import com.shellinfo.common.data.local.db.entity.DailyLimitTable
 import com.shellinfo.common.data.local.db.entity.OrdersTable
 import com.shellinfo.common.data.local.db.entity.PassTable
+import com.shellinfo.common.data.local.db.entity.PurchasePassTable
 import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.data.local.db.entity.TicketBackupTable
 import com.shellinfo.common.data.local.db.entity.TripLimitTable
@@ -25,7 +27,8 @@ class DbRepository @Inject constructor(
     private val passDao: PassDao,
     private val dailyLimitDao: DailyLimitDao,
     private val tripLimitDao: TripLimitDao,
-    private val zoneDao: ZoneDao){
+    private val zoneDao: ZoneDao,
+    private val purchasePassDao: PurchasePassDao){
 
     suspend fun insertStations(stations:List<StationsTable>){
          stationsDao.deleteAll()
@@ -116,5 +119,18 @@ class DbRepository @Inject constructor(
 
     suspend fun getAllZones():List<ZoneTable>{
         return zoneDao.getAllZones()
+    }
+
+    suspend fun insertPurchasePassData(data:PurchasePassTable){
+        purchasePassDao.deleteAll()
+        purchasePassDao.insert(data)
+    }
+
+    suspend fun getUnSyncedData():List<PurchasePassTable>{
+        return purchasePassDao.getUnSyncedRecords()
+    }
+
+    suspend fun setPassPurchaseToSync(id:String){
+        purchasePassDao.setDataToSync(id)
     }
 }

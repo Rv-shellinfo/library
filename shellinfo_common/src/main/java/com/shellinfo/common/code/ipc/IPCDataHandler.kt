@@ -22,10 +22,13 @@ import com.shellinfo.common.data.local.data.emv_rupay.CSAMasterData
 import com.shellinfo.common.data.local.data.ipc.BF200Data
 import com.shellinfo.common.data.local.data.ipc.ServiceInfo
 import com.shellinfo.common.data.local.data.ipc.base.BaseMessage
+import com.shellinfo.common.data.local.db.entity.PurchasePassTable
 import com.shellinfo.common.di.DefaultMoshi
+import com.shellinfo.common.utils.DateUtils
 import com.shellinfo.common.utils.IPCConstants
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_AMOUNT_REQUEST
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_CREATE_OSA_ACK
+import com.shellinfo.common.utils.IPCConstants.MSG_ID_CREATE_PASS_ACK
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_ICC_DATA
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_NO_DATA_ERROR
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_PAYMENT_APP_VERSION_DATA
@@ -280,6 +283,16 @@ class IPCDataHandler @Inject constructor(
 
             }
 
+            MSG_ID_CREATE_PASS_ACK->{
+
+                // Convert JSON string back to BaseMessage object
+                val baseMessage: BaseMessage<String>? = convertFromJson<String>(message,moshi)
+
+                if(baseMessage!!.messageId == STYL_NO_ERROR){
+                    rupayDataHandler.savePassPurchaseData()
+                }
+            }
+
             MSG_ID_STYL_ERROR->{
 
 
@@ -501,4 +514,7 @@ class IPCDataHandler @Inject constructor(
         // Start the runnable if it's not already running
         handler?.post(connectionRunnable!!)
     }
+
+
+
 }

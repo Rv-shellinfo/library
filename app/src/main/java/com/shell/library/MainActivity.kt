@@ -12,6 +12,7 @@ import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.EquipmentType
 import com.shellinfo.common.code.enums.NcmcDataType
 import com.shellinfo.common.data.local.data.InitData
+import com.shellinfo.common.data.remote.response.model.pass.BankTransactionDetail
 import com.shellinfo.common.data.remote.response.model.pass.PassRequest
 import com.shellinfo.common.data.shared.SharedDataManager
 import dagger.hilt.android.AndroidEntryPoint
@@ -127,20 +128,21 @@ class MainActivity : AppCompatActivity() {
         })
 
         btnCreateHolidayPass.setOnClickListener(View.OnClickListener {
-
-            val passRequest = PassRequest(100)
+            val bankDetail = BankTransactionDetail(paymentMethodId =100)
+            val passRequest = PassRequest(100, bankDetail = bankDetail, productCode = "HOLIDAY", amount = 100.0)
             shellInfoLibrary.createPass(passRequest)
         })
 
         btnCreateTripPass.setOnClickListener(View.OnClickListener {
 
-            val passRequest = PassRequest(103, passLimitValue = 30, zoneId = 40)
+            val bankDetail = BankTransactionDetail(paymentMethodId =100)
+            val passRequest = PassRequest(103, passLimitValue = 30, zoneId = 40, bankDetail = bankDetail, productCode = "MONTHLY", amount = 200.0)
             shellInfoLibrary.createPass(passRequest)
         })
 
         btnCreateZonePass.setOnClickListener(View.OnClickListener {
-
-            val passRequest = PassRequest(105, passLimitValue = 30, zoneId = 1, zoneAmount = 10.0)
+            val bankDetail = BankTransactionDetail(paymentMethodId =100,)
+            val passRequest = PassRequest(105, passLimitValue = 30, zoneId = 1, zoneAmount = 10.0, bankDetail = bankDetail,productCode = "MONTHLY", amount = 300.0)
             shellInfoLibrary.createPass(passRequest)
         })
 

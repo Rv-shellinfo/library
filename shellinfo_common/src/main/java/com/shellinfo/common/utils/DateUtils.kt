@@ -161,6 +161,15 @@ object DateUtils {
 
     }
 
+    fun getFutureDate(n:Int):String{
+
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.DAY_OF_MONTH, n) // Add 'n' days
+
+        val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        return dateFormat.format(calendar.time)
+    }
+
     fun getDateFromByteArrayPass(dateBytes: ByteArray): String {
         if (dateBytes.size != 2) {
             throw IllegalArgumentException("Invalid byte array size. Must be exactly 2 bytes.")

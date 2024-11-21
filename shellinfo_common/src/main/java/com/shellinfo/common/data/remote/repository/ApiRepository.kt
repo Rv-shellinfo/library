@@ -27,6 +27,7 @@ import com.shellinfo.common.data.remote.response.model.payment_gateway.TrackTran
 import com.shellinfo.common.data.remote.response.model.payment_gateway.cash_free.CashFreePaymentRequest
 import com.shellinfo.common.data.remote.response.model.payment_gateway.cash_free.CashFreePaymentResponse
 import com.shellinfo.common.data.remote.response.model.payment_gateway.order_status.OrderStatusRequest
+import com.shellinfo.common.data.remote.response.model.purchase_pass.PurchasePassRequest
 import com.shellinfo.common.data.remote.response.model.server.ServerDateTimeRequest
 import com.shellinfo.common.data.remote.response.model.server.ServerDateTimeResponse
 import com.shellinfo.common.data.remote.response.model.stations.StationRequest
@@ -335,5 +336,20 @@ class ApiRepository @Inject constructor(
             // Handle failure if any call exhausts retries
             Result.failure(ex)
         }
+    }
+
+    /**
+     * Purchase Pass Data API Sync Call
+     */
+    suspend fun syncPurchaseData(request:PurchasePassRequest)= withContext(Dispatchers.IO){
+
+        try{
+
+            apiService.doSyncPurchasePassData(ApiEndPoints.BASE_URL_1+ApiEndPoints.ENDPOINT_PURCHASE_PASS,request)
+
+        }catch (ex:Exception){
+            ex.printStackTrace()
+        }
+
     }
 }

@@ -6,6 +6,7 @@ import com.shellinfo.common.data.local.db.DatabaseConfig
 import com.shellinfo.common.data.local.db.dao.DailyLimitDao
 import com.shellinfo.common.data.local.db.dao.OrderDao
 import com.shellinfo.common.data.local.db.dao.PassDao
+import com.shellinfo.common.data.local.db.dao.PurchasePassDao
 import com.shellinfo.common.data.local.db.dao.StationsDao
 import com.shellinfo.common.data.local.db.dao.TicketBackupDao
 import com.shellinfo.common.data.local.db.dao.TripLimitDao
@@ -67,11 +68,17 @@ object ShellDatabaseModule {
     }
 
     @Provides
+    fun providePurchasePassDao(database: DatabaseConfig):PurchasePassDao{
+        return database.purchasePassDao()
+    }
+
+    @Provides
     @Singleton
     fun provideDbRepository(stationsDao: StationsDao, orderDao: OrderDao, ticketBackupDao: TicketBackupDao, passDao: PassDao,
-                            dailyLimitDao: DailyLimitDao, tripLimitDao: TripLimitDao,zoneDao: ZoneDao
+                            dailyLimitDao: DailyLimitDao, tripLimitDao: TripLimitDao,zoneDao: ZoneDao,
+                            purchasePassDao: PurchasePassDao
     ): DbRepository  {
-        return DbRepository(stationsDao,orderDao, ticketBackupDao,passDao,dailyLimitDao,tripLimitDao,zoneDao)
+        return DbRepository(stationsDao,orderDao, ticketBackupDao,passDao,dailyLimitDao,tripLimitDao,zoneDao,purchasePassDao)
     }
 
 

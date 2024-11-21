@@ -6,6 +6,7 @@ import com.squareup.moshi.JsonClass
 @JsonClass(generateAdapter = true)
 data class PassRequest(
     val productType:Int,
+    val productCode:String?="",
     val isZonePass:Boolean?=false,
     val zoneId:Int?=99,
     val zoneAmount:Double?=99.00,
@@ -14,5 +15,9 @@ data class PassRequest(
     val dailyLimitId:Int?=99,
     val dailyLimitValue:Int?=99,
     val sourceStationId:Int?=99,
-    val destStationId:Int?=99
+    val destStationId:Int?=99,
+    var startDateTime:String?="",
+    var expiryDate:String?="",
+    val amount:Double? =0.0,
+    val bankDetail:BankTransactionDetail
 )

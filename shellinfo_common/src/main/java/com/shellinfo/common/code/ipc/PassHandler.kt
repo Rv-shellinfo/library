@@ -134,10 +134,12 @@ class PassHandler @Inject constructor(
         passBin.productType = passInfo.passId.toByte()
         passBin.passLimit = passRequest.passLimitValue?.toByte()
         passBin.dailyLimit = passRequest.dailyLimitValue?.toByte()
+        ShellInfoLibrary.passCreateRequest.startDateTime=DateUtils.getDateInSpecificFormat("yyyy-MM-dd HH:mm:ss")
         Utils.numToBin(passBin.startDateTime,trxTimeFromCardEffDate,3)
         passBin.validZoneId = passRequest.zoneId?.toByte()
 
         passBin.endDateTime= DateUtils.saveFutureDateInTwoBytes(passInfo.passDuration)
+        ShellInfoLibrary.passCreateRequest.expiryDate=DateUtils.getFutureDate(passInfo.passDuration)
         passBin.lastConsumedDate=DateUtils.saveFutureDateInTwoBytes(0)
         passBin.priority = passInfo.passPriority.toByte()
 

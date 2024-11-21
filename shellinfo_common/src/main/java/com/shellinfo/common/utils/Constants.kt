@@ -106,6 +106,7 @@ object DBConstants{
     const val TRIP_LIMITS_TABLE = "TRIP_LIMITS_TABLE"
     const val DAILY_LIMITS_TABLE = "DAILY_LIMITS_TABLE"
     const val ZONE_TABLE = "ZONE_TABLE"
+    const val PURCHASE_PASS_TABLE = "PURCHASE_PASS_TABLE"
 
 }
 
