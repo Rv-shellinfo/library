@@ -14,6 +14,7 @@ import com.shellinfo.common.data.local.data.emv_rupay.binary.osa_bin.HistoryBinO
 import com.shellinfo.common.data.local.data.emv_rupay.binary.osa_bin.PassBin
 import com.shellinfo.common.data.local.data.emv_rupay.display.csa_display.CSADataDisplay
 import com.shellinfo.common.data.local.data.ipc.BF200Data
+import com.shellinfo.common.data.local.db.entity.PurchasePassTable
 import com.shellinfo.common.data.local.db.entity.ZoneTable
 import com.shellinfo.common.data.local.db.repository.DbRepository
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
@@ -23,6 +24,7 @@ import com.shellinfo.common.data.remote.response.model.entry_validation.EntryVal
 import com.shellinfo.common.data.remote.response.model.entry_validation.EntryValidationResponse
 import com.shellinfo.common.data.remote.response.model.gate_fare.GateFareRequest
 import com.shellinfo.common.data.remote.response.model.gate_fare.GateFareResponse
+import com.shellinfo.common.data.remote.response.model.purchase_pass.PurchasePassRequest
 import com.shellinfo.common.data.shared.SharedDataManager
 import com.shellinfo.common.utils.DateUtils
 import com.shellinfo.common.utils.IPCConstants
@@ -52,6 +54,7 @@ import com.shellinfo.common.utils.IPCConstants.TXN_STATUS_ENTRY
 import com.shellinfo.common.utils.IPCConstants.TXN_STATUS_EXIT
 import com.shellinfo.common.utils.IPCConstants.TXN_STATUS_ONE_TAP_TICKET
 import com.shellinfo.common.utils.IPCConstants.TXN_STATUS_PENALTY
+import com.shellinfo.common.utils.SpConstants
 import com.shellinfo.common.utils.SpConstants.ACQUIRER_ID
 import com.shellinfo.common.utils.SpConstants.DEVICE_TYPE
 import com.shellinfo.common.utils.SpConstants.ENTRY_EXIT
@@ -144,9 +147,34 @@ class RupayDataHandler @Inject constructor(
         //set error
         csaMasterData.rupayMessage!!.returnCode= errorCode
         csaMasterData.rupayMessage!!.returnMessage= errorMessage
+        csaMasterData.rupayMessage!!.isSuccess =false
 
         //post value to live data to application
         sharedDataManager.sendCsaData(csaMasterData)
+
+        //if want to send the data to payment app
+        if(sendToPaymentApp == true) {
+            //send back error to payment app
+            communicationService.sendData(MSG_ID_ERROR_TRANSACTION, "MSG_ID_ERROR_TRANSACTION")
+        }
+    }
+
+
+    /**
+     * Method to send the result to Application and to the Payment Application, Both or to only Application
+     */
+    fun handleErrorOSA(errorCode:Int, errorMessage:String,sendToPaymentApp:Boolean?=true){
+
+        //create csa master data error
+        val osaMasterData = OSAMasterData()
+
+        //set error
+        osaMasterData.rupayMessage!!.returnCode= errorCode
+        osaMasterData.rupayMessage!!.returnMessage= errorMessage
+        osaMasterData.rupayMessage!!.isSuccess =false
+
+        //post value to live data to application
+        sharedDataManager.sendOsaData(osaMasterData)
 
         //if want to send the data to payment app
         if(sendToPaymentApp == true) {
@@ -437,22 +465,35 @@ class RupayDataHandler @Inject constructor(
                         }
 
 
+                        if(osaMasterData.rupayMessage!!.isSuccess){
 
-                        //convert the updated csa bin to byte array
-                        val osaSent =  rupayUtils.osaBinToByteArray(osaMasterData.osaUpdatedBinData!!)
+                            //make service active
+                            osaMasterData.osaUpdatedBinData!!.generalInfo.setServiceStatus(true)
+
+                            //convert the updated csa bin to byte array
+                            val osaSent =  rupayUtils.osaBinToByteArray(osaMasterData.osaUpdatedBinData!!)
 
 
-                        //add the header and footer for the update
-                        val startIndex= osaMasterData.bf200Data?.serviceDataIndex!!
-                        val endIndex= osaMasterData.bf200Data?.serviceDataIndex!!+95
-                        var updatedDataWithHeaderFooter=osaMasterData.bf200Data?.serviceRelatedData
-                        for( i in startIndex..endIndex){
-                            updatedDataWithHeaderFooter!!.set(i, osaSent[i-startIndex])
+                            //add the header and footer for the update
+                            val startIndex= osaMasterData.bf200Data?.serviceDataIndex!!
+                            val endIndex= osaMasterData.bf200Data?.serviceDataIndex!!+95
+                            var updatedDataWithHeaderFooter=osaMasterData.bf200Data?.serviceRelatedData
+                            for( i in startIndex..endIndex){
+                                updatedDataWithHeaderFooter!!.set(i, osaSent[i-startIndex])
+                            }
+
+
+                            //send back the message
+                            communicationService.sendData(MSG_ID_CREATE_PASS_DATA,updatedDataWithHeaderFooter!!.toByteArray().toHexString())
+
+                        }else{
+
+                            //handle pass creation error
+                            handleErrorOSA(osaMasterData.rupayMessage!!.returnCode,osaMasterData.rupayMessage!!.returnMessage)
+
                         }
 
 
-                        //send back the message
-                        communicationService.sendData(MSG_ID_CREATE_PASS_DATA,updatedDataWithHeaderFooter!!.toByteArray().toHexString())
 
                     }
 
@@ -485,7 +526,7 @@ class RupayDataHandler @Inject constructor(
                     osaMasterData.bf200Data = bF200Data
 
                     //check reader location
-                    when (spUtils.getPreference(READER_LOCATION, "EXIT")) {
+                    when (spUtils.getPreference(READER_LOCATION, "ENTRY")) {
 
                         ENTRY_SIDE -> {
 
@@ -701,6 +742,15 @@ class RupayDataHandler @Inject constructor(
         //get csa raw data
         val osaRawData = osaMasterData.osaBinData
 
+        //check for osa service active or not
+        if(!osaRawData!!.generalInfo.getServiceStatus()){
+
+            //if service is not active go for csa deduction
+            //TODO go for csa transaction without going further
+
+        }
+
+
         //get display data
         val osaDataDisplay = osaMasterData.osaDisplayData
 
@@ -845,6 +895,13 @@ class RupayDataHandler @Inject constructor(
                 }
 
             }else{
+
+                //return error to payment app and UI
+                handleError(
+                    FAILURE_ENTRY_VALIDATION,
+                    rupayUtils.getError("FAILURE_ENTRY_VALIDATION")
+                )
+
                 return@runBlocking
             }
         }
@@ -1817,7 +1874,7 @@ class RupayDataHandler @Inject constructor(
             //1. check if osa service is inactive
             if(osaMasterData.osaBinData!!.generalInfo.getServiceStatus()){
                 //TODO go for CSA transaction
-                return
+                //return
             }
 
             //2. check if all pass expired
@@ -2192,6 +2249,116 @@ class RupayDataHandler @Inject constructor(
         }
     }
 
+    /**
+     * Save pass in local database
+     */
+    fun savePassPurchaseData(){
 
+        //get pass creation request
+        val passCreationData= ShellInfoLibrary.passCreateRequest
+
+        //operator id
+        val operatorId = spUtils.getPreference(OPERATOR_ID,1000)
+
+        //get current date and time
+        val currentDateTime= DateUtils.getDateInSpecificFormat("yyMMddHHmmss")
+
+        //merchant id
+        val merchantId= spUtils.getPreference(SpConstants.MERCHANT_ID,1000)
+
+        //station id
+        val stationId= spUtils.getPreference(STATION_ID,"1213")
+
+        //equipment id
+        val euipId= spUtils.getPreference(EQUIPMENT_ID,"222")
+
+        //pass type id
+        val passTypeId= passCreationData.productType
+
+        //unique pass id
+        val passId= currentDateTime+merchantId+stationId+euipId+passTypeId
+
+        //line id
+        val lineId= spUtils.getPreference(SpConstants.LINE_ID,124)
+
+        //create Purchase pass table request for local database
+        val passPurchaseTable = PurchasePassTable(
+            passId = passId,
+            operatorId = operatorId.toString(),
+            merchantOrderId = passId,
+            merchantId = merchantId.toString(),
+            passTypeId = passCreationData.productType,
+            passTypeCode = passCreationData.productCode!!,
+            totalAmount = passCreationData.amount!!,
+            passStatusId = 110,
+            passStatusCode = "ACTIVE",
+            purchaseDate = passCreationData.startDateTime!!,
+            expiryDate = passCreationData.expiryDate!!,
+            stationId = stationId,
+            equipmentId = euipId,
+            fromStation = passCreationData.sourceStationId.toString(),
+            toStation = passCreationData.destStationId.toString(),
+            zone = passCreationData.zoneId!!,
+            lines = lineId,
+            tripLimit = passCreationData.passLimitValue!!,
+            dailyLimit = passCreationData.dailyLimitValue!!,
+            paymentMethodId=passCreationData.bankDetail.paymentMethodId,
+            bankStan=passCreationData.bankDetail.bankStan!!,
+            bankRrn=passCreationData.bankDetail.bankRrn!!,
+            bankResponseCode=passCreationData.bankDetail.bankResponseCode!!,
+            bankAid=passCreationData.bankDetail.bankAid!!,
+            bankCardNumber=passCreationData.bankDetail.bankCardNumber!!,
+            bankCardType=passCreationData.bankDetail.bankCardType!!,
+            bankMid=passCreationData.bankDetail.bankMid!!,
+            bankTid=passCreationData.bankDetail.bankTid!!,
+            bankTransactionId=passCreationData.bankDetail.bankTransactionId!!,
+            bankReferenceNumber=passCreationData.bankDetail.bankReferenceNumber!!,
+            bankIssuerId=passCreationData.bankDetail.bankIssuerId!!,
+            acquierBank=passCreationData.bankDetail.acquierBank!!,
+            cardScheme=passCreationData.bankDetail.cardScheme!!,
+        )
+
+        //request for api call
+        val request = PurchasePassRequest(
+            operatorId = operatorId,
+            passId= passId,
+            merchantOrderId = passId,
+            merchantId = merchantId,
+            passTypeId = passCreationData.productType,
+            passTypeCode = passCreationData.productCode!!,
+            totalAmount = passCreationData.amount!!,
+            passStatusId = 110,
+            passStatusCode = "ACTIVE",
+            purchaseDate = passCreationData.startDateTime!!,
+            expiryDate = passCreationData.expiryDate!!,
+            stationId = stationId,
+            equipmentId = euipId,
+            fromStation = passCreationData.sourceStationId.toString(),
+            toStation = passCreationData.destStationId.toString(),
+            zone = passCreationData.zoneId!!,
+            lines = lineId,
+            tripLimit = passCreationData.passLimitValue!!,
+            dailyLimit = passCreationData.dailyLimitValue!!,
+            paymentMethodId=passCreationData.bankDetail.paymentMethodId,
+            bankStan=passCreationData.bankDetail.bankStan!!,
+            bankRrn=passCreationData.bankDetail.bankRrn!!,
+            bankResponseCode=passCreationData.bankDetail.bankResponseCode!!,
+            bankAid=passCreationData.bankDetail.bankAid!!,
+            bankCardNumber=passCreationData.bankDetail.bankCardNumber!!,
+            bankCardType=passCreationData.bankDetail.bankCardType!!,
+            bankMid=passCreationData.bankDetail.bankMid!!,
+            bankTid=passCreationData.bankDetail.bankTid!!,
+            bankTransactionId=passCreationData.bankDetail.bankTransactionId!!,
+            bankReferenceNumber=passCreationData.bankDetail.bankReferenceNumber!!,
+            bankIssuerId=passCreationData.bankDetail.bankIssuerId!!,
+            acquierBank=passCreationData.bankDetail.acquierBank!!,
+            cardScheme=passCreationData.bankDetail.cardScheme!!
+        )
+
+        runBlocking {
+            dbRepository.insertPurchasePassData(passPurchaseTable)
+            apiRepository.syncPurchaseData(request)
+        }
+    }
 
 }
