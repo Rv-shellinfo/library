@@ -4,6 +4,8 @@ import android.content.Context
 import com.shellinfo.common.code.DatabaseCall
 import com.shellinfo.common.data.local.db.DatabaseConfig
 import com.shellinfo.common.data.local.db.dao.DailyLimitDao
+import com.shellinfo.common.data.local.db.dao.EntryTrxDao
+import com.shellinfo.common.data.local.db.dao.ExitTrxDao
 import com.shellinfo.common.data.local.db.dao.OrderDao
 import com.shellinfo.common.data.local.db.dao.PassDao
 import com.shellinfo.common.data.local.db.dao.PurchasePassDao
@@ -73,12 +75,22 @@ object ShellDatabaseModule {
     }
 
     @Provides
+    fun provideEntryTrxDao(database: DatabaseConfig):EntryTrxDao{
+        return database.entryTrxDao()
+    }
+
+    @Provides
+    fun provideExitTrxDao(database: DatabaseConfig):ExitTrxDao{
+        return database.exitTrxDao()
+    }
+
+    @Provides
     @Singleton
     fun provideDbRepository(stationsDao: StationsDao, orderDao: OrderDao, ticketBackupDao: TicketBackupDao, passDao: PassDao,
                             dailyLimitDao: DailyLimitDao, tripLimitDao: TripLimitDao,zoneDao: ZoneDao,
-                            purchasePassDao: PurchasePassDao
+                            purchasePassDao: PurchasePassDao, entryTrxDao: EntryTrxDao,exitTrxDao: ExitTrxDao
     ): DbRepository  {
-        return DbRepository(stationsDao,orderDao, ticketBackupDao,passDao,dailyLimitDao,tripLimitDao,zoneDao,purchasePassDao)
+        return DbRepository(stationsDao,orderDao, ticketBackupDao,passDao,dailyLimitDao,tripLimitDao,zoneDao,purchasePassDao,entryTrxDao,exitTrxDao)
     }
 
 

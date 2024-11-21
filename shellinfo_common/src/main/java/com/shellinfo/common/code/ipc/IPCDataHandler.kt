@@ -264,7 +264,16 @@ class IPCDataHandler @Inject constructor(
 
             MSG_ID_TRX_STATUS_RUPAY_NCMC->{
 
-                Toast.makeText(context,"GOOD JOB",Toast.LENGTH_LONG).show()
+                // Convert JSON string back to BaseMessage object
+                val baseMessage: BaseMessage<String>? = convertFromJson<String>(message,moshi)
+
+                if(baseMessage!!.messageId == STYL_NO_ERROR){
+                    rupayDataHandler.saveNcmcTransaction(baseMessage.dataType)
+
+                    //TODO send success to app
+                }else{
+                    //TODO send error to app
+                }
             }
 
             MSG_ID_NO_DATA_ERROR ->{
@@ -290,6 +299,10 @@ class IPCDataHandler @Inject constructor(
 
                 if(baseMessage!!.messageId == STYL_NO_ERROR){
                     rupayDataHandler.savePassPurchaseData()
+
+                    //TODO send success to app
+                }else{
+                    //TODO send error to app
                 }
             }
 

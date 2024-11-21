@@ -12,8 +12,10 @@ import com.shellinfo.common.data.remote.ApiEndPoints
 import com.shellinfo.common.data.remote.NetworkUtils
 import com.shellinfo.common.data.remote.response.ApiResponse
 import com.shellinfo.common.data.remote.response.model.daily_limit.DailyLimitResponse
+import com.shellinfo.common.data.remote.response.model.entry_trx.EntryTrxRequest
 import com.shellinfo.common.data.remote.response.model.entry_validation.EntryValidationRequest
 import com.shellinfo.common.data.remote.response.model.entry_validation.EntryValidationResponse
+import com.shellinfo.common.data.remote.response.model.exit_trx.ExitTrxRequest
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
 import com.shellinfo.common.data.remote.response.model.fare.FareResponse
 import com.shellinfo.common.data.remote.response.model.gate_fare.GateFareRequest
@@ -348,6 +350,34 @@ class ApiRepository @Inject constructor(
         try{
 
             apiService.doSyncPurchasePassData(ApiEndPoints.BASE_URL_1+ApiEndPoints.ENDPOINT_PURCHASE_PASS,request)
+
+        }catch (ex:Exception){
+            ex.printStackTrace()
+        }
+
+    }
+
+    /**
+     * Entry Trx Data API Sync Call
+     */
+    suspend fun syncEntryTrxData(request:EntryTrxRequest)= withContext(Dispatchers.IO){
+
+        try{
+            apiService.doSyncEntryTrxData(ApiEndPoints.BASE_URL_1+ApiEndPoints.ENDPOINT_ENTRY_TRX_URL,request)
+
+        }catch (ex:Exception){
+            ex.printStackTrace()
+        }
+
+    }
+
+    /**
+     * Exit Trx Data API Sync Call
+     */
+    suspend fun syncExitTrxData(request:ExitTrxRequest)= withContext(Dispatchers.IO){
+
+        try{
+            apiService.doSyncExitTrxData(ApiEndPoints.BASE_URL_1+ApiEndPoints.ENDPOINT_EXIT_TRX_URL,request)
 
         }catch (ex:Exception){
             ex.printStackTrace()

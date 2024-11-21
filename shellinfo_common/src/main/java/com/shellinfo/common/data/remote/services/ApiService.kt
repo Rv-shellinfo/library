@@ -3,8 +3,12 @@ package com.shellinfo.common.data.remote.services
 import com.shellinfo.common.data.remote.response.model.pass.GetPassResponse
 import com.shellinfo.common.data.remote.ApiEndPoints
 import com.shellinfo.common.data.remote.response.model.daily_limit.DailyLimitResponse
+import com.shellinfo.common.data.remote.response.model.entry_trx.EntryTrxRequest
+import com.shellinfo.common.data.remote.response.model.entry_trx.EntryTrxResponse
 import com.shellinfo.common.data.remote.response.model.entry_validation.EntryValidationRequest
 import com.shellinfo.common.data.remote.response.model.entry_validation.EntryValidationResponse
+import com.shellinfo.common.data.remote.response.model.exit_trx.ExitTrxRequest
+import com.shellinfo.common.data.remote.response.model.exit_trx.ExitTrxResponse
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
 import com.shellinfo.common.data.remote.response.model.fare.FareResponse
 import com.shellinfo.common.data.remote.response.model.gate_fare.GateFareRequest
@@ -100,5 +104,13 @@ interface ApiService {
 
     @POST
     suspend fun doSyncPurchasePassData(@Url url: String,@Body request:PurchasePassRequest):Response<PurchasePassResponse>
+
+    @POST
+    suspend fun doSyncEntryTrxData(@Url url: String,@Body request:EntryTrxRequest):Response<EntryTrxResponse>
+
+    @POST
+    suspend fun doSyncExitTrxData(@Url url: String,@Body request:ExitTrxRequest):Response<ExitTrxResponse>
+
+
 
 }

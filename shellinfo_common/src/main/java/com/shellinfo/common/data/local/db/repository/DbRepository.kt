@@ -1,6 +1,8 @@
 package com.shellinfo.common.data.local.db.repository
 
 import com.shellinfo.common.data.local.db.dao.DailyLimitDao
+import com.shellinfo.common.data.local.db.dao.EntryTrxDao
+import com.shellinfo.common.data.local.db.dao.ExitTrxDao
 import com.shellinfo.common.data.local.db.dao.OrderDao
 import com.shellinfo.common.data.local.db.dao.PassDao
 import com.shellinfo.common.data.local.db.dao.PurchasePassDao
@@ -9,6 +11,8 @@ import com.shellinfo.common.data.local.db.dao.TicketBackupDao
 import com.shellinfo.common.data.local.db.dao.TripLimitDao
 import com.shellinfo.common.data.local.db.dao.ZoneDao
 import com.shellinfo.common.data.local.db.entity.DailyLimitTable
+import com.shellinfo.common.data.local.db.entity.EntryTrxTable
+import com.shellinfo.common.data.local.db.entity.ExitTrxTable
 import com.shellinfo.common.data.local.db.entity.OrdersTable
 import com.shellinfo.common.data.local.db.entity.PassTable
 import com.shellinfo.common.data.local.db.entity.PurchasePassTable
@@ -28,7 +32,9 @@ class DbRepository @Inject constructor(
     private val dailyLimitDao: DailyLimitDao,
     private val tripLimitDao: TripLimitDao,
     private val zoneDao: ZoneDao,
-    private val purchasePassDao: PurchasePassDao){
+    private val purchasePassDao: PurchasePassDao,
+    private val entryTrxDao: EntryTrxDao,
+    private val exitTrxDao: ExitTrxDao){
 
     suspend fun insertStations(stations:List<StationsTable>){
          stationsDao.deleteAll()
@@ -133,4 +139,31 @@ class DbRepository @Inject constructor(
     suspend fun setPassPurchaseToSync(id:String){
         purchasePassDao.setDataToSync(id)
     }
+
+    suspend fun insertEntryTrx(data:EntryTrxTable){
+        entryTrxDao.deleteAll()
+        entryTrxDao.insert(data)
+    }
+
+    suspend fun getUnSyncedEntryTrx():List<EntryTrxTable>{
+        return entryTrxDao.getUnSyncedRecords()
+    }
+
+    suspend fun setEntryTrxToSync(id:String){
+        entryTrxDao.setDataToSync(id)
+    }
+
+    suspend fun insertExitTrx(data:ExitTrxTable){
+        exitTrxDao.deleteAll()
+        exitTrxDao.insert(data)
+    }
+
+    suspend fun getUnSyncedExitTrx():List<ExitTrxTable>{
+        return exitTrxDao.getUnSyncedRecords()
+    }
+
+    suspend fun setExitTrxToSync(id:String){
+        exitTrxDao.setDataToSync(id)
+    }
+
 }

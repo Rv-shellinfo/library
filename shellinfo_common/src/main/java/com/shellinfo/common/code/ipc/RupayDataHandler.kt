@@ -5,6 +5,7 @@ import com.shellinfo.IRemoteService
 import com.shellinfo.common.code.NetworkCall
 import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.code.enums.EquipmentType
+import com.shellinfo.common.code.enums.NcmcDataType
 import com.shellinfo.common.code.enums.PassType
 import com.shellinfo.common.code.pass.BasePassValidator
 import com.shellinfo.common.data.local.data.emv_rupay.CSAMasterData
@@ -14,14 +15,18 @@ import com.shellinfo.common.data.local.data.emv_rupay.binary.osa_bin.HistoryBinO
 import com.shellinfo.common.data.local.data.emv_rupay.binary.osa_bin.PassBin
 import com.shellinfo.common.data.local.data.emv_rupay.display.csa_display.CSADataDisplay
 import com.shellinfo.common.data.local.data.ipc.BF200Data
+import com.shellinfo.common.data.local.db.entity.EntryTrxTable
+import com.shellinfo.common.data.local.db.entity.ExitTrxTable
 import com.shellinfo.common.data.local.db.entity.PurchasePassTable
 import com.shellinfo.common.data.local.db.entity.ZoneTable
 import com.shellinfo.common.data.local.db.repository.DbRepository
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.remote.repository.ApiRepository
 import com.shellinfo.common.data.remote.response.ApiResponse
+import com.shellinfo.common.data.remote.response.model.entry_trx.EntryTrxRequest
 import com.shellinfo.common.data.remote.response.model.entry_validation.EntryValidationRequest
 import com.shellinfo.common.data.remote.response.model.entry_validation.EntryValidationResponse
+import com.shellinfo.common.data.remote.response.model.exit_trx.ExitTrxRequest
 import com.shellinfo.common.data.remote.response.model.gate_fare.GateFareRequest
 import com.shellinfo.common.data.remote.response.model.gate_fare.GateFareResponse
 import com.shellinfo.common.data.remote.response.model.purchase_pass.PurchasePassRequest
@@ -99,6 +104,10 @@ class RupayDataHandler @Inject constructor(
 ) {
 
     lateinit var communicationService: IRemoteService
+
+    lateinit var csaMasterGlobal:CSAMasterData
+
+    lateinit var osaMasterGlobal:OSAMasterData
 
     private val TAG = RupayDataHandler::class.java.simpleName
 
@@ -305,6 +314,7 @@ class RupayDataHandler @Inject constructor(
 
         //parsing csa master data
         val csaMasterData = rupayUtils.readCSAData(bF200Data)
+        csaMasterGlobal= csaMasterData
 
 
         Timber.e(TAG,">>>> CSA READ DATA: ${networkCall.toJson(csaMasterData.csaDisplayData!!,
@@ -410,6 +420,7 @@ class RupayDataHandler @Inject constructor(
 
         //get osa master data
         var osaMasterData= rupayUtils.readOSAData(bF200Data)
+        osaMasterGlobal=osaMasterData
 
         //check device type to handle data request
         val deviceType= spUtils.getPreference(DEVICE_TYPE,"")
@@ -2359,6 +2370,280 @@ class RupayDataHandler @Inject constructor(
             dbRepository.insertPurchasePassData(passPurchaseTable)
             apiRepository.syncPurchaseData(request)
         }
+    }
+
+    /**
+     * Method to initiate saving ncmc transction data
+     */
+    fun saveNcmcTransaction(type:NcmcDataType){
+
+        if(spUtils.getPreference(READER_LOCATION, "EXIT") == ENTRY_SIDE){
+            saveEntryTransaction(type)
+        }else if(spUtils.getPreference(READER_LOCATION, "EXIT") == EXIT_SIDE){
+            saveExitTransaction(type)
+        }else if(spUtils.getPreference(READER_LOCATION, "ENTRY_EXIT") == ENTRY_EXIT){
+            //TODO change entry exit type gate , make a global variable to handle it
+        }
+    }
+
+    /**
+     * Method to save the entry transaction
+     */
+    fun saveEntryTransaction(type:NcmcDataType){
+
+        //operator id
+        val operatorId = spUtils.getPreference(OPERATOR_ID,1000)
+
+        //get current date and time
+        val currentDateTime= DateUtils.getDateInSpecificFormat("yyMMddHHmmss")
+
+        //merchant id
+        val merchantId= spUtils.getPreference(SpConstants.MERCHANT_ID,1000)
+
+        //station id
+        val stationId= spUtils.getPreference(STATION_ID,"1213")
+
+        //equipment id
+        val euipId= spUtils.getPreference(EQUIPMENT_ID,"222")
+
+        //equipment group id
+        val equipGroupId= spUtils.getPreference(EQUIPMENT_GROUP_ID,"1000")
+
+        //acquirer id
+        val acquirerId= spUtils.getPreference(ACQUIRER_ID,"800")
+
+        //terminal id
+        val terminalId= spUtils.getPreference(TERMINAL_ID,"8989")
+
+        //line id
+        val lineId= spUtils.getPreference(SpConstants.LINE_ID,124)
+
+        //sequence number
+        val seqNo = spUtils.getPreference(SpConstants.TRANSACTION_SEQ_NUMBER,1)
+
+        //trx id
+        var trxId:String
+
+        //pan sha
+        var panSha:String
+
+        //var card bin
+        var cardBin:String
+
+        //check ncmc trx type
+        if(type == NcmcDataType.CSA){
+            trxId = csaMasterGlobal.csaDisplayData!!.lastTxnDateTime+operatorId+acquirerId+terminalId
+            cardBin = csaMasterGlobal.bf200Data?.b?.`5A`!!.slice(0..5)
+        }else{
+            trxId = osaMasterGlobal.osaDisplayData!!.lastTxnDateTime+operatorId+acquirerId+terminalId
+            cardBin = osaMasterGlobal.bf200Data?.b?.`5A`!!.slice(0..5)
+        }
+
+
+
+
+
+
+        //TODO make values dynamic if require
+        //api request for entry trx
+        val entryTrxRequest = EntryTrxRequest(
+            transactionId = trxId,
+            transactionType =1,
+            transactionSeqNum = euipId.toInt()+seqNo,
+            lineId=lineId.toString(),
+            stationId=stationId,
+            equipmentGroupId=equipGroupId,
+            equipmentId=euipId,
+            aquirerId=acquirerId,
+            operatorId=operatorId.toString(),
+            terminalId=terminalId,
+            cardType=1,
+            panSha="",
+            productType=1,
+            cardBin=cardBin,
+            peakNonPeakTypeId=2,
+            businessDate=DateUtils.getDateInSpecificFormat("yyyy-MM-dd")!!,
+            transactionDateTime=DateUtils.getDateInSpecificFormat("yyyy-MM-dd HH:mm:ss")!!,
+            passStartDate="",
+            passEndDate="",
+            passStationOne="",
+            passStationTwo="",
+            passBalance=""
+
+        )
+
+        //db request for entry trx
+        val entryTrxTable = EntryTrxTable(
+            transactionId = trxId,
+            transactionType =1,
+            trxSeqNumber = euipId.toInt()+seqNo,
+            lineId=lineId.toString(),
+            stationId=stationId,
+            equipmentGroupId=equipGroupId,
+            equipmentId=euipId,
+            aquirerId=acquirerId,
+            operatorId=operatorId.toString(),
+            terminalId=terminalId,
+            cardType=1,
+            panSha="",
+            productType=1,
+            cardBin=cardBin,
+            peakNonPeakTypeId=2,
+            businessDate=DateUtils.getDateInSpecificFormat("yyyy-MM-dd")!!,
+            transactionDateTime=DateUtils.getDateInSpecificFormat("yyyy-MM-dd HH:mm:ss")!!,
+            passStartDate="",
+            passEndDate="",
+            passStationOne="",
+            passStationTwo="",
+            passBalance=""
+
+        )
+
+        runBlocking {
+            dbRepository.insertEntryTrx(entryTrxTable)
+            apiRepository.syncEntryTrxData(entryTrxRequest)
+        }
+
+    }
+
+
+    /**
+     * Method to save the entry transaction
+     */
+    fun saveExitTransaction(type:NcmcDataType){
+
+        //operator id
+        val operatorId = spUtils.getPreference(OPERATOR_ID,1000)
+
+        //get current date and time
+        val currentDateTime= DateUtils.getDateInSpecificFormat("yyMMddHHmmss")
+
+        //merchant id
+        val merchantId= spUtils.getPreference(SpConstants.MERCHANT_ID,1000)
+
+        //station id
+        val stationId= spUtils.getPreference(STATION_ID,"1213")
+
+        //equipment id
+        val euipId= spUtils.getPreference(EQUIPMENT_ID,"222")
+
+        //equipment group id
+        val equipGroupId= spUtils.getPreference(EQUIPMENT_GROUP_ID,"1000")
+
+        //acquirer id
+        val acquirerId= spUtils.getPreference(ACQUIRER_ID,"800")
+
+        //terminal id
+        val terminalId= spUtils.getPreference(TERMINAL_ID,"8989")
+
+        //line id
+        val lineId= spUtils.getPreference(SpConstants.LINE_ID,124)
+
+        //sequence number
+        val seqNo = spUtils.getPreference(SpConstants.TRANSACTION_SEQ_NUMBER,1)
+
+        //trx id
+        var trxId:String
+
+        //pan sha
+        var panSha:String
+
+        //var card bin
+        var cardBin:String
+
+        //amount
+        var amount:Double
+        var cardBalance:Double
+
+        //check ncmc trx type
+        if(type == NcmcDataType.CSA){
+            trxId = csaMasterGlobal.csaDisplayData!!.lastTxnDateTime+operatorId+acquirerId+terminalId
+            cardBin = csaMasterGlobal.bf200Data?.b?.`5A`!!.slice(0..5)
+            cardBalance = csaMasterGlobal.csaDisplayData!!.cardBalance
+            amount = csaMasterGlobal.csaDisplayData!!.cardHistory.get(0).txnAmount.toDouble()
+        }else{
+            trxId = osaMasterGlobal.osaDisplayData!!.lastTxnDateTime+operatorId+acquirerId+terminalId
+            cardBin = osaMasterGlobal.bf200Data?.b?.`5A`!!.slice(0..5)
+            cardBalance = 0.0
+            amount =0.0
+
+        }
+
+
+
+
+
+
+        //TODO make values dynamic if require
+        //api request for entry trx
+        val exitTrxRequest = ExitTrxRequest(
+            transactionId = trxId,
+            transactionType =1,
+            transactionSeqNum = euipId.toInt()+seqNo,
+            lineId=lineId.toString(),
+            stationId=stationId,
+            equipmentGroupId=equipGroupId,
+            equipmentId=euipId,
+            aquirerId=acquirerId,
+            operatorId=operatorId.toString(),
+            terminalId=terminalId,
+            cardType=1,
+            panSha="",
+            productType=1,
+            cardBin=cardBin,
+            businessDate=DateUtils.getDateInSpecificFormat("yyyy-MM-dd")!!,
+            transactionDateTime=DateUtils.getDateInSpecificFormat("yyyy-MM-dd HH:mm:ss")!!,
+            amount= amount,
+            cardBalance = cardBalance,
+            passStartDate = "",
+            passEndDate = "",
+            passStationOne="",
+            passStationTwo="",
+            passBalance="",
+            bankMid ="",
+            bankTid ="",
+            peakNonPeakTypeId=2,
+            entryAquirerId = "",
+            entryDateTime = "",
+            entryOperatorId = "",
+            entryTerminalId = ""
+            )
+
+        //db request for entry trx
+        val exitTrxTable = ExitTrxTable(
+            transactionId = trxId,
+            transactionType =1,
+            trxSeqNumber = euipId.toInt()+seqNo,
+            lineId=lineId.toString(),
+            stationId=stationId,
+            equipmentGroupId=equipGroupId,
+            equipmentId=euipId,
+            aquirerId=acquirerId,
+            operatorId=operatorId.toString(),
+            terminalId=terminalId,
+            cardType=1,
+            panSha="",
+            productType=1,
+            cardBin=cardBin,
+            businessDate=DateUtils.getDateInSpecificFormat("yyyy-MM-dd")!!,
+            transactionDateTime=DateUtils.getDateInSpecificFormat("yyyy-MM-dd HH:mm:ss")!!,
+            amount= amount,
+            cardBalance = cardBalance,
+            passStartDate = "",
+            passEndDate = "",
+            passStationOne="",
+            passStationTwo="",
+            passBalance="",
+            bankMid="",
+            bankTid="",
+            peakNonPeakTypeId=2,
+        )
+
+        runBlocking {
+            dbRepository.insertExitTrx(exitTrxTable)
+            apiRepository.syncExitTrxData(exitTrxRequest)
+        }
+
     }
 
 }

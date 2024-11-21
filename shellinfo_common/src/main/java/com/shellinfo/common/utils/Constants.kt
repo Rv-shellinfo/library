@@ -95,6 +95,9 @@ object SpConstants{
     const val IS_TODAY_HOLIDAY= "is_today_holiday"
     const val IS_TODAY_EVENT = "is_today_event"
 
+    //Terminal sequence number
+    const val TRANSACTION_SEQ_NUMBER= "trx_seq_number"
+
 }
 
 object DBConstants{
@@ -107,6 +110,8 @@ object DBConstants{
     const val DAILY_LIMITS_TABLE = "DAILY_LIMITS_TABLE"
     const val ZONE_TABLE = "ZONE_TABLE"
     const val PURCHASE_PASS_TABLE = "PURCHASE_PASS_TABLE"
+    const val ENTRY_TRANSACTION_TABLE = "ENTRY_TRANSACTION_TABLE"
+    const val EXIT_TRANSACTION_TABLE = "EXIT_TRANSACTION_TABLE"
 
 }
 
