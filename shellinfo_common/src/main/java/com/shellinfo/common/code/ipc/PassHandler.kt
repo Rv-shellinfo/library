@@ -8,6 +8,7 @@ import com.shellinfo.common.data.local.data.emv_rupay.OSAMasterData
 import com.shellinfo.common.data.local.data.emv_rupay.binary.osa_bin.PassBin
 import com.shellinfo.common.data.local.db.entity.DailyLimitTable
 import com.shellinfo.common.data.local.db.entity.PassTable
+import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.utils.Constants
 import com.shellinfo.common.utils.DateUtils
 import com.shellinfo.common.utils.IPCConstants
@@ -117,6 +118,8 @@ class PassHandler @Inject constructor(
 
         //pass info
         var passInfo:PassTable
+        var fromStation:StationsTable
+        var toStation:StationsTable
 
         //get the pass request
         val passRequest= ShellInfoLibrary.passCreateRequest
@@ -124,6 +127,8 @@ class PassHandler @Inject constructor(
         //get pass information from database
         runBlocking {
             passInfo = databaseCall.getPassById(passRequest.productType)
+            fromStation= databaseCall.getStationByStationId(passRequest.sourceStationId!!)
+            toStation= databaseCall.getStationByStationId(passRequest.destStationId!!)
         }
 
         //calculate card effective date
@@ -150,6 +155,9 @@ class PassHandler @Inject constructor(
         ShellInfoLibrary.passCreateRequest.expiryDate=DateUtils.getFutureDate(passInfo.passDuration)
         passBin.lastConsumedDate=DateUtils.saveFutureDateInTwoBytes(0)
         passBin.priority = passInfo.passPriority.toByte()
+
+        passBin.validEntryStationId = fromStation.id.toByte()
+        passBin.validExitStationId = toStation.id.toByte()
 
         return passBin
     }

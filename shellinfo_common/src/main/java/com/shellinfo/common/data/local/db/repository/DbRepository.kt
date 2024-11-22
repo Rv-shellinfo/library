@@ -61,6 +61,10 @@ class DbRepository @Inject constructor(
         return stationsDao.getStationById(stationId)
     }
 
+    suspend fun getStationById(stationId:Int):StationsTable{
+        return stationsDao.getStationById(stationId)
+    }
+
     suspend fun insertOrder(ordersTable: OrdersTable){
         orderDao.insert(ordersTable)
     }

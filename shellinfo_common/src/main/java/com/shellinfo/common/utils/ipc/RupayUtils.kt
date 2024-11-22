@@ -275,9 +275,11 @@ class RupayUtils @Inject constructor(
             val pass1EntryStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 172, 174)).toString()
             var pass1EntryStationName=""
 
+            Log.e("pass1EntryStationId",pass1EntryStationId)
+
             if(!pass1EntryStationId.equals("0")) {
                 runBlocking {
-                    stationInfo= databaseCall.getStationByStationId(pass1EntryStationId)
+                    stationInfo= databaseCall.getStationByStationId(pass1EntryStationId.toInt())
                     pass1EntryStationName= stationInfo!!.stationName!!
                 }
             }
@@ -289,7 +291,7 @@ class RupayUtils @Inject constructor(
 
             if(!pass1ExitStationId.equals("0")) {
                 runBlocking {
-                    stationInfo= databaseCall.getStationByStationId(pass1ExitStationId)
+                    stationInfo= databaseCall.getStationByStationId(pass1ExitStationId.toInt())
                     pass1ExitStationName= stationInfo!!.stationName!!
                 }
             }
@@ -361,7 +363,7 @@ class RupayUtils @Inject constructor(
 
             if(!pass2EntryStationId.equals("0")) {
                 runBlocking {
-                    stationInfo= databaseCall.getStationByStationId(pass2EntryStationId)
+                    stationInfo= databaseCall.getStationByStationId(pass2EntryStationId.toInt())
                     pass2EntryStationName= stationInfo!!.stationName!!
                 }
             }
@@ -372,7 +374,7 @@ class RupayUtils @Inject constructor(
 
             if(!pass2ExitStationId.equals("0")) {
                 runBlocking {
-                    stationInfo= databaseCall.getStationByStationId(pass2ExitStationId)
+                    stationInfo= databaseCall.getStationByStationId(pass2ExitStationId.toInt())
                     pass2ExitStationName= stationInfo!!.stationName!!
                 }
             }
@@ -444,7 +446,7 @@ class RupayUtils @Inject constructor(
 
             if(!pass3EntryStationId.equals("0")) {
                 runBlocking {
-                    stationInfo= databaseCall.getStationByStationId(pass3EntryStationId)
+                    stationInfo= databaseCall.getStationByStationId(pass3EntryStationId.toInt())
                     pass3EntryStationName= stationInfo!!.stationName!!
                 }
             }
@@ -455,7 +457,7 @@ class RupayUtils @Inject constructor(
 
             if(!pass3ExitStationId.equals("0")) {
                 runBlocking {
-                    stationInfo= databaseCall.getStationByStationId(pass3ExitStationId)
+                    stationInfo= databaseCall.getStationByStationId(pass3ExitStationId.toInt())
                     pass3ExitStationName= stationInfo!!.stationName!!
                 }
             }

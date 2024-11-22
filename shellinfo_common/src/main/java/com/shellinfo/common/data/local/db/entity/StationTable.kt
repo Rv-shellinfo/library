@@ -8,7 +8,10 @@ import com.shellinfo.common.utils.DBConstants
 @Entity(tableName = DBConstants.STATIONS_TABLE)
 data class StationsTable(
 
-    @PrimaryKey()
+    @PrimaryKey(autoGenerate = true)
+    @ColumnInfo(name = "ID")
+    val id: Int = 0, // Auto-incremented serial number
+
     @ColumnInfo(name = "STATION_ID")
     val stationId: String,
 

@@ -154,8 +154,8 @@ class MainActivity : AppCompatActivity() {
                 passLimitValue = 50,
                 dailyLimitId=5,
                 dailyLimitValue = 10,
-                sourceStationId=401,
-                destStationId = 402,
+                sourceStationId="0420",
+                destStationId = "0425",
                 bankDetail = bankDetail,
                 productCode = "WEEKLY_PASS",
                 amount = 100.0)

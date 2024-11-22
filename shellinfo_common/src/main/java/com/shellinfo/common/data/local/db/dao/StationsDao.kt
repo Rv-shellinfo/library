@@ -30,4 +30,8 @@ interface StationsDao{
 
     @Query("SELECT * FROM STATIONS_TABLE WHERE STATION_ID = :stationId LIMIT 1")
     suspend fun getStationById(stationId: String): StationsTable
+
+    @Query("SELECT * FROM STATIONS_TABLE WHERE ID = :id LIMIT 1")
+    suspend fun getStationById(id: Int): StationsTable
+
 }

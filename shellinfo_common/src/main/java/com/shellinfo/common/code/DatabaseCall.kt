@@ -64,6 +64,10 @@ class DatabaseCall @Inject constructor(
        return dbRepository.getStationById(id)
     }
 
+    suspend fun getStationByStationId(id:Int):StationsTable{
+        return dbRepository.getStationById(id)
+    }
+
     fun getStationByStationIdNew(id:String){
         viewModelScope.launch {
             val station = dbRepository.getStationById(id)

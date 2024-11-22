@@ -28,7 +28,7 @@ import com.shellinfo.common.utils.DBConstants
 
 @Database(entities = [StationsTable::class,OrdersTable::class,TicketBackupTable::class, PassTable::class,
                      DailyLimitTable::class,TripLimitTable::class,ZoneTable::class,PurchasePassTable::class,
-                     EntryTrxTable::class,ExitTrxTable::class] , version = 10, exportSchema = false)
+                     EntryTrxTable::class,ExitTrxTable::class] , version = 11, exportSchema = false)
 abstract class DatabaseConfig : RoomDatabase(){
 
     abstract fun stationsDao() : StationsDao
