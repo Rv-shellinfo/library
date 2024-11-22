@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity() {
         val initData = InitData(BuildConfig.APPLICATION_ID,
             "Transit",BuildConfig.VERSION_CODE.toString(),
             BuildConfig.VERSION_NAME,
-            EquipmentType.VALIDATOR,
+            EquipmentType.TOM,
             "Transit",
             Build.SERIAL,
             ApiMode.PUBLIC,
@@ -129,14 +129,36 @@ class MainActivity : AppCompatActivity() {
 
         btnCreateHolidayPass.setOnClickListener(View.OnClickListener {
             val bankDetail = BankTransactionDetail(paymentMethodId =100)
-            val passRequest = PassRequest(100, bankDetail = bankDetail, productCode = "HOLIDAY", amount = 100.0)
+            val passRequest = PassRequest(
+                productType = 100,
+                isZonePass = true,
+                zoneId=1,
+                zoneAmount = 10.0,
+                passLimitId=1,
+                passLimitValue = 30,
+                dailyLimitId=2,
+                dailyLimitValue = 2,
+                bankDetail = bankDetail,
+                productCode = "HOLIDAY_PASS",
+                amount = 100.0)
             shellInfoLibrary.createPass(passRequest)
         })
 
         btnCreateTripPass.setOnClickListener(View.OnClickListener {
 
             val bankDetail = BankTransactionDetail(paymentMethodId =100)
-            val passRequest = PassRequest(103, passLimitValue = 30, zoneId = 40, bankDetail = bankDetail, productCode = "MONTHLY", amount = 200.0)
+            val passRequest = PassRequest(
+                productType = 103,
+                isZonePass = false,
+                passLimitId=3,
+                passLimitValue = 50,
+                dailyLimitId=5,
+                dailyLimitValue = 10,
+                sourceStationId=401,
+                destStationId = 402,
+                bankDetail = bankDetail,
+                productCode = "WEEKLY_PASS",
+                amount = 100.0)
             shellInfoLibrary.createPass(passRequest)
         })
 

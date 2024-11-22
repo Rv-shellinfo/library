@@ -1,5 +1,6 @@
 package com.shellinfo.common.code.ipc
 
+import android.util.Log
 import com.shellinfo.common.code.DatabaseCall
 import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.code.enums.PassType
@@ -44,8 +45,15 @@ class PassHandler @Inject constructor(
         val pass= getPassData(osaMasterData)
 
 
+
         // Remove expired or exhausted passes
-        passList.removeIf { passData -> (isExpired(passData.endDateTime) || passData.passLimit!!.toInt() <= 0) }
+        passList.removeIf { passData ->
+
+            Log.e("Pass Limit",""+passData.passLimit!!.toInt())
+            Log.e("Pass Expired",""+isExpired(passData.endDateTime))
+            Log.e("Pass Type",""+passData.productType!!.toInt())
+
+            (passData.productType!!.toInt() !=0 && (isExpired(passData.endDateTime) || passData.passLimit!!.toInt() <= 0)) }
 
         // If less than 3 passes are present after removal, add default passes back
         while (passList.size < 3) {
@@ -164,8 +172,10 @@ class PassHandler @Inject constructor(
     // Checks if the pass is expired (assuming expiryDate is until 12PM)
     private fun isExpired(expiryDate:ByteArray): Boolean {
 
+
         val expiryDatePass = DateUtils.getDateFromByteArrayPass(expiryDate)  //format (dd-mm-yyyy)
 
+        Log.e("Expiry Date", expiryDatePass)
 
         try {
             // Define the date format

@@ -229,9 +229,11 @@ class RupayUtils @Inject constructor(
 
             //get pass information from database
             runBlocking {
+                Log.e("PASS ID",hexToByte(pass1)!!.toInt().toString())
                 passInfo = databaseCall.getPassById(hexToByte(pass1)!!.toInt())
             }
 
+            Log.e("PASS Name",passInfo?.passName ?:"")
             val pass1Name= passInfo?.passName ?:""
 
             //pass limit
