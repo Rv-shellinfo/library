@@ -252,9 +252,10 @@ class ApiRepository @Inject constructor(
                 // Cast stations response and save in db
                 (results[1].body() as? StationDataResponse)?.let { data ->
 
-                    val stationList = data.stations.map { station ->
+                    val stationList = data.stations.mapIndexed { index,station ->
                         StationsTable(
                             stationId = station.stationUniqueid!!,
+                            id = index+1,
                             operatorNameId = 1000,
                             stationName = station.stationName,
                             name = station.stationName,

@@ -277,24 +277,36 @@ class RupayUtils @Inject constructor(
 
             Log.e("pass1EntryStationId",pass1EntryStationId)
 
-            if(!pass1EntryStationId.equals("0")) {
-                runBlocking {
-                    stationInfo= databaseCall.getStationByStationId(pass1EntryStationId.toInt())
-                    pass1EntryStationName= stationInfo!!.stationName!!
+            try {
+                if(!pass1EntryStationId.equals("0")) {
+                    runBlocking {
+                        stationInfo= databaseCall.getStationByStationId(pass1EntryStationId.toInt())
+                        pass1EntryStationName= stationInfo!!.stationName!!
+                    }
                 }
+            }catch (ex:Exception){
+
             }
+
+
 
 
             //exit station id
             val pass1ExitStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 174, 176)).toString()
             var pass1ExitStationName=""
 
-            if(!pass1ExitStationId.equals("0")) {
-                runBlocking {
-                    stationInfo= databaseCall.getStationByStationId(pass1ExitStationId.toInt())
-                    pass1ExitStationName= stationInfo!!.stationName!!
+            try {
+
+                if(!pass1ExitStationId.equals("0")) {
+                    runBlocking {
+                        stationInfo= databaseCall.getStationByStationId(pass1ExitStationId.toInt())
+                        pass1ExitStationName= stationInfo!!.stationName!!
+                    }
                 }
+            }catch (ex:Exception){
+
             }
+
 
 
             //trip counts
@@ -361,23 +373,34 @@ class RupayUtils @Inject constructor(
             val pass2EntryStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 202, 204)).toString()
             var pass2EntryStationName=""
 
-            if(!pass2EntryStationId.equals("0")) {
-                runBlocking {
-                    stationInfo= databaseCall.getStationByStationId(pass2EntryStationId.toInt())
-                    pass2EntryStationName= stationInfo!!.stationName!!
+            try {
+                if(!pass2EntryStationId.equals("0")) {
+                    runBlocking {
+                        stationInfo= databaseCall.getStationByStationId(pass2EntryStationId.toInt())
+                        pass2EntryStationName= stationInfo!!.stationName!!
+                    }
                 }
+            }catch (ex:Exception){
+
             }
+
 
             //exit station id
             val pass2ExitStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 204, 206)).toString()
             var pass2ExitStationName=""
 
-            if(!pass2ExitStationId.equals("0")) {
-                runBlocking {
-                    stationInfo= databaseCall.getStationByStationId(pass2ExitStationId.toInt())
-                    pass2ExitStationName= stationInfo!!.stationName!!
+            try {
+
+                if(!pass2ExitStationId.equals("0")) {
+                    runBlocking {
+                        stationInfo= databaseCall.getStationByStationId(pass2ExitStationId.toInt())
+                        pass2ExitStationName= stationInfo!!.stationName!!
+                    }
                 }
+            }catch (ex:Exception){
+
             }
+
 
             //trip counts
             val pass2TripCounts= emvUtils.getHexatoDecimal(getSubString(df33_data, 206, 208)).toString()
@@ -444,23 +467,37 @@ class RupayUtils @Inject constructor(
             val pass3EntryStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 232, 234)).toString()
             var pass3EntryStationName=""
 
-            if(!pass3EntryStationId.equals("0")) {
-                runBlocking {
-                    stationInfo= databaseCall.getStationByStationId(pass3EntryStationId.toInt())
-                    pass3EntryStationName= stationInfo!!.stationName!!
+            try {
+
+                if(!pass3EntryStationId.equals("0")) {
+                    runBlocking {
+                        stationInfo= databaseCall.getStationByStationId(pass3EntryStationId.toInt())
+                        pass3EntryStationName= stationInfo!!.stationName!!
+                    }
                 }
+            }catch (ex:Exception){
+
             }
+
+
 
             //exit station id
             val pass3ExitStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 234, 236)).toString()
             var pass3ExitStationName=""
 
-            if(!pass3ExitStationId.equals("0")) {
-                runBlocking {
-                    stationInfo= databaseCall.getStationByStationId(pass3ExitStationId.toInt())
-                    pass3ExitStationName= stationInfo!!.stationName!!
+            try {
+
+
+                if(!pass3ExitStationId.equals("0")) {
+                    runBlocking {
+                        stationInfo= databaseCall.getStationByStationId(pass3ExitStationId.toInt())
+                        pass3ExitStationName= stationInfo!!.stationName!!
+                    }
                 }
+            }catch (ex:Exception){
+
             }
+
 
             //trip counts
             val pass3TripCounts= emvUtils.getHexatoDecimal(getSubString(df33_data, 236, 238)).toString()

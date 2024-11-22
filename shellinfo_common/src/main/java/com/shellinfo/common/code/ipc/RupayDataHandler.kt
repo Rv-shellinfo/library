@@ -537,7 +537,7 @@ class RupayDataHandler @Inject constructor(
                     osaMasterData.bf200Data = bF200Data
 
                     //check reader location
-                    when (spUtils.getPreference(READER_LOCATION, "ENTRY")) {
+                    when (spUtils.getPreference(READER_LOCATION, "EXIT")) {
 
                         ENTRY_SIDE -> {
 
@@ -753,34 +753,34 @@ class RupayDataHandler @Inject constructor(
         //get csa raw data
         val osaRawData = osaMasterData.osaBinData
 
-        //check for osa service active or not
-        if(!osaRawData!!.generalInfo.getServiceStatus()){
-
-            //if service is not active go for csa deduction
-            //TODO go for csa transaction without going further
-
-        }
+//        //check for osa service active or not
+//        if(!osaRawData!!.generalInfo.getServiceStatus()){
+//
+//            //if service is not active go for csa deduction
+//            //TODO go for csa transaction without going further
+//
+//        }
 
 
         //get display data
         val osaDataDisplay = osaMasterData.osaDisplayData
 
-        //check general data for version
-        if (osaRawData!!.generalInfo.versionNumber != IPCConstants.VERSION_NUMBER) {
-            FileLogger.d(TAG, "Card CSA General Info Version: ${osaRawData.generalInfo.versionNumber}")
-        }
+//        //check general data for version
+//        if (osaRawData!!.generalInfo.versionNumber != IPCConstants.VERSION_NUMBER) {
+//            FileLogger.d(TAG, "Card CSA General Info Version: ${osaRawData.generalInfo.versionNumber}")
+//        }
+//
+//        //check general data for language
+//        if (!isLanguageEnglish(osaRawData.generalInfo.languageInfo)) {
+//            FileLogger.d(TAG, "Card CSA General Info Language: ${osaRawData.generalInfo.languageInfo}")
+//        }
 
-        //check general data for language
-        if (!isLanguageEnglish(osaRawData.generalInfo.languageInfo)) {
-            FileLogger.d(TAG, "Card CSA General Info Language: ${osaRawData.generalInfo.languageInfo}")
-        }
 
-
-        Timber.e(TAG,">>>>VALIDATION ERROR CODE: ${osaRawData.validationData.errorCode}")
+        //Timber.e(TAG,">>>>VALIDATION ERROR CODE: ${osaRawData!!.validationData.errorCode}")
 
 
         //check for existing error
-        if (osaRawData.validationData.errorCode!!.toInt() != NO_ERROR) {
+        if (osaRawData!!.validationData.errorCode!!.toInt() != NO_ERROR) {
 
             FileLogger.e(TAG, "Existing Error : ${osaDataDisplay?.errorCode}")
 
@@ -1713,9 +1713,9 @@ class RupayDataHandler @Inject constructor(
             passValidator.setPass(pass)
 
             // 1. Check Pass Expiry (endDateTime)
-            if (passValidator.validateExpiry()) {
-                return@forEachIndexed // Skip expired pass and move to the next one
-            }
+//            if (passValidator.validateExpiry()) {
+//                return@forEachIndexed // Skip expired pass and move to the next one
+//            }
 
             // 2. Check if today is a holiday
             if(isTodayHoliday){
@@ -1739,14 +1739,14 @@ class RupayDataHandler @Inject constructor(
             if (passLimit != 99.toByte() && (pass.tripCount ?: 0) >= passLimit) return@forEachIndexed // Exceed limit, move to next pass
 
             // 5. Check Daily Limit
-            passValidator.validateDailyLimit(pass)
+            //passValidator.validateDailyLimit(pass)
             val dailyLimit = pass.dailyLimit ?: 0
             if (dailyLimit == 0.toByte()) return@forEachIndexed // Move to next pass if daily limit is 0
             if (dailyLimit != 99.toByte() && (pass.tripCount ?: 0) >= dailyLimit) return@forEachIndexed // Exceed limit, move to next pass
 
             // 6. Check Source Station
-            val validEntryStationId = pass.validEntryStationId ?: 0
-            if (validEntryStationId != 99.toByte() && validEntryStationId != currentStationId) return@forEachIndexed // Move to next pass if source ID mismatch
+            //val validEntryStationId = pass.validEntryStationId ?: 0
+            //if (validEntryStationId != 99.toByte() && validEntryStationId != currentStationId) return@forEachIndexed // Move to next pass if source ID mismatch
 
             // If none of the conditions fail, we found a valid pass
             return Pair(true, index)
