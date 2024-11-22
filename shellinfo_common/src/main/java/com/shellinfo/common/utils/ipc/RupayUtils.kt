@@ -28,6 +28,8 @@ import com.shellinfo.common.data.local.data.emv_rupay.raw.TerminalData
 import com.shellinfo.common.data.local.data.emv_rupay.raw.ValidationData
 import com.shellinfo.common.data.local.data.ipc.BF200Data
 import com.shellinfo.common.data.local.db.entity.PassTable
+import com.shellinfo.common.data.local.db.entity.StationsTable
+import com.shellinfo.common.data.local.db.entity.ZoneTable
 import com.shellinfo.common.utils.DateUtils
 import com.shellinfo.common.utils.IPCConstants
 import kotlinx.coroutines.runBlocking
@@ -223,6 +225,8 @@ class RupayUtils @Inject constructor(
         //===============================    PASS 1 =================================================================//
 
             var passInfo:PassTable?
+            var zoneInfo:ZoneTable?
+            var stationInfo:StationsTable?
 
             //pass id and name
             val pass1= getSubString(df33_data, 156, 158)
@@ -258,12 +262,38 @@ class RupayUtils @Inject constructor(
 
             //pass zone
             val pass1ZoneId= emvUtils.getHexatoDecimal(getSubString(df33_data, 170, 172)).toString()
+            var pass1ZoneFare:Double=0.0
+
+            if(!pass1ZoneId.equals("0") && !pass1ZoneId.equals("99")) {
+                runBlocking {
+                    zoneInfo = databaseCall.getZoneById(pass1ZoneId.toInt())
+                    pass1ZoneFare = zoneInfo!!.zoneAmount
+                }
+            }
 
             //entry station id
             val pass1EntryStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 172, 174)).toString()
+            var pass1EntryStationName=""
+
+            if(!pass1EntryStationId.equals("0")) {
+                runBlocking {
+                    stationInfo= databaseCall.getStationByStationId(pass1EntryStationId)
+                    pass1EntryStationName= stationInfo!!.stationName!!
+                }
+            }
+
 
             //exit station id
             val pass1ExitStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 174, 176)).toString()
+            var pass1ExitStationName=""
+
+            if(!pass1ExitStationId.equals("0")) {
+                runBlocking {
+                    stationInfo= databaseCall.getStationByStationId(pass1ExitStationId)
+                    pass1ExitStationName= stationInfo!!.stationName!!
+                }
+            }
+
 
             //trip counts
             val pass1TripCounts= emvUtils.getHexatoDecimal(getSubString(df33_data, 176, 178)).toString()
@@ -316,12 +346,36 @@ class RupayUtils @Inject constructor(
 
             //pass zone
             val pass2ZoneId= emvUtils.getHexatoDecimal(getSubString(df33_data, 200, 202)).toString()
+            var pass2ZoneFare:Double=0.0
+
+            if(!pass2ZoneId.equals("0") && !pass2ZoneId.equals("99")) {
+                runBlocking {
+                    zoneInfo = databaseCall.getZoneById(pass2ZoneId.toInt())
+                    pass2ZoneFare = zoneInfo!!.zoneAmount
+                }
+            }
 
             //entry station id
             val pass2EntryStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 202, 204)).toString()
+            var pass2EntryStationName=""
+
+            if(!pass2EntryStationId.equals("0")) {
+                runBlocking {
+                    stationInfo= databaseCall.getStationByStationId(pass2EntryStationId)
+                    pass2EntryStationName= stationInfo!!.stationName!!
+                }
+            }
 
             //exit station id
             val pass2ExitStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 204, 206)).toString()
+            var pass2ExitStationName=""
+
+            if(!pass2ExitStationId.equals("0")) {
+                runBlocking {
+                    stationInfo= databaseCall.getStationByStationId(pass2ExitStationId)
+                    pass2ExitStationName= stationInfo!!.stationName!!
+                }
+            }
 
             //trip counts
             val pass2TripCounts= emvUtils.getHexatoDecimal(getSubString(df33_data, 206, 208)).toString()
@@ -375,12 +429,36 @@ class RupayUtils @Inject constructor(
 
             //pass zone
             val pass3ZoneId= emvUtils.getHexatoDecimal(getSubString(df33_data, 230, 232)).toString()
+            var pass3ZoneFare:Double=0.0
+
+            if(!pass3ZoneId.equals("0") && !pass3ZoneId.equals("99")) {
+                runBlocking {
+                    zoneInfo = databaseCall.getZoneById(pass3ZoneId.toInt())
+                    pass3ZoneFare = zoneInfo!!.zoneAmount
+                }
+            }
 
             //entry station id
             val pass3EntryStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 232, 234)).toString()
+            var pass3EntryStationName=""
+
+            if(!pass3EntryStationId.equals("0")) {
+                runBlocking {
+                    stationInfo= databaseCall.getStationByStationId(pass3EntryStationId)
+                    pass3EntryStationName= stationInfo!!.stationName!!
+                }
+            }
 
             //exit station id
             val pass3ExitStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 234, 236)).toString()
+            var pass3ExitStationName=""
+
+            if(!pass3ExitStationId.equals("0")) {
+                runBlocking {
+                    stationInfo= databaseCall.getStationByStationId(pass3ExitStationId)
+                    pass3ExitStationName= stationInfo!!.stationName!!
+                }
+            }
 
             //trip counts
             val pass3TripCounts= emvUtils.getHexatoDecimal(getSubString(df33_data, 236, 238)).toString()
@@ -415,13 +493,16 @@ class RupayUtils @Inject constructor(
                     startDateTime = pass1StartDateTime,
                     endDate = pass1ExpiryDate,
                     validZoneId = pass1ZoneId,
+                    validZoneFare = pass1ZoneFare,
                     validEntryStationId = pass1EntryStationId,
+                    validEntryStationName = pass1EntryStationName,
+                    validExitStationName = pass1ExitStationName,
                     validExitStationId = pass1ExitStationId,
                     tripConsumed = pass1TripCounts,
                     classType = "Normal",
                     lastConsumedDate = pass1LastConsumedDate,
                     dailyLimit = pass1DailyLimit,
-                    priority = pass1Priority.toInt()
+                    priority = pass1Priority.toInt(),
                 ))
 
             passes.add(
@@ -431,8 +512,11 @@ class RupayUtils @Inject constructor(
                     startDateTime = pass2StartDateTime,
                     endDate = pass2ExpiryDate,
                     validZoneId = pass2ZoneId,
+                    validZoneFare = pass2ZoneFare,
                     validEntryStationId = pass2EntryStationId,
+                    validEntryStationName = pass2EntryStationName,
                     validExitStationId = pass2ExitStationId,
+                    validExitStationName = pass2ExitStationName,
                     tripConsumed = pass2TripCounts,
                     classType = "Normal",
                     lastConsumedDate = pass2LastConsumedDate,
@@ -447,8 +531,11 @@ class RupayUtils @Inject constructor(
                     startDateTime = pass3StartDateTime,
                     endDate = pass3ExpiryDate,
                     validZoneId = pass3ZoneId,
+                    validZoneFare = pass3ZoneFare,
                     validEntryStationId = pass3EntryStationId,
+                    validEntryStationName = pass3EntryStationName,
                     validExitStationId = pass3ExitStationId,
+                    validExitStationName = pass3ExitStationName,
                     tripConsumed = pass3TripCounts,
                     classType = "Normal",
                     lastConsumedDate = pass3LastConsumedDate,

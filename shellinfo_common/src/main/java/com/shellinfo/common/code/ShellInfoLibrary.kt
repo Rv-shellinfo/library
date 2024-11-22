@@ -392,7 +392,7 @@ class ShellInfoLibrary @Inject constructor(
     }
 
     override fun getStationByStationId(id: String) {
-        databaseCall.getStationByStationId(id)
+        databaseCall.getStationByStationIdNew(id)
     }
 
     override fun getFare(fareRequest: FareRequest) {

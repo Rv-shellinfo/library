@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.shellinfo.common.data.local.db.entity.PassTable
 import com.shellinfo.common.data.local.db.entity.StationsTable
+import com.shellinfo.common.data.local.db.entity.ZoneTable
 import com.shellinfo.common.data.local.db.repository.DbRepository
 import com.shellinfo.common.data.shared.SharedDataManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -59,12 +60,17 @@ class DatabaseCall @Inject constructor(
         }
     }
 
-    fun getStationByStationId(id:String){
+   suspend fun getStationByStationId(id:String):StationsTable{
+       return dbRepository.getStationById(id)
+    }
+
+    fun getStationByStationIdNew(id:String){
         viewModelScope.launch {
             val station = dbRepository.getStationById(id)
-           sharedDataManager.sendSingleStationData(station)
+            sharedDataManager.sendSingleStationData(station)
         }
     }
+
 
     fun getPassData(){
         viewModelScope.launch {
@@ -96,6 +102,10 @@ class DatabaseCall @Inject constructor(
             val zoneData = dbRepository.getAllZones()
             sharedDataManager.sendZoneData(zoneData)
         }
+    }
+
+    suspend fun getZoneById(id:Int):ZoneTable{
+        return dbRepository.getZoneById(id)
     }
 
 }
