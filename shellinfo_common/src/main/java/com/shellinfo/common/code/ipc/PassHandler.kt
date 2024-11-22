@@ -118,8 +118,8 @@ class PassHandler @Inject constructor(
 
         //pass info
         var passInfo:PassTable
-        var fromStation:StationsTable
-        var toStation:StationsTable
+        var fromStation:StationsTable?=null
+        var toStation:StationsTable?=null
 
         //get the pass request
         val passRequest= ShellInfoLibrary.passCreateRequest
@@ -127,8 +127,10 @@ class PassHandler @Inject constructor(
         //get pass information from database
         runBlocking {
             passInfo = databaseCall.getPassById(passRequest.productType)
-            fromStation= databaseCall.getStationByStationId(passRequest.sourceStationId!!)
-            toStation= databaseCall.getStationByStationId(passRequest.destStationId!!)
+            if(!passRequest.sourceStationId!!.equals("0")) {
+                fromStation = databaseCall.getStationByStationId(passRequest.sourceStationId!!)
+                toStation = databaseCall.getStationByStationId(passRequest.destStationId!!)
+            }
         }
 
         //calculate card effective date
@@ -156,8 +158,13 @@ class PassHandler @Inject constructor(
         passBin.lastConsumedDate=DateUtils.saveFutureDateInTwoBytes(0)
         passBin.priority = passInfo.passPriority.toByte()
 
-        passBin.validEntryStationId = fromStation.id.toByte()
-        passBin.validExitStationId = toStation.id.toByte()
+        if(fromStation!=null) {
+            passBin.validEntryStationId = fromStation!!.id.toByte()
+            passBin.validExitStationId = toStation!!.id.toByte()
+        }else{
+            passBin.validEntryStationId = 0x00.toByte()
+            passBin.validExitStationId = 0x00.toByte()
+        }
 
         return passBin
     }
