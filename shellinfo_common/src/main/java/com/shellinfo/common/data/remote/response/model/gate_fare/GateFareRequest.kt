@@ -11,5 +11,13 @@ data class GateFareRequest(
     @Json(name ="exitDateTime") var exitDateTime: String?="",
     @Json(name ="modeId") var modeId: Int?=0,
     @Json(name ="equipmentId") var equipmentId: String?="",
-    @Json(name ="equipmentGroupId") var equipmentGroupId: String?=""
+    @Json(name ="equipmentGroupId") var equipmentGroupId: String?="",
+    @Json(name ="terminalId") var terminalId: String?="",
+    @Json(name ="productType") var productType: String?="",
+    @Json(name ="passType") var passType: String?="",
+    @Json(name ="passStartDate") var passStartDate: String?="",
+    @Json(name ="passExpiryDate") var passExpiryDate: String?="",
+    @Json(name ="passStationOneId") var passStationOneId: String?="",
+    @Json(name ="passStationTwoId") var passStationTwoId: String?="",
+    @Json(name ="noOfTripRemaining") var noOfTripRemaining: String?="",
 )

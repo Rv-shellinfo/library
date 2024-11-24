@@ -127,7 +127,7 @@ class PassHandler @Inject constructor(
         //get pass information from database
         runBlocking {
             passInfo = databaseCall.getPassById(passRequest.productType)
-            if(!passRequest.sourceStationId!!.equals("0")) {
+            if(passRequest.sourceStationId != "0" && passRequest.sourceStationId != "99" && passRequest.sourceStationId != "") {
                 fromStation = databaseCall.getStationByStationId(passRequest.sourceStationId!!)
                 toStation = databaseCall.getStationByStationId(passRequest.destStationId!!)
             }
@@ -158,12 +158,12 @@ class PassHandler @Inject constructor(
         passBin.lastConsumedDate=DateUtils.saveFutureDateInTwoBytes(0)
         passBin.priority = passInfo.passPriority.toByte()
 
-        if(fromStation!=null) {
+        if(fromStation!=null && toStation!=null) {
             passBin.validEntryStationId = fromStation!!.id.toByte()
             passBin.validExitStationId = toStation!!.id.toByte()
         }else{
-            passBin.validEntryStationId = 0x00.toByte()
-            passBin.validExitStationId = 0x00.toByte()
+            passBin.validEntryStationId = 0.toByte()
+            passBin.validExitStationId = 0.toByte()
         }
 
         return passBin
@@ -185,7 +185,7 @@ class PassHandler @Inject constructor(
     }
 
     // Checks if the pass is expired (assuming expiryDate is until 12PM)
-    private fun isExpired(expiryDate:ByteArray): Boolean {
+     fun isExpired(expiryDate:ByteArray): Boolean {
 
 
         val expiryDatePass = DateUtils.getDateFromByteArrayPass(expiryDate)  //format (dd-mm-yyyy)

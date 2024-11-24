@@ -137,8 +137,6 @@ class MainActivity : AppCompatActivity() {
                 passLimitId=1,
                 passLimitValue = 30,
                 dailyLimitId=2,
-                sourceStationId="0",
-                destStationId = "0",
                 dailyLimitValue = 2,
                 bankDetail = bankDetail,
                 productCode = "HOLIDAY_PASS",

@@ -170,4 +170,6 @@ class DbRepository @Inject constructor(
         exitTrxDao.setDataToSync(id)
     }
 
+
+
 }

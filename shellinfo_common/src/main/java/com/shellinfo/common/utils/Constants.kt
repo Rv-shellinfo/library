@@ -219,6 +219,7 @@ object IPCConstants{
     const val MSG_ID_START_CARD_DETECTION =                     0x93
     const val MSG_ID_CREATE_PASS =                              0x94
     const val MSG_ID_CREATE_PASS_DATA =                         0x95
+    const val MSG_ID_ABORT_OSA_TRANSACTION =                    0x96
 
 
     // Message ID for messages from Transit to Payment Application for Reader Commands

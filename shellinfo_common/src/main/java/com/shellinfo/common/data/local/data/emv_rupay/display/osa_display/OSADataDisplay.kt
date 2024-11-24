@@ -8,7 +8,7 @@ data class OSADataDisplay(
     var errorCode:Int,
     var lastTxnDateTime:String,
     var lastTxnStatus:String,
-    var lastStationId:String,
+    var lastStationName:String,
     var product:String,
     var txnStatus:Int,
     var cardEffectiveDate:String,

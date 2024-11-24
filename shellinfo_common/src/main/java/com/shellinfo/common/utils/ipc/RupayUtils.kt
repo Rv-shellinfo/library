@@ -80,10 +80,20 @@ class RupayUtils @Inject constructor(
             val error_code: String = getSubString(df33_data, 68, 70)
             val errorFormat: String = getError(error_code)
 
-            //product
+            //product (pass name)
+            var productInfo:PassTable?=null
             val product: String = getSubString(df33_data, 70, 72)
-            val productValue: Int = PassType.fromPassCode(hexToByte(product)!!)!!.passCode.toInt()
-            val productName: String = PassType.getPassNameByCode(hexToByte(product)!!)!!
+            val productValue: Int = hexToByte(product)!!.toInt()
+            var productName:String = "--"
+
+            runBlocking {
+                productInfo = databaseCall.getPassById(productValue)
+            }
+
+            if(productInfo!=null){
+                productName= productInfo!!.passName
+            }
+
 
 
             //last transaction date time
@@ -97,7 +107,22 @@ class RupayUtils @Inject constructor(
                 )
             }
 
-            //status
+            //last station name
+            val lastStationHex: String = getSubString(df33_data, 78, 82)
+            val lastStationBytes: ByteArray = hexToByteArray(lastStationHex)!!
+            val lastStationId:Int = lastStationBytes[0].toInt()
+            var lastStationName :String ? ="--"
+            var lastStationInfo:StationsTable?=null
+            runBlocking {
+                lastStationInfo=databaseCall.getStationByStationId(lastStationId)
+            }
+
+            if(lastStationInfo!=null){
+                lastStationName = lastStationInfo!!.stationName
+            }
+
+
+            //last status
             val status: String = getSubString(df33_data, 82, 84)
             val statusValue: Int = getTxnStatusNCMC(status)
             val statusFormat: String = getTxnStatus(status)
@@ -278,7 +303,7 @@ class RupayUtils @Inject constructor(
             Log.e("pass1EntryStationId",pass1EntryStationId)
 
             try {
-                if(!pass1EntryStationId.equals("0")) {
+                if(pass1EntryStationId != "0" && pass1EntryStationId != "99" && pass1EntryStationId != "") {
                     runBlocking {
                         stationInfo= databaseCall.getStationByStationId(pass1EntryStationId.toInt())
                         pass1EntryStationName= stationInfo!!.stationName!!
@@ -297,7 +322,7 @@ class RupayUtils @Inject constructor(
 
             try {
 
-                if(!pass1ExitStationId.equals("0")) {
+                if(pass1ExitStationId != "0" && pass1ExitStationId != "99" && pass1ExitStationId != "") {
                     runBlocking {
                         stationInfo= databaseCall.getStationByStationId(pass1ExitStationId.toInt())
                         pass1ExitStationName= stationInfo!!.stationName!!
@@ -374,7 +399,7 @@ class RupayUtils @Inject constructor(
             var pass2EntryStationName=""
 
             try {
-                if(!pass2EntryStationId.equals("0")) {
+                if(pass2EntryStationId != "0" && pass2EntryStationId != "99" && pass2EntryStationId != "") {
                     runBlocking {
                         stationInfo= databaseCall.getStationByStationId(pass2EntryStationId.toInt())
                         pass2EntryStationName= stationInfo!!.stationName!!
@@ -391,7 +416,7 @@ class RupayUtils @Inject constructor(
 
             try {
 
-                if(!pass2ExitStationId.equals("0")) {
+                if(pass2ExitStationId != "0" && pass2ExitStationId != "99" && pass2ExitStationId != "") {
                     runBlocking {
                         stationInfo= databaseCall.getStationByStationId(pass2ExitStationId.toInt())
                         pass2ExitStationName= stationInfo!!.stationName!!
@@ -469,7 +494,7 @@ class RupayUtils @Inject constructor(
 
             try {
 
-                if(!pass3EntryStationId.equals("0")) {
+                if(pass3EntryStationId != "0" && pass3EntryStationId != "99" && pass3EntryStationId != "") {
                     runBlocking {
                         stationInfo= databaseCall.getStationByStationId(pass3EntryStationId.toInt())
                         pass3EntryStationName= stationInfo!!.stationName!!
@@ -488,7 +513,7 @@ class RupayUtils @Inject constructor(
             try {
 
 
-                if(!pass3ExitStationId.equals("0")) {
+                if(pass3ExitStationId != "0" && pass3ExitStationId != "99" && pass3ExitStationId != "") {
                     runBlocking {
                         stationInfo= databaseCall.getStationByStationId(pass3ExitStationId.toInt())
                         pass3ExitStationName= stationInfo!!.stationName!!
@@ -596,7 +621,7 @@ class RupayUtils @Inject constructor(
                 errorCode= error_code.toInt(),
                 lastTxnDateTime = finaltxndate,
                 lastTxnStatus =statusFormat,
-                lastStationId=  "",
+                lastStationName=  lastStationName!!,
                 product=productName,
                 txnStatus= statusValue,
                 cardEffectiveDate= cardEffectiveDate,
@@ -1296,9 +1321,9 @@ class RupayUtils @Inject constructor(
             buffer.put(historyBin.terminalID!!) // 3 bytes
             buffer.put(historyBin.trxDateTime!!) // 3 bytes
             buffer.put(historyBin.trxSeqNum!!) // 2 bytes
-            buffer.put(historyBin.trxAmt!!) // 2 bytes
-            buffer.put(historyBin.cardBalance1!!)
-            buffer.put(historyBin.cardBalance2!!)
+            buffer.put(historyBin.previousTrips!!) // 2 bytes
+            buffer.put(historyBin.tripLimits!!)
+            buffer.put(historyBin.tripCounts!!)
             buffer.put(historyBin.cardBalance3!!) // cardBalance3 and trxStatus
             buffer.put(historyBin.productType!!) // cardBalance3 and trxStatus
             buffer.put(historyBin.rfu!!)
