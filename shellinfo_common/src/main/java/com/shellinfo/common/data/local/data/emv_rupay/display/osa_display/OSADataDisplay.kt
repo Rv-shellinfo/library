@@ -9,6 +9,7 @@ data class OSADataDisplay(
     var lastTxnDateTime:String,
     var lastTxnStatus:String,
     var lastStationName:String,
+    var lastStationId:String,
     var product:String,
     var txnStatus:Int,
     var cardEffectiveDate:String,

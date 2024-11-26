@@ -160,8 +160,8 @@ object IPCConstants{
     const val NO_ERROR=					                0			//NO errors found
     const val AMT_NOT_SUFFICIENT=		                1			//Amount not sufficient for Entry/Exit
     const val TORN_TRANSACTION=			                2			//Torn Transaction
-    const val ENTRY_NOT_FOUND_CSA=		                3			//Entry not found in validation area in CSA
-    const val EXIT_NOT_FOUND_CSA=		                4			//Exit not found in validation area in CSA
+    const val ENTRY_NOT_FOUND=		                    3			//Entry not found in validation area in CSA
+    const val EXIT_NOT_FOUND=		                    4			//Exit not found in validation area in CSA
     const val CSA_PRESENT_ALL_PASS_INVALID=	            5		    //service area present but all pass invalid
     const val TIME_EXCEEDED=			                6			//Time Exceed
     const val CARD_EXPIRED=			                    7			//Card Expired
@@ -204,6 +204,8 @@ object IPCConstants{
     const val VERSION_NUMBER:Byte =                            0x31
 
     // Message ID for messages from Transit to Payment Application for Transaction
+    const val MSG_ID_DELETE_OSA_DATA =                          0x71
+    const val MSG_ID_DELETE_CSA_DATA =                          0x72
     const val MSG_ID_TRANSIT_VALIDATION_RUPAY_NCMC =            0x81
     const val MSG_ID_TRANSIT_VALIDATION_FAIL_RUPAY_NCMC =       0x82
     const val MSG_ID_AMOUNT_RESPONSE =                          0x83

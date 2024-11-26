@@ -17,7 +17,8 @@ data class CSADataDisplay(
     var errorCode:Int,
     var lastTxnDateTime:String,
     var lastTxnStatus:String,
-    var lastEquipId:String,
+    var lastStationName:String,
+    var lastStationId:String,
     var txnStatus:Int,
     var cardEffectiveDate:String,
     var cardHistory:List<TxnHistory>

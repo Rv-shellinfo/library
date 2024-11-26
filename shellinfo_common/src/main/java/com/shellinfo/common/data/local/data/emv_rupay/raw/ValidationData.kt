@@ -10,8 +10,8 @@ import com.shellinfo.common.utils.IPCConstants
  *  @see IPCConstants.NO_ERROR
  *  @see IPCConstants.AMT_NOT_SUFFICIENT
  *  @see IPCConstants.TORN_TRANSACTION
- *  @see IPCConstants.ENTRY_NOT_FOUND_CSA
- *  @see IPCConstants.EXIT_NOT_FOUND_CSA
+ *  @see IPCConstants.ENTRY_NOT_FOUND
+ *  @see IPCConstants.EXIT_NOT_FOUND
  *  @see IPCConstants.CSA_PRESENT_ALL_PASS_INVALID
  *  @see IPCConstants.TIME_EXCEEDED
  *  @see IPCConstants.CARD_EXPIRED

@@ -57,4 +57,11 @@ class HistoryQueue<T>(private val maxSize: Int = 4) : Iterable<T> {
     override fun toString(): String {
         return deque.toString()
     }
+
+    fun get(index: Int): T {
+        if (index < 0 || index >= deque.size) {
+            throw IndexOutOfBoundsException("Index: $index, Size: ${deque.size}")
+        }
+        return deque.elementAt(index) // Retrieves the element at the specified index
+    }
 }

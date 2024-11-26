@@ -2,7 +2,7 @@ package com.shellinfo.common.utils.ipc
 
 import android.util.Log
 import com.shellinfo.common.code.DatabaseCall
-import com.shellinfo.common.code.enums.PassType
+import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.data.local.data.emv_rupay.CSAMasterData
 import com.shellinfo.common.data.local.data.emv_rupay.HistoryQueue
 import com.shellinfo.common.data.local.data.emv_rupay.OSAMasterData
@@ -32,6 +32,7 @@ import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.data.local.db.entity.ZoneTable
 import com.shellinfo.common.utils.DateUtils
 import com.shellinfo.common.utils.IPCConstants
+import com.shellinfo.common.utils.IPCConstants.TXN_STATUS_PENALTY
 import kotlinx.coroutines.runBlocking
 import timber.log.Timber
 import java.nio.BufferOverflowException
@@ -60,6 +61,16 @@ class RupayUtils @Inject constructor(
     //osa master data
     private lateinit var osaMasterData: OSAMasterData
 
+    //osa global master data
+    private lateinit var osaGlobalData:OSAMasterData
+
+    /**
+     * Method to set osa global data
+     */
+    fun setOsaGlobalData(osaMasterData: OSAMasterData){
+        osaGlobalData=osaMasterData
+    }
+
 
     /**
      * Method to read tlv data and set the raw and display OSA data classes
@@ -74,6 +85,9 @@ class RupayUtils @Inject constructor(
 
         try{
 
+            //osa bin data
+            val osaBin = setOsaBinValue(bF200Data.serviceRelatedData!!.toByteArray().sliceArray(bF200Data.serviceDataIndex!!..bF200Data.serviceDataIndex!!+95))
+
         //============================VALIDATION==========================================//
 
             //error string any
@@ -82,8 +96,7 @@ class RupayUtils @Inject constructor(
 
             //product (pass name)
             var productInfo:PassTable?=null
-            val product: String = getSubString(df33_data, 70, 72)
-            val productValue: Int = hexToByte(product)!!.toInt()
+            val productValue: Int = osaBin.validationData.productType.toInt()
             var productName:String = "--"
 
             runBlocking {
@@ -108,10 +121,9 @@ class RupayUtils @Inject constructor(
             }
 
             //last station name
-            val lastStationHex: String = getSubString(df33_data, 78, 82)
-            val lastStationBytes: ByteArray = hexToByteArray(lastStationHex)!!
-            val lastStationId:Int = lastStationBytes[0].toInt()
+            val lastStationId:Int = osaBin.validationData.stationCode[0].toInt()
             var lastStationName :String ? ="--"
+            var lastStationStringId:String?=""
             var lastStationInfo:StationsTable?=null
             runBlocking {
                 lastStationInfo=databaseCall.getStationByStationId(lastStationId)
@@ -119,23 +131,20 @@ class RupayUtils @Inject constructor(
 
             if(lastStationInfo!=null){
                 lastStationName = lastStationInfo!!.stationName
+                lastStationStringId= lastStationInfo!!.stationId
             }
 
 
             //last status
+            //status
             val status: String = getSubString(df33_data, 82, 84)
             val statusValue: Int = getTxnStatusNCMC(status)
             val statusFormat: String = getTxnStatus(status)
 
-
-
        //============================ HISTORY 1 ==========================================//
 
             //last equipment id, operator id and station id
-            val terminalInfo: String = getSubString(df33_data, 84, 96)
-            val operatorId= terminalInfo.substring(2,5)
-            val lastEquipmentId = getLastEquipmentId(terminalInfo.substring(6, 11))
-            val lastStation = "--"
+            val lastEquipmentId = bin2num(osaBin.history.get(0).terminalID!!,3).toString()
 
 
             //date time
@@ -147,41 +156,40 @@ class RupayUtils @Inject constructor(
             }
 
             //trx sequence number
-            val txnSeqNo1 = "" + emvUtils.getHexatoDecimal(getSubString(df33_data, 103, 107))
-
-            //trx amount
-            val txnAmountHex = getSubString(df33_data, 107, 111)
-            val txnAmount1 = emvUtils.getHexatoDecimal(txnAmountHex).toDouble() / 10
+            val txnSeqNo1 = bin2num(osaBin.history.get(0).trxSeqNum!!,2).toString()
 
 
-            //card balance
-            val tripBalance = getSubString(df33_data,111,116)
-            val beforeTrip = tripBalance.substring(0,2)
-            val afterTrip = tripBalance.substring(2,4)
-            val tripCount = tripBalance.substring(4,5)
+            //pass limit
+            val passLimit = bin2num(osaBin.history.get(0).passLimit!!,2).toString()
+
+            //trip counts today
+            val tripCount = osaBin.history.get(0).tripCount!!.toInt().toString()
+
+            //daily limit
+            val dailyLimit = osaBin.history.get(0).dailyLimit!!.toInt().toString()
 
             //trx status
-            val trxType1 = if (dateTime1 == "-- --") {
-                "--"
-            } else {
-                getHistoryTxnStatus(getSubString(df33_data, 116, 117))
-            }
+            val trxType1 = getTxnStatusFromHex(osaBin.history.get(0).trxStatus!!.toInt())
 
 
             //product 1
-            val historyProduct1: String = getSubString(df33_data, 117, 119)
-            val historyProductValue1: Int = PassType.fromPassCode(hexToByte(historyProduct1)!!)!!.passCode.toInt()
-            val historyProductName1: String = PassType.getPassNameByCode(hexToByte(historyProduct1)!!)!!
+            val historyProduct1: Int = osaBin.history.get(0).productType!!.toInt()
+            var historyProductName1= ""
+            productInfo=null
+            runBlocking {
+                productInfo = databaseCall.getPassById(historyProduct1)
+            }
+
+            if(productInfo!=null){
+                historyProductName1= productInfo!!.passName
+            }
 
 
 
         //============================ HISTORY 2 ==========================================//
 
             //last equipment id, operator id and station id
-            val terminalInfo2: String = getSubString(df33_data, 120, 132)
-            val operatorId2= terminalInfo2.substring(2,5)
-            val lastEquipmentId2 = getLastEquipmentId(terminalInfo2.substring(6, 11))
-            val lastStation2 = "--"
+            val lastEquipmentId2 = bin2num(osaBin.history.get(1).terminalID!!,3).toString()
 
 
             //date time
@@ -193,31 +201,33 @@ class RupayUtils @Inject constructor(
             }
 
             //trx sequence number
-            val txnSeqNo2 = "" + emvUtils.getHexatoDecimal(getSubString(df33_data, 138, 142))
-
-            //trx amount
-            val txnAmountHex2 = getSubString(df33_data, 142, 146)
-            val txnAmount2 = emvUtils.getHexatoDecimal(txnAmountHex2).toDouble() / 10
+            val txnSeqNo2 = bin2num(osaBin.history.get(1).trxSeqNum!!,2).toString()
 
 
-            //card balance
-            val tripBalance2 = getSubString(df33_data,146,151)
-            val beforeTrip2 = tripBalance2.substring(0,2)
-            val afterTrip2 = tripBalance2.substring(2,4)
-            val tripCount2 = tripBalance2.substring(4,5)
+            //pass limit
+            val passLimit2 = bin2num(osaBin.history.get(1).passLimit!!,2).toString()
+
+            //trip counts today
+            val tripCount2 = osaBin.history.get(1).tripCount!!.toInt().toString()
+
+            //daily limit
+            val dailyLimit2 = osaBin.history.get(1).dailyLimit!!.toInt().toString()
 
             //trx status
-            val trxType2 = if (dateTime1 == "-- --") {
-                "--"
-            } else {
-                getHistoryTxnStatus(getSubString(df33_data, 151, 152))
-            }
+            val trxType2 = getTxnStatusFromHex(osaBin.history.get(1).trxStatus!!.toInt())
 
 
             //product 1
-            val historyProduct2: String = getSubString(df33_data, 152, 154)
-            val historyProductValue2: Int = PassType.fromPassCode(hexToByte(historyProduct2)!!)!!.passCode.toInt()
-            val historyProductName2: String = PassType.getPassNameByCode(hexToByte(historyProduct2)!!)!!
+            val historyProduct2: Int = osaBin.history.get(1).productType!!.toInt()
+            var historyProductName2= ""
+            productInfo=null
+            runBlocking {
+                productInfo = databaseCall.getPassById(historyProduct2)
+            }
+
+            if(productInfo!=null){
+                historyProductName2= productInfo!!.passName
+            }
 
 
 
@@ -226,24 +236,30 @@ class RupayUtils @Inject constructor(
             val transactions = mutableListOf<TxnHistoryOsa>()
             transactions.add(
                 TxnHistoryOsa(
+                    terminalId = lastEquipmentId,
                     txnSeqNo1,
                     dateTime1.split(" ")[0],
                     dateTime1.split(" ")[1],
-                    emvUtils.df.format(txnAmount1),
+                    passLimit,
+                    dailyLimit,
+                    tripCount,
                     trxType1,
                     historyProductName1,
-                    lastStation
+                    ""
                 )
             )
             transactions.add(
                 TxnHistoryOsa(
+                    terminalId = lastEquipmentId2,
                     txnSeqNo2,
                     dateTime2.split(" ")[0],
                     dateTime2.split(" ")[1],
-                    emvUtils.df.format(txnAmount2),
+                    passLimit2,
+                    dailyLimit2,
+                    tripCount2,
                     trxType2,
                     historyProductName2,
-                    lastStation2
+                    ""
                 )
             )
 
@@ -626,12 +642,12 @@ class RupayUtils @Inject constructor(
                 txnStatus= statusValue,
                 cardEffectiveDate= cardEffectiveDate,
                 cardHistory = transactions,
-                cardPassesList = passes
+                cardPassesList = passes,
+                lastStationId = lastStationStringId!!
             )
 
 
-            //osa bin data
-            val osaBin = setOsaBinValue(bF200Data.serviceRelatedData!!.toByteArray().sliceArray(bF200Data.serviceDataIndex!!..bF200Data.serviceDataIndex!!+95))
+
 
             //now set all values to OSA Master
             osaMasterData.bf200Data= bF200Data
@@ -663,6 +679,38 @@ class RupayUtils @Inject constructor(
 
         //init master csa data
         csaMasterData= CSAMasterData()
+
+        //check
+        if(ShellInfoLibrary.isOsaTrxAbort || ShellInfoLibrary.isOsaTrxAbortWithPenalty){
+
+            //previous osa df33 data
+            val osa_df33 = osaGlobalData.bf200Data!!.b.DF33
+
+
+            //error string any
+            val error_code: String = getSubString(osa_df33!!, 68, 70)
+            setSubstring(df33_data,68,error_code)
+
+            //trx date time
+            val date: String = getSubString(osa_df33, 72, 78)
+            setSubstring(df33_data,84,date)
+
+            //last station name
+            val lastStationHex: String = getSubString(osa_df33, 78, 82)
+            setSubstring(df33_data,84,lastStationHex)
+
+            //last status
+            val status: String = getSubString(osa_df33, 82, 84)
+            setSubstring(df33_data,104,status)
+
+            //last history
+            val lastHistory : String = getSubString(osa_df33,120,154)
+            setSubstring(df33_data,220,lastHistory)
+
+            if(ShellInfoLibrary.isOsaTrxAbortWithPenalty){
+                setSubstring(df33_data,68,TXN_STATUS_PENALTY.toString())
+            }
+        }
 
         try {
 
@@ -705,10 +753,18 @@ class RupayUtils @Inject constructor(
             lastequip = getLastEquipmentId(lastequip.substring(6, 11))
 
             //last station name
-            //TODO need to fix the station name
-//            var lastStation = lastequip.substring(6, 9)
-//            lastStation = "NAGOLE"
-            var lastStation = "NAGOLE"
+            val lastStationId = emvUtils.getHexatoDecimal(getSubString(df33_data, 94, 98)).toString()
+            var stationsTable:StationsTable?=null
+            var lastStationName= ""
+            var lastStationStringId:String=""
+            runBlocking {
+                stationsTable = databaseCall.getStationByStationId(lastStationId)
+            }
+
+            if(stationsTable!=null){
+                lastStationName = stationsTable!!.stationName.toString()
+                lastStationStringId = stationsTable!!.stationId
+            }
 
 
 
@@ -912,7 +968,8 @@ class RupayUtils @Inject constructor(
                 error_code.toInt(),
                 finaltxndate,
                 statusFormat,
-                lastStation,
+                lastStationName,
+                lastStationStringId,
                 statusValue,
                 cardEffectiveDate,
                 transactions
@@ -1200,12 +1257,11 @@ class RupayUtils @Inject constructor(
             buffer.get(trxAmt)
             val cardBalance1 = buffer.get()
             val cardBalance2 = buffer.get()
-            val cardBalance3 = buffer.get()
-            val trxStatus = cardBalance3
+            val trxStatus = buffer.get()
             val productType = buffer.get()
             val rfu = buffer.get()
 
-            HistoryBinOsa(acquirerID, operatorID, terminalID, trxDateTime, trxSeqNum, trxAmt, cardBalance1, cardBalance2, cardBalance3, trxStatus, productType, rfu)
+            HistoryBinOsa(acquirerID, operatorID, terminalID, trxDateTime, trxSeqNum, trxAmt, cardBalance1, cardBalance2, trxStatus, productType, rfu)
         }
 
         // Extract Passes (3 entries)
@@ -1321,11 +1377,11 @@ class RupayUtils @Inject constructor(
             buffer.put(historyBin.terminalID!!) // 3 bytes
             buffer.put(historyBin.trxDateTime!!) // 3 bytes
             buffer.put(historyBin.trxSeqNum!!) // 2 bytes
-            buffer.put(historyBin.previousTrips!!) // 2 bytes
-            buffer.put(historyBin.tripLimits!!)
-            buffer.put(historyBin.tripCounts!!)
-            buffer.put(historyBin.cardBalance3!!) // cardBalance3 and trxStatus
-            buffer.put(historyBin.productType!!) // cardBalance3 and trxStatus
+            buffer.put(historyBin.passLimit!!) // 2 bytes
+            buffer.put(historyBin.tripCount!!)
+            buffer.put(historyBin.dailyLimit!!)
+            buffer.put(historyBin.trxStatus!!) //  trxStatus
+            buffer.put(historyBin.productType!!) // product type
             buffer.put(historyBin.rfu!!)
         }
 
@@ -1358,6 +1414,16 @@ class RupayUtils @Inject constructor(
         return originalstring.substring(startIndex, endIndex)
     }
 
+    fun setSubstring(originalString: String, startIndex: Int, replacement: String): String {
+        require(startIndex >= 0 && startIndex + replacement.length <= originalString.length) {
+            "Invalid start index or replacement length"
+        }
+
+        return originalString.substring(0, startIndex) +
+                replacement +
+                originalString.substring(startIndex + replacement.length)
+    }
+
     fun getTxnStatus(status: String): String {
         var status = status
         if (status == "10") {
@@ -1380,6 +1446,26 @@ class RupayUtils @Inject constructor(
             txnStatus = IPCConstants.TXN_STATUS_PENALTY
         }
         return txnStatus
+    }
+
+    fun getTxnStatusFromHex(status:Int):String{
+        var trxStatus = ""
+        when(status){
+            IPCConstants.TXN_STATUS_EXIT->{
+                trxStatus = "Exit"
+            }
+
+            IPCConstants.TXN_STATUS_ENTRY->{
+                trxStatus = "Entry"
+            }
+
+            IPCConstants.TXN_STATUS_PENALTY->{
+                trxStatus = "Penalty"
+            }
+
+        }
+
+        return trxStatus
     }
 
     fun getHistoryTxnStatus(status: String): String {

@@ -43,6 +43,8 @@ import com.shellinfo.common.utils.BarcodeUtils
 import com.shellinfo.common.utils.DateUtils
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_CREATE_OSA_SERVICE
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_CREATE_PASS
+import com.shellinfo.common.utils.IPCConstants.MSG_ID_DELETE_CSA_DATA
+import com.shellinfo.common.utils.IPCConstants.MSG_ID_DELETE_OSA_DATA
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_ONE_TIME_READ_CARD_REQUEST
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_REMOVE_PENALTY
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_START_CARD_DETECTION
@@ -80,6 +82,7 @@ class ShellInfoLibrary @Inject constructor(
         var isForOsaRead=false
         var isForOsaCreate=false
         var isForOsaDelete=false
+        var isForDataDelete=false
         var isOsaTrxAbort =false
         var isOsaTrxAbortWithPenalty =false
         lateinit var passCreateRequest: PassRequest
@@ -626,6 +629,34 @@ class ShellInfoLibrary @Inject constructor(
 
         //send message to payment application to create the OSA service
         sendMessageToIpcService(MSG_ID_CREATE_PASS,baseMessage)
+    }
+
+    override fun deleteData(dataType: NcmcDataType) {
+        if(dataType == NcmcDataType.OSA){
+
+            isForDataDelete =true
+
+            //get osa service id
+            val osaServiceId= spUtils.getPreference(OPERATOR_SERVICE_ID,0x1234)
+
+            //create base message
+            val baseMessage= BaseMessage(MSG_ID_DELETE_OSA_DATA,NcmcDataType.OSA,osaServiceId)
+
+            //send message to payment application to create the OSA service
+            sendMessageToIpcService(MSG_ID_DELETE_OSA_DATA,baseMessage)
+        }else{
+
+            isForDataDelete =true
+
+            //get osa service id
+            val commonService= spUtils.getPreference(COMMON_SERVICE_ID,0x1010)
+
+            //create base message
+            val baseMessage= BaseMessage(MSG_ID_DELETE_CSA_DATA,NcmcDataType.CSA,commonService)
+
+            //send message to payment application to create the OSA service
+            sendMessageToIpcService(MSG_ID_DELETE_CSA_DATA,baseMessage)
+        }
     }
 
     override fun updatePassValue() {

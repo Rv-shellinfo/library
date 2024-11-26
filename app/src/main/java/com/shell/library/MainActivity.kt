@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var btnCreateTripPass:Button;
     lateinit var btnCreateZonePass:Button;
     lateinit var btnClearOSA:Button;
+    lateinit var btnDelteData:Button;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +49,7 @@ class MainActivity : AppCompatActivity() {
         btnCreateHolidayPass= findViewById(R.id.btnCreateHolidayPass)
         btnCreateTripPass= findViewById(R.id.btnCreateTripPass)
         btnCreateZonePass= findViewById(R.id.btnCreateZonePass)
+        btnDelteData= findViewById(R.id.btnDelteData)
         btnClearOSA= findViewById(R.id.btnClearOSA)
 
         //shellInfoLibrary.setApiMode(ApiMode.PUBLIC)
@@ -57,7 +59,7 @@ class MainActivity : AppCompatActivity() {
         val initData = InitData(BuildConfig.APPLICATION_ID,
             "Transit",BuildConfig.VERSION_CODE.toString(),
             BuildConfig.VERSION_NAME,
-            EquipmentType.TOM,
+            EquipmentType.VALIDATOR,
             "Transit",
             Build.SERIAL,
             ApiMode.PUBLIC,
@@ -171,6 +173,10 @@ class MainActivity : AppCompatActivity() {
 
         btnClearOSA.setOnClickListener(View.OnClickListener {
             shellInfoLibrary.deletePasses()
+        })
+
+        btnDelteData.setOnClickListener(View.OnClickListener {
+            shellInfoLibrary.deleteData(NcmcDataType.OSA)
         })
 
         //shellInfoLibrary.mqttConnect()

@@ -36,9 +36,9 @@ import com.shellinfo.common.utils.DateUtils
 import com.shellinfo.common.utils.IPCConstants
 import com.shellinfo.common.utils.IPCConstants.AMT_NOT_SUFFICIENT
 import com.shellinfo.common.utils.IPCConstants.CARD_ALREADY_TAPPED
-import com.shellinfo.common.utils.IPCConstants.ENTRY_NOT_FOUND_CSA
+import com.shellinfo.common.utils.IPCConstants.ENTRY_NOT_FOUND
 import com.shellinfo.common.utils.SpConstants.DOUBLE_TAP_THRESHOLD
-import com.shellinfo.common.utils.IPCConstants.EXIT_NOT_FOUND_CSA
+import com.shellinfo.common.utils.IPCConstants.EXIT_NOT_FOUND
 import com.shellinfo.common.utils.IPCConstants.FAILURE_ENTRY_VALIDATION
 import com.shellinfo.common.utils.IPCConstants.FAILURE_FARE_API
 import com.shellinfo.common.utils.IPCConstants.LANGUAGE_MASK
@@ -394,7 +394,7 @@ class RupayDataHandler @Inject constructor(
 
 
         //check reader location
-        when (spUtils.getPreference(READER_LOCATION, "EXIT")) {
+        when (spUtils.getPreference(READER_LOCATION, "ENTRY")) {
 
             ENTRY_SIDE -> {
 
@@ -423,6 +423,7 @@ class RupayDataHandler @Inject constructor(
         //get osa master data
         var osaMasterData= rupayUtils.readOSAData(bF200Data)
         osaMasterGlobal=osaMasterData
+        rupayUtils.setOsaGlobalData(osaMasterGlobal)
 
         //check device type to handle data request
         val deviceType= spUtils.getPreference(DEVICE_TYPE,"")
@@ -508,6 +509,12 @@ class RupayDataHandler @Inject constructor(
 
 
 
+                    }else if(ShellInfoLibrary.isForDataDelete){
+                        ShellInfoLibrary.isForDataDelete=false
+
+                        val eventResponse = byteArrayOf(0x0, 0x2, 0x30, 0x30)
+                        //send back the message
+                        communicationService.sendData(MSG_ID_CREATE_PASS_DATA,eventResponse.toHexString())
                     }
 
                 }
@@ -702,8 +709,8 @@ class RupayDataHandler @Inject constructor(
         if (isCheckEmergencyMode) {
 
             //get hex value from terminal id
-            val terminalId = Utils.bin2hex(lastEntryTerminalId!!, 3)
-            entryValidationRequest.lastStationId = terminalId
+            //val terminalId = Utils.bin2hex(lastEntryTerminalId!!, 3)
+            entryValidationRequest.lastStationId = csaDataDisplay!!.lastStationId
             entryValidationRequest.lastTransactionDateTime = lastEntryDateTIme
 
         }
@@ -756,11 +763,27 @@ class RupayDataHandler @Inject constructor(
         val osaRawData = osaMasterData.osaBinData
 
         //check for osa service active or not
-        if(!osaRawData!!.generalInfo.getServiceStatus()){
+        if(true){
+
+            //log for
+            Timber.e(TAG,"OSA Service De")
 
             //if service is not active go for csa deduction
-            //TODO go for csa transaction without going further
+            abortOsaTransaction(osaMasterData)
 
+            return
+        }
+
+        //check if all passes expired then make service inactive
+        if(passValidator.isAllPassExpired(osaMasterData.osaBinData!!.passes)){
+
+            //update service flag to false
+            osaMasterData.osaUpdatedBinData!!.generalInfo.setServiceStatus(false)
+
+            //if service is not active go for csa deduction
+            abortOsaTransaction(osaMasterData)
+
+            return
         }
 
 
@@ -788,7 +811,7 @@ class RupayDataHandler @Inject constructor(
 
 
             //return error to payment app and UI
-            handleError(
+            handleErrorOSA(
                 osaRawData.validationData.errorCode!!.toInt(),
                 rupayUtils.getError(osaRawData.validationData.errorCode!!.toString())
             )
@@ -836,7 +859,7 @@ class RupayDataHandler @Inject constructor(
 
                 //set error code and error message
                 //return error to payment app and UI
-                handleError(
+                handleErrorOSA(
                     CARD_ALREADY_TAPPED,
                     rupayUtils.getError("CARD_ALREADY_TAPPED")
                 )
@@ -852,7 +875,7 @@ class RupayDataHandler @Inject constructor(
                 lastEntryDateTIme = DateUtils.getTimeInYMDHMS(entryTime)
 
                 //last entry terminal id
-                lastEntryTerminalId = osaRawData.validationData.stationCode
+                lastEntryTerminalId = osaRawData.history.get(1).terminalID
 
                 //set check emergency mode flag to true (we want to check if on last station emergency mode was activate while validation)
                 isCheckEmergencyMode = true
@@ -874,8 +897,7 @@ class RupayDataHandler @Inject constructor(
         if (isCheckEmergencyMode) {
 
             //get hex value from terminal id
-            val terminalId = Utils.bin2hex(lastEntryTerminalId!!, 3)
-            entryValidationRequest.lastStationId = terminalId
+            entryValidationRequest.lastStationId =osaDataDisplay!!.lastStationId
             entryValidationRequest.lastTransactionDateTime = lastEntryDateTIme
 
         }
@@ -899,7 +921,7 @@ class RupayDataHandler @Inject constructor(
                 }else{
 
                     //return error to payment app and UI
-                    handleError(
+                    handleErrorOSA(
                         FAILURE_ENTRY_VALIDATION,
                         rupayUtils.getError("FAILURE_ENTRY_VALIDATION")
                     )
@@ -910,7 +932,7 @@ class RupayDataHandler @Inject constructor(
             }else{
 
                 //return error to payment app and UI
-                handleError(
+                handleErrorOSA(
                     FAILURE_ENTRY_VALIDATION,
                     rupayUtils.getError("FAILURE_ENTRY_VALIDATION")
                 )
@@ -949,11 +971,11 @@ class RupayDataHandler @Inject constructor(
         if (apiErrorCode.toInt() != NO_ERROR) {
 
             //if error code is Exit Not Found then update the csa validation data txn status
-            if (apiErrorCode.toInt() == EXIT_NOT_FOUND_CSA) {
+            if (apiErrorCode.toInt() == EXIT_NOT_FOUND) {
 
                 //return error to payment app, not to the UI
                 handleError(
-                    EXIT_NOT_FOUND_CSA,
+                    EXIT_NOT_FOUND,
                     rupayUtils.getError("EXIT_NOT_FOUND_CSA"),
                     false
                 )
@@ -961,7 +983,7 @@ class RupayDataHandler @Inject constructor(
                 csaMasterData.csaUpdatedBinData?.validationData?.trxStatusAndRfu = TXN_STATUS_ENTRY.toByte()
 
                 //write back the error code to csa data
-                errorWriteCSA(EXIT_NOT_FOUND_CSA,"EXIT_NOT_FOUND_CSA",csaMasterData)
+                errorWriteCSA(EXIT_NOT_FOUND,"EXIT_NOT_FOUND_CSA",csaMasterData)
 
                 return
             }
@@ -972,8 +994,8 @@ class RupayDataHandler @Inject constructor(
             extractTrxStatus(csaMasterData.csaUpdatedBinData!!.validationData.trxStatusAndRfu)
 
         if (((lastTrxStatus == TXN_STATUS_EXIT) || (lastTrxStatus == TXN_STATUS_ONE_TAP_TICKET)
-                    || (lastTrxStatus == TXN_STATUS_PENALTY) || entryExitOverride || isCheckEmergencyMode)
-            && apiErrorCode.toInt() == NO_ERROR
+                    || (lastTrxStatus == TXN_STATUS_PENALTY) || entryExitOverride) ||
+            (isCheckEmergencyMode && apiErrorCode.toInt() == NO_ERROR)
         ) {
 
 
@@ -1004,16 +1026,14 @@ class RupayDataHandler @Inject constructor(
 
 
         } else {
-
-            //found entry, so change the error code to 'EXIT_NOT_FOUND'
-            csaMasterData.csaUpdatedBinData!!.validationData.trxStatusAndRfu=EXIT_NOT_FOUND_CSA.toByte()
-
-
             //return error to payment app and UI
             handleError(
-                EXIT_NOT_FOUND_CSA,
+                EXIT_NOT_FOUND,
                 rupayUtils.getError("EXIT_NOT_FOUND_CSA")
             )
+
+            //write back the error on the card
+            errorWriteCSA(EXIT_NOT_FOUND,"EXIT_NOT_FOUND_CSA",csaMasterData)
 
             return
         }
@@ -1040,12 +1060,12 @@ class RupayDataHandler @Inject constructor(
         //if api error code is not NO_ERROR then check for the error code
         if (apiErrorCode.toInt() != NO_ERROR) {
 
-            //if error code is Exit Not Found then update the csa validation data txn status
-            if (apiErrorCode.toInt() == EXIT_NOT_FOUND_CSA) {
+            //if error code is Exit Not Found then update the osa validation data txn status
+            if (apiErrorCode.toInt() == EXIT_NOT_FOUND) {
 
                 //return error to payment app, not to the UI
-                handleError(
-                    EXIT_NOT_FOUND_CSA,
+                handleErrorOSA(
+                    EXIT_NOT_FOUND,
                     rupayUtils.getError("EXIT_NOT_FOUND_CSA"),
                     false
                 )
@@ -1053,7 +1073,7 @@ class RupayDataHandler @Inject constructor(
                 osaMasterData.osaUpdatedBinData?.validationData?.trxStatusAndRfu = TXN_STATUS_ENTRY.toByte()
 
                 //write back the error code to csa data
-                errorWriteOSA(EXIT_NOT_FOUND_CSA,"EXIT_NOT_FOUND_CSA",osaMasterData)
+                errorWriteOSA(EXIT_NOT_FOUND,"EXIT_NOT_FOUND_CSA",osaMasterData)
 
                 return
             }
@@ -1064,8 +1084,8 @@ class RupayDataHandler @Inject constructor(
             extractTrxStatus(osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu)
 
         if (((lastTrxStatus == TXN_STATUS_EXIT) || (lastTrxStatus == TXN_STATUS_ONE_TAP_TICKET)
-                    || (lastTrxStatus == TXN_STATUS_PENALTY) || entryExitOverride || isCheckEmergencyMode)
-            && apiErrorCode.toInt() == NO_ERROR
+                    || (lastTrxStatus == TXN_STATUS_PENALTY) || entryExitOverride) ||
+            (isCheckEmergencyMode && apiErrorCode.toInt() == NO_ERROR)
         ) {
 
 
@@ -1075,15 +1095,16 @@ class RupayDataHandler @Inject constructor(
 
         } else {
 
-            //found entry, so change the error code to 'EXIT_NOT_FOUND'
-            osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu=EXIT_NOT_FOUND_CSA.toByte()
 
 
             //return error to payment app and UI
-            handleError(
-                EXIT_NOT_FOUND_CSA,
+            handleErrorOSA(
+                EXIT_NOT_FOUND,
                 rupayUtils.getError("EXIT_NOT_FOUND_CSA")
             )
+
+            //write back the error code to csa data
+            errorWriteOSA(EXIT_NOT_FOUND,"EXIT_NOT_FOUND_CSA",osaMasterData)
 
             return
         }
@@ -1265,13 +1286,13 @@ class RupayDataHandler @Inject constructor(
 
             //return error to payment app, not to the UI
             handleError(
-                ENTRY_NOT_FOUND_CSA,
+                ENTRY_NOT_FOUND,
                 rupayUtils.getError("ENTRY_NOT_FOUND_CSA"),
                 false
             )
 
             //write back the error on the card
-            errorWriteCSA(ENTRY_NOT_FOUND_CSA,"ENTRY_NOT_FOUND_CSA",csaMasterData)
+            errorWriteCSA(ENTRY_NOT_FOUND,"ENTRY_NOT_FOUND_CSA",csaMasterData)
         }
 
     }
@@ -1351,10 +1372,10 @@ class RupayDataHandler @Inject constructor(
         lastTrxTime= entryTime
 
         //extract last transaction status
-        val lastTrxStatus = osaMasterData.osaBinData!!.validationData.trxStatusAndRfu
+        val lastTrxStatus = osaRawData.validationData.trxStatusAndRfu.toInt()
 
         //check last transaction is ENTRY or EXIT
-        if (lastTrxStatus.toInt() == TXN_STATUS_EXIT) {
+        if (lastTrxStatus == TXN_STATUS_EXIT) {
 
 
             //if logging on then print the log and save
@@ -1379,7 +1400,7 @@ class RupayDataHandler @Inject constructor(
 
 
         // last transaction status check condition
-        if (((lastTrxStatus.toInt() == TXN_STATUS_ENTRY) || (lastTrxStatus.toInt() == TXN_STATUS_PENALTY) || entryExitOverride)) {
+        if (((lastTrxStatus == TXN_STATUS_ENTRY) || (lastTrxStatus == TXN_STATUS_PENALTY) || entryExitOverride)) {
 
             //error code
             osaMasterData.rupayMessage?.returnCode = NO_ERROR
@@ -1392,13 +1413,13 @@ class RupayDataHandler @Inject constructor(
 
             //return error to payment app, not to the UI
             handleError(
-                ENTRY_NOT_FOUND_CSA,
+                ENTRY_NOT_FOUND,
                 rupayUtils.getError("ENTRY_NOT_FOUND_CSA"),
                 false
             )
 
             //write back the error on the card
-            errorWriteOSA(ENTRY_NOT_FOUND_CSA,"ENTRY_NOT_FOUND_CSA",osaMasterData)
+            errorWriteOSA(ENTRY_NOT_FOUND,"ENTRY_NOT_FOUND_CSA",osaMasterData)
         }
 
     }
@@ -1632,13 +1653,14 @@ class RupayDataHandler @Inject constructor(
 
 
         //History Data
-        if (fare > 0) {
-            updateHistory(fare, csaMasterData)
-        } else {
-
-            //For Entry just copy the existing csa history yo updated one
-            csaMasterData.csaUpdatedBinData?.history = csaMasterData.csaBinData!!.history
-        }
+        updateHistory(fare, csaMasterData)
+//        if (fare > 0) {
+//            updateHistory(fare, csaMasterData)
+//        } else {
+//
+//            //For Entry just copy the existing csa history yo updated one
+//            csaMasterData.csaUpdatedBinData?.history = csaMasterData.csaBinData!!.history
+//        }
 
 
         //convert the updated csa bin to byte array
@@ -1891,9 +1913,12 @@ class RupayDataHandler @Inject constructor(
         if(txnStatus == TXN_STATUS_ENTRY){
 
             //1. check if osa service is inactive
-            if(osaMasterData.osaBinData!!.generalInfo.getServiceStatus()){
-                //TODO go for CSA transaction
-                //return
+            if(!osaMasterData.osaBinData!!.generalInfo.getServiceStatus()){
+
+                //abort osa transaction
+                abortOsaTransaction(osaMasterData)
+
+                return
             }
 
             //2. check if all pass expired
@@ -1902,7 +1927,9 @@ class RupayDataHandler @Inject constructor(
                 //set osa service inactive
                 osaMasterData.osaBinData!!.generalInfo.setServiceStatus(false)
 
-                //TODO go for CSA transaction
+                //abort osa transaction
+                abortOsaTransaction(osaMasterData)
+
                 return
             }
 
@@ -1959,7 +1986,7 @@ class RupayDataHandler @Inject constructor(
                 //terminal info
                 val acquirerID = spUtils.getPreference(ACQUIRER_ID, "01")
                 val operatorID = spUtils.getPreference(OPERATOR_ID, "6014")
-                val terminalID = spUtils.getPreference(TERMINAL_ID, "108")
+                val terminalID = spUtils.getPreference(TERMINAL_ID, "108810")
 
                 val acquirerIDBytes = rupayUtils.hexToByte(acquirerID)!!
                 val operatorIDBytes = rupayUtils.hexToByteArray(operatorID)!!
@@ -1990,16 +2017,16 @@ class RupayDataHandler @Inject constructor(
                 historyBin.productType= currentPass.productType
 
                 //set previous trips
-                Utils.numToBin(historyBin.previousTrips!!,currentPass.passLimit!!.toLong(),2)
+                Utils.numToBin(historyBin.passLimit!!,currentPass.passLimit!!.toLong(),2)
 
                 //remaining trips
-                historyBin.tripLimits = (currentPass.passLimit!!.toInt()).toByte()
+                historyBin.tripCount = (currentPass.tripCount!!.toInt()).toByte()
 
                 //daily limit
-                historyBin.tripCounts = (currentPass.tripCount!!.toInt()).toByte()
+                historyBin.dailyLimit = (currentPass.dailyLimit!!.toInt()).toByte()
 
-                //transaction status change
-                historyBin.cardBalance3 = ((txnStatus.toUByte().toInt() and 0x0F) shl 4).toByte()
+                //trx status
+                historyBin.trxStatus = txnStatus.toByte()
 
                 //history rfu
                 historyBin.rfu = 0
@@ -2007,12 +2034,11 @@ class RupayDataHandler @Inject constructor(
                 //update the bin data(already we have created Queue Data Structure)
                 osaMasterData.osaUpdatedBinData!!.history.add(historyBin)
 
-                //convert the updated csa bin to byte array
-                val osaSent =  rupayUtils.osaBinToByteArray(osaMasterData.osaUpdatedBinData!!)
-
                 //set entry from osa to 1 and pass index in rfu
                 osaMasterData.osaUpdatedBinData!!.rfu = byteArrayOf(1.toByte(),passValidator.validPassIndex.toByte(),0,0,0)
 
+                //convert the updated csa bin to byte array
+                val osaSent =  rupayUtils.osaBinToByteArray(osaMasterData.osaUpdatedBinData!!)
 
                 //add the header and footer for the update
                 val startIndex= osaMasterData.bf200Data?.serviceDataIndex!!
@@ -2029,7 +2055,9 @@ class RupayDataHandler @Inject constructor(
             }else{
 
                 //no valid pass set
-                //TODO go for CSA transaction
+                //abort osa transaction
+                abortOsaTransaction(osaMasterData)
+
                 return
             }
 
@@ -2051,7 +2079,7 @@ class RupayDataHandler @Inject constructor(
 
             // 3. get both stations data
             val exitStationId = spUtils.getPreference(STATION_ID,"0425")
-            val entryStationId = osaMasterData.osaBinData!!.validationData.productType.toInt()
+            val entryStationId = osaMasterData.osaBinData!!.validationData.stationCode[0].toInt()
             var exitStationInfo:StationsTable?=null
             var entryStationInfo:StationsTable?=null
 
@@ -2105,19 +2133,22 @@ class RupayDataHandler @Inject constructor(
 
                                 if(response.returnCode == TIME_EXCEEDED){
 
-                                    //return error to transit app
-                                    handleErrorOSA(
-                                        TIME_EXCEEDED,
-                                        rupayUtils.getError("TIME_EXCEEDED"),
-                                        false
-                                    )
+                                    osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = TXN_STATUS_EXIT.toByte()
 
-                                    //return error to payment app
-                                    errorWriteOSA(TIME_EXCEEDED,"TIME_EXCEEDED",osaMasterData)
+                                    //set entry from osa to 0 and pass index to 0
+                                    osaMasterData.osaUpdatedBinData!!.rfu = byteArrayOf(0,0,0,0,0)
+
+                                    //make osa penalty to true
+                                    ShellInfoLibrary.isOsaTrxAbortWithPenalty=true
+
+                                    //abort osa transaction
+                                    abortOsaTransaction(osaMasterData)
 
                                     return@runBlocking
 
                                 }else if(response.returnCode == READER_FUNCTIONALITY_DISABLED){
+
+
 
                                     //return error to payment app and UI
                                     handleErrorOSA(
@@ -2138,7 +2169,17 @@ class RupayDataHandler @Inject constructor(
 
                                     }else{
 
-                                        //TODO go for csa
+                                        osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = TXN_STATUS_EXIT.toByte()
+
+                                        //make osa trx abort to true
+                                        ShellInfoLibrary.isOsaTrxAbort=true
+
+                                        //set entry from osa to 0 and pass index to 0
+                                        osaMasterData.osaUpdatedBinData!!.rfu = byteArrayOf(0,0,0,0,0)
+
+                                        //abort osa transaction
+                                        abortOsaTransaction(osaMasterData)
+
                                         return@runBlocking
                                     }
 
@@ -2156,6 +2197,19 @@ class RupayDataHandler @Inject constructor(
                             }
 
                         }else{
+
+                            osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = TXN_STATUS_EXIT.toByte()
+
+                            //make osa trx abort to true
+                            ShellInfoLibrary.isOsaTrxAbort=true
+
+                            //set entry from osa to 0 and pass index to 0
+                            osaMasterData.osaUpdatedBinData!!.rfu = byteArrayOf(0,0,0,0,0)
+
+
+                            //abort osa transaction
+                            abortOsaTransaction(osaMasterData)
+
                             return@runBlocking
                         }
                     }
@@ -2163,17 +2217,23 @@ class RupayDataHandler @Inject constructor(
 
             }else if(previousPass.validEntryStationId != 99.toByte() && previousPass.validExitStationId != 99.toByte()){
 
-                if(exitStationInfo==null || previousPass.validExitStationId!!.toInt()!=entryStationId || previousPass.validExitStationId!!.toInt() !=exitStationInfo!!.id){
+                if(exitStationInfo==null || previousPass.validEntryStationId!!.toInt()!=entryStationId || previousPass.validExitStationId!!.toInt() !=exitStationInfo!!.id){
 
-                    //TODO go for csa
+                    osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = TXN_STATUS_EXIT.toByte()
+
+                    //make osa trx abort to true
+                    ShellInfoLibrary.isOsaTrxAbort=true
+
+                    //set entry from osa to 0 and pass index to 0
+                    osaMasterData.osaUpdatedBinData!!.rfu = byteArrayOf(0,0,0,0,0)
+
+                    //abort osa transaction
+                    abortOsaTransaction(osaMasterData)
                 }else{
                     //write on osa data and send back the result
                     sendExitOsaSuccess(osaMasterData,previousPass,txnStatus,exitStationInfo!!.id,passIndex)
                 }
             }
-
-
-
         }
     }
 
@@ -2201,14 +2261,16 @@ class RupayDataHandler @Inject constructor(
         //terminal info
         val acquirerID = spUtils.getPreference(ACQUIRER_ID, "01")
         val operatorID = spUtils.getPreference(OPERATOR_ID, "6014")
-        val terminalID = spUtils.getPreference(TERMINAL_ID, "108")
+        val terminalID = spUtils.getPreference(TERMINAL_ID, "108090")
 
         val acquirerIDBytes = rupayUtils.hexToByte(acquirerID)!!
         val operatorIDBytes = rupayUtils.hexToByteArray(operatorID)!!
         val terminalIDBytes = rupayUtils.hexToByteArray(terminalID)!!
 
         //validation data station id
-        osaMasterData.osaUpdatedBinData?.validationData?.stationCode= byteArrayOf(0,stationId.toByte())
+        osaMasterData.osaUpdatedBinData?.validationData?.stationCode?.set(0,
+            stationId.toByte()
+        )
 
         //create history data
         val historyBin = HistoryBinOsa()
@@ -2218,12 +2280,8 @@ class RupayDataHandler @Inject constructor(
         historyBin.operatorID = operatorIDBytes
         historyBin.terminalID = terminalIDBytes
 
-        Utils.numToBin(
-            historyBin.trxDateTime!!,
-            trxTimeFromCardEffDate.toLong(),
-            3
-        )
-
+        //trx date time for history
+        historyBin.trxDateTime = osaMasterData.osaUpdatedBinData?.validationData?.trxDateTime!!
 
         //update sequence number
         val terminateSeq = spUtils.getPreference(TRANSACTION_SEQ_NUMBER,1)
@@ -2235,16 +2293,16 @@ class RupayDataHandler @Inject constructor(
         historyBin.productType= previousPass?.productType
 
         //set previous trips
-        Utils.numToBin(historyBin.previousTrips!!,previousPass.passLimit!!.toLong(),2)
-
+        Utils.numToBin(historyBin.passLimit!!,(previousPass.passLimit!!.toInt()-1).toLong(),2)
 
         //remaining trips
-        historyBin.tripLimits = (previousPass.passLimit!!.toInt()-1).toByte()
+        historyBin.tripCount = (previousPass.tripCount!!.toInt()+1).toByte()
+
         //daily limit
-        historyBin.tripCounts = (previousPass.tripCount!!.toInt()+1).toByte()
+        historyBin.dailyLimit = (previousPass.dailyLimit!!.toInt()).toByte()
 
         //transaction status change
-        historyBin.cardBalance3 = ((txnStatus.toUByte().toInt() and 0x0F) shl 4).toByte()
+        historyBin.trxStatus = txnStatus.toByte()
 
         //history rfu
         historyBin.rfu = 0
@@ -2853,21 +2911,22 @@ class RupayDataHandler @Inject constructor(
     /**
      * Abort OSA transaction and go for csa transaction
      */
-    fun abortOsaTransaction(trxStatus:Int,isAllPassExpired:Boolean,osaMasterData: OSAMasterData){
+    fun abortOsaTransaction(osaMasterData: OSAMasterData){
 
-        //check when transaction aborted
-        if(trxStatus == TXN_STATUS_ENTRY){
+        //convert the updated csa bin to byte array
+        val osaSent =  rupayUtils.osaBinToByteArray(osaMasterData.osaUpdatedBinData!!)
 
-
-        }else if(trxStatus == TXN_STATUS_EXIT){
-
-            ShellInfoLibrary.isOsaTrxAbort =true
-
-        } else if(trxStatus == TXN_STATUS_PENALTY){
-
-            ShellInfoLibrary.isOsaTrxAbortWithPenalty =true
-
+        //add the header and footer for the update
+        val startIndex= osaMasterData.bf200Data?.serviceDataIndex!!
+        val endIndex= osaMasterData.bf200Data?.serviceDataIndex!!+95
+        var updatedDataWithHeaderFooter=osaMasterData.bf200Data?.serviceRelatedData
+        for( i in startIndex..endIndex){
+            updatedDataWithHeaderFooter!!.set(i, osaSent[i-startIndex])
         }
+
+
+        //send back the message
+        communicationService.sendData(IPCConstants.MSG_ID_ABORT_OSA_TRANSACTION,updatedDataWithHeaderFooter!!.toByteArray().toHexString())
     }
 
     /**

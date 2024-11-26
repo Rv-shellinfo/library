@@ -4,10 +4,13 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class TxnHistoryOsa(
+    var terminalId:String,
     var txnSeqNumber:String,
     var txnDate:String,
     var txnTime:String,
-    var txnAmount:String,
+    var passLimit:String,
+    var dailyLimit:String,
+    var tripCounts:String,
     var txnType:String,
     var passType:String,
     var stationName:String

@@ -100,6 +100,8 @@ interface ShellInfoProvider {
 
     fun deletePasses()
 
+    fun deleteData(dataType:NcmcDataType)
+
     fun updatePassValue()
 
 

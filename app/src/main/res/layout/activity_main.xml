@@ -90,4 +90,14 @@
         android:layout_width="match_parent"
         android:layout_height="32dp"/>
 
+    <Button
+        android:id="@+id/btnDelteData"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Delete Data"/>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="32dp"/>
+
 </LinearLayout>
