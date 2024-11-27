@@ -142,9 +142,35 @@ class RupayUtils @Inject constructor(
             val statusFormat: String = getTxnStatus(status)
 
        //============================ HISTORY 1 ==========================================//
+            var stationsTable:StationsTable?=null
 
             //last equipment id, operator id and station id
-            val lastEquipmentId = bin2num(osaBin.history.get(0).terminalID!!,3).toString()
+            val terminalId= osaBin.history.get(0).terminalID
+            val terminalInfo1: String = byteArrayToHex(terminalId!!)
+            var h1_lastStationName= ""
+            var h1_lastStationStringId:String=""
+            var equipmentGroupId1:String=""
+
+
+            if(!terminalInfo1.all { it == '0' }){
+                val parsedValues1 = parseTerminalHexValue(terminalInfo1)
+
+                val lineId1 = parsedValues1["lineId"]
+                val stationNumber1 = parsedValues1["stationNumber"]
+                equipmentGroupId1 =""+ parsedValues1["equipmentGroupId"]
+
+                //last station name
+                val h1_lastStationId =""+lineId1+stationNumber1
+
+                runBlocking {
+                    stationsTable = databaseCall.getStationByStationId(h1_lastStationId)
+                }
+
+                if(stationsTable!=null){
+                    h1_lastStationName = stationsTable!!.stationName.toString()
+                    h1_lastStationStringId = stationsTable!!.stationId
+                }
+            }
 
 
             //date time
@@ -189,7 +215,32 @@ class RupayUtils @Inject constructor(
         //============================ HISTORY 2 ==========================================//
 
             //last equipment id, operator id and station id
-            val lastEquipmentId2 = bin2num(osaBin.history.get(1).terminalID!!,3).toString()
+            val terminalId2= osaBin.history.get(1).terminalID
+            val terminalInfo2: String = byteArrayToHex(terminalId2!!)
+            var h2_lastStationName= ""
+            var h2_lastStationStringId:String=""
+            var equipmentGroupId2:String=""
+
+
+            if(!terminalInfo2.all { it == '0' }){
+                val parsedValues1 = parseTerminalHexValue(terminalInfo2)
+
+                val lineId2 = parsedValues1["lineId"]
+                val stationNumber2 = parsedValues1["stationNumber"]
+                equipmentGroupId2 =""+ parsedValues1["equipmentGroupId"]
+
+                //last station name
+                val h2_lastStationId =""+lineId2+stationNumber2
+
+                runBlocking {
+                    stationsTable = databaseCall.getStationByStationId(h2_lastStationId)
+                }
+
+                if(stationsTable!=null){
+                    h2_lastStationName = stationsTable!!.stationName.toString()
+                    h2_lastStationStringId = stationsTable!!.stationId
+                }
+            }
 
 
             //date time
@@ -236,7 +287,7 @@ class RupayUtils @Inject constructor(
             val transactions = mutableListOf<TxnHistoryOsa>()
             transactions.add(
                 TxnHistoryOsa(
-                    terminalId = lastEquipmentId,
+                    terminalId = terminalInfo1,
                     txnSeqNo1,
                     dateTime1.split(" ")[0],
                     dateTime1.split(" ")[1],
@@ -245,12 +296,13 @@ class RupayUtils @Inject constructor(
                     tripCount,
                     trxType1,
                     historyProductName1,
-                    ""
+                    h1_lastStationName,
+                    h1_lastStationStringId
                 )
             )
             transactions.add(
                 TxnHistoryOsa(
-                    terminalId = lastEquipmentId2,
+                    terminalId = terminalInfo2,
                     txnSeqNo2,
                     dateTime2.split(" ")[0],
                     dateTime2.split(" ")[1],
@@ -259,7 +311,8 @@ class RupayUtils @Inject constructor(
                     tripCount2,
                     trxType2,
                     historyProductName2,
-                    ""
+                    h2_lastStationName,
+                    h2_lastStationStringId
                 )
             )
 
@@ -313,7 +366,7 @@ class RupayUtils @Inject constructor(
             }
 
             //entry station id
-            val pass1EntryStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 172, 174)).toString()
+            var pass1EntryStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 172, 174)).toString()
             var pass1EntryStationName=""
 
             Log.e("pass1EntryStationId",pass1EntryStationId)
@@ -323,6 +376,7 @@ class RupayUtils @Inject constructor(
                     runBlocking {
                         stationInfo= databaseCall.getStationByStationId(pass1EntryStationId.toInt())
                         pass1EntryStationName= stationInfo!!.stationName!!
+                        pass1EntryStationId= stationInfo!!.stationId!!
                     }
                 }
             }catch (ex:Exception){
@@ -333,7 +387,7 @@ class RupayUtils @Inject constructor(
 
 
             //exit station id
-            val pass1ExitStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 174, 176)).toString()
+            var pass1ExitStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 174, 176)).toString()
             var pass1ExitStationName=""
 
             try {
@@ -342,6 +396,7 @@ class RupayUtils @Inject constructor(
                     runBlocking {
                         stationInfo= databaseCall.getStationByStationId(pass1ExitStationId.toInt())
                         pass1ExitStationName= stationInfo!!.stationName!!
+                        pass1ExitStationId= stationInfo!!.stationId!!
                     }
                 }
             }catch (ex:Exception){
@@ -411,7 +466,7 @@ class RupayUtils @Inject constructor(
             }
 
             //entry station id
-            val pass2EntryStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 202, 204)).toString()
+            var pass2EntryStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 202, 204)).toString()
             var pass2EntryStationName=""
 
             try {
@@ -419,6 +474,7 @@ class RupayUtils @Inject constructor(
                     runBlocking {
                         stationInfo= databaseCall.getStationByStationId(pass2EntryStationId.toInt())
                         pass2EntryStationName= stationInfo!!.stationName!!
+                        pass2EntryStationId= stationInfo!!.stationId!!
                     }
                 }
             }catch (ex:Exception){
@@ -427,7 +483,7 @@ class RupayUtils @Inject constructor(
 
 
             //exit station id
-            val pass2ExitStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 204, 206)).toString()
+            var pass2ExitStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 204, 206)).toString()
             var pass2ExitStationName=""
 
             try {
@@ -436,6 +492,7 @@ class RupayUtils @Inject constructor(
                     runBlocking {
                         stationInfo= databaseCall.getStationByStationId(pass2ExitStationId.toInt())
                         pass2ExitStationName= stationInfo!!.stationName!!
+                        pass2ExitStationId= stationInfo!!.stationId!!
                     }
                 }
             }catch (ex:Exception){
@@ -505,7 +562,7 @@ class RupayUtils @Inject constructor(
             }
 
             //entry station id
-            val pass3EntryStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 232, 234)).toString()
+            var pass3EntryStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 232, 234)).toString()
             var pass3EntryStationName=""
 
             try {
@@ -514,6 +571,7 @@ class RupayUtils @Inject constructor(
                     runBlocking {
                         stationInfo= databaseCall.getStationByStationId(pass3EntryStationId.toInt())
                         pass3EntryStationName= stationInfo!!.stationName!!
+                        pass3EntryStationId= stationInfo!!.stationId!!
                     }
                 }
             }catch (ex:Exception){
@@ -523,7 +581,7 @@ class RupayUtils @Inject constructor(
 
 
             //exit station id
-            val pass3ExitStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 234, 236)).toString()
+            var pass3ExitStationId= emvUtils.getHexatoDecimal(getSubString(df33_data, 234, 236)).toString()
             var pass3ExitStationName=""
 
             try {
@@ -533,6 +591,8 @@ class RupayUtils @Inject constructor(
                     runBlocking {
                         stationInfo= databaseCall.getStationByStationId(pass3ExitStationId.toInt())
                         pass3ExitStationName= stationInfo!!.stationName!!
+                        pass3ExitStationId= stationInfo!!.stationId!!
+
                     }
                 }
             }catch (ex:Exception){
@@ -730,7 +790,7 @@ class RupayUtils @Inject constructor(
 
             //status
             val status: String = getSubString(df33_data, 104, 106)
-            val statusValue: Int = getTxnStatusNCMC(status)
+            val statusValue: Int = status.toInt()
             val statusFormat: String = getTxnStatus(status)
 
             //last transaction date time
@@ -744,27 +804,34 @@ class RupayUtils @Inject constructor(
                 )
             }
 
-            Log.e("error", errorFormat)
-            Log.e("staus", statusFormat)
-            Log.e("finaltxndate", finaltxndate)
+
 
             //last equipment id
-            var lastequip: String = getSubString(df33_data, 72, 84)
-            lastequip = getLastEquipmentId(lastequip.substring(6, 11))
-
-            //last station name
-            val lastStationId = emvUtils.getHexatoDecimal(getSubString(df33_data, 94, 98)).toString()
+            val terminalInfo: String = getSubString(df33_data, 72, 84)
             var stationsTable:StationsTable?=null
             var lastStationName= ""
             var lastStationStringId:String=""
-            runBlocking {
-                stationsTable = databaseCall.getStationByStationId(lastStationId)
+            if(!terminalInfo.all { it == '0' }){
+                val parsedValues = parseTerminalHexValue(terminalInfo)
+
+                val lineId = parsedValues["lineId"]
+                val stationNumber = parsedValues["stationNumber"]
+                val equipmentGroupId = parsedValues["equipmentGroupId"]
+
+                //last station name
+                val lastStationId =""+lineId+stationNumber
+
+                runBlocking {
+                    stationsTable = databaseCall.getStationByStationId(lastStationId)
+                }
+
+                if(stationsTable!=null){
+                    lastStationName = stationsTable!!.stationName.toString()
+                    lastStationStringId = stationsTable!!.stationId
+                }
             }
 
-            if(stationsTable!=null){
-                lastStationName = stationsTable!!.stationName.toString()
-                lastStationStringId = stationsTable!!.stationId
-            }
+
 
 
 
@@ -801,7 +868,33 @@ class RupayUtils @Inject constructor(
                     getSubString(df33_data, 137, 138)
                 )
 
-            val transStationId1 = getSubString(df33_data, 106, 118)
+            var terminalInfo1: String = getSubString(df33_data, 106, 118)
+            var h1_lastStationName= ""
+            var h1_lastStationStringId:String=""
+            var equipmentGroupId1:String=""
+            stationsTable=null
+
+            if(!terminalInfo1.all { it == '0' }){
+                val parsedValues1 = parseTerminalHexValue(terminalInfo1)
+
+                val lineId1 = parsedValues1["lineId"]
+                val stationNumber1 = parsedValues1["stationNumber"]
+                 equipmentGroupId1 =""+ parsedValues1["equipmentGroupId"]
+
+                //last station name
+                val h1_lastStationId =""+lineId1+stationNumber1
+
+                runBlocking {
+                    stationsTable = databaseCall.getStationByStationId(h1_lastStationId)
+                }
+
+                if(stationsTable!=null){
+                    h1_lastStationName = stationsTable!!.stationName.toString()
+                    h1_lastStationStringId = stationsTable!!.stationId
+                }
+            }
+
+
 
 
             //history log2
@@ -830,7 +923,33 @@ class RupayUtils @Inject constructor(
                     getSubString(df33_data, 171, 172)
                 )
 
-            val transStationId2 = getSubString(df33_data, 106, 118)
+
+            //terminal info 2
+            var terminalInfo2: String = getSubString(df33_data, 140, 152)
+            var h2_lastStationName= ""
+            var h2_lastStationStringId:String=""
+            var equipmentGroupId2:String=""
+            stationsTable=null
+
+            if(!terminalInfo2.all { it == '0' }) {
+                val parsedValues2 = parseTerminalHexValue(terminalInfo2)
+
+                val lineId2 = parsedValues2["lineId"]
+                val stationNumber2 = parsedValues2["stationNumber"]
+                 equipmentGroupId2 = ""+parsedValues2["equipmentGroupId"]
+
+                //last station name
+                val h2_lastStationId = "" + lineId2 + stationNumber2
+
+                runBlocking {
+                    stationsTable = databaseCall.getStationByStationId(h2_lastStationId)
+                }
+
+                if (stationsTable != null) {
+                    h2_lastStationName = stationsTable!!.stationName.toString()
+                    h2_lastStationStringId = stationsTable!!.stationId
+                }
+            }
 
             //history log3
             var datentime3: String =
@@ -858,7 +977,32 @@ class RupayUtils @Inject constructor(
                     getSubString(df33_data, 205, 206)
                 )
 
-            val transStationId3 = getSubString(df33_data, 174, 186)
+
+            //terminal info 3
+            var terminalInfo3: String = getSubString(df33_data, 174, 186)
+            var h3_lastStationName= ""
+            var h3_lastStationStringId:String=""
+            var equipmentGroupId3:String=""
+            stationsTable=null
+            if(!terminalInfo3.all { it== '0' }){
+                val parsedValues3 = parseTerminalHexValue(terminalInfo3)
+
+                val lineId3 = parsedValues3["lineId"]
+                val stationNumber3 = parsedValues3["stationNumber"]
+                 equipmentGroupId3 = ""+parsedValues3["equipmentGroupId"]
+
+                //last station name
+                val h3_lastStationId =""+lineId3+stationNumber3
+                runBlocking {
+                    stationsTable = databaseCall.getStationByStationId(h3_lastStationId)
+                }
+
+                if(stationsTable!=null){
+                    h3_lastStationName = stationsTable!!.stationName.toString()
+                    h3_lastStationStringId = stationsTable!!.stationId
+                }
+            }
+
 
             //history log4
             var datentime4: String =
@@ -886,29 +1030,34 @@ class RupayUtils @Inject constructor(
                     getSubString(df33_data, 239, 240)
                 )
 
-            val transStationId4 = getSubString(df33_data, 208, 220)
 
-            var station_str1 = transStationId1.substring(6, 9)
-            station_str1 =
-                if (station_str1 == "000") "--" else emvUtils.getStationIdFromStationDetailList(
-                    "0$station_str1"
-                )
 
-            var station_str2: String = transStationId2.substring(6, 9)
-            station_str2 =
-                if (station_str2 == "000") "--" else emvUtils.getStationIdFromStationDetailList(
-                    "0$station_str2"
-                )
-            var station_str3: String = transStationId3.substring(6, 9)
-            station_str3 =
-                if (station_str3 == "000") "--" else emvUtils.getStationIdFromStationDetailList(
-                    "0$station_str3"
-                )
-            var station_str4: String = transStationId4.substring(6, 9)
-            station_str4 =
-                if (station_str4 == "000") "--" else emvUtils.getStationIdFromStationDetailList(
-                    "0$station_str4"
-                )
+            //terminal info 3
+            var terminalInfo4: String = getSubString(df33_data, 208, 220)
+            var h4_lastStationName= ""
+            var h4_lastStationStringId:String=""
+            var equipmentGroupId4:String=""
+
+            if(!terminalInfo4.all { it == '0' }){
+                val parsedValues4 = parseTerminalHexValue(terminalInfo4)
+
+                val lineId4 = parsedValues4["lineId"]
+                val stationNumber4 = parsedValues4["stationNumber"]
+                 equipmentGroupId4 = ""+parsedValues4["equipmentGroupId"]
+
+                //last station name
+                val h4_lastStationId =""+lineId4+stationNumber4
+
+                runBlocking {
+                    stationsTable = databaseCall.getStationByStationId(h4_lastStationId)
+                }
+
+                if(stationsTable!=null){
+                    h4_lastStationName = stationsTable!!.stationName.toString()
+                    h4_lastStationStringId = stationsTable!!.stationId
+                }
+            }
+
 
 
             //adding the transaction history
@@ -920,7 +1069,9 @@ class RupayUtils @Inject constructor(
                     datentime1.split(" ")[1],
                     emvUtils.df.format(txn_amnt1),
                     getTxnStatus(transtype1),
-                    station_str1
+                    h1_lastStationName,
+                    h1_lastStationStringId,
+                    equipmentGroupId1.toString()
                 )
             )
             transactions.add(
@@ -930,7 +1081,10 @@ class RupayUtils @Inject constructor(
                     datentime2.split(" ")[1],
                     emvUtils.df.format(txn_amnt2),
                     getTxnStatus(transtype2),
-                    station_str2
+                    h2_lastStationName,
+                    h2_lastStationStringId,
+                    equipmentGroupId2.toString()
+
                 )
             )
             transactions.add(
@@ -940,7 +1094,9 @@ class RupayUtils @Inject constructor(
                     datentime3.split(" ")[1],
                     emvUtils.df.format(txn_amnt3),
                     getTxnStatus(transtype3),
-                    station_str3
+                    h3_lastStationName,
+                    h3_lastStationStringId,
+                    equipmentGroupId3.toString()
                 )
             )
             transactions.add(
@@ -950,7 +1106,9 @@ class RupayUtils @Inject constructor(
                     datentime4.split(" ")[1],
                     emvUtils.df.format(txn_amnt4),
                     getTxnStatus(transtype4),
-                    station_str4
+                    h4_lastStationName,
+                    h4_lastStationStringId,
+                    equipmentGroupId4.toString()
                 )
             )
 
@@ -1821,7 +1979,18 @@ class RupayUtils @Inject constructor(
     }
 
 
+    fun combineToByte(value1: Int, value2: Int): Byte {
+        // Ensure both values fit within 4 bits
+        require(value1 in 0..15) { "value1 must be a 4-bit value (0-15)" }
+        require(value2 in 0..15) { "value2 must be a 4-bit value (0-15)" }
 
+        // Shift value1 to the upper 4 bits and combine with value2
+        return ((value1 shl 4) or value2).toByte()
+    }
+
+    fun getFirst4Bits(value: Byte): Int {
+        return (value.toInt() shr 4) and 0x0F
+    }
 
 
 //    fun hexStringToByteArray(hex: String): ByteArray {
@@ -1849,4 +2018,76 @@ class RupayUtils @Inject constructor(
 //        }
 //        return byteArrayList.toByteArray()
 //    }
+
+    fun parseTerminalHexValue(hexValue1: String): Map<String, String> {
+
+        var hexValue =""
+
+        //remove acq id and operator id from terminal info
+        if(hexValue1.length !=6){
+            hexValue = hexValue1.substring(6,hexValue1.length)
+        }else{
+            hexValue = hexValue1
+        }
+
+
+        require(hexValue.length == 6) { "Hexadecimal value must be exactly 6 characters long" }
+
+        val bytes = hexValue.chunked(2).map { it.toInt(16) }
+
+        // Bytes from the encoded string
+        val byte1 = bytes[0]
+        val byte2 = bytes[1]
+        val byte3 = bytes[2]
+
+        // Line ID: First 4 bits from byte1
+        val lineId = (byte1 shr 4) and 0x0F
+
+        // Station ID: Next 8 bits (lower 4 bits from byte1 and upper 4 bits from byte2)
+        val stationNumber = ((byte1 and 0x0F) shl 4) or (byte2 shr 4)
+
+        // Equipment Group ID: Lower 6 bits from byte2 and byte3
+        val equipmentGroupId = ((byte2 and 0x0F) shl 2) or (byte3 shr 6)
+
+        // System Number: Last 6 bits from byte3
+        val systemNumber = byte3 and 0x3F
+
+       val decode= mapOf(
+            "lineId" to lineId,
+            "stationNumber" to stationNumber,
+            "equipmentGroupId" to equipmentGroupId,
+            "systemNumber" to systemNumber
+        )
+        println("Decoded Values: $decode")
+
+        return mapOf(
+            "lineId" to lineId.toString().padStart(2, '0'),
+            "stationNumber" to stationNumber.toString().padStart(2, '0'),
+            "equipmentGroupId" to equipmentGroupId.toString().padStart(2, '0'),
+            "systemNumber" to systemNumber.toString().padStart(2, '0')
+        )
+
+//        println("Line ID: ${parsedValues["lineId"]}")
+//        println("Station ID: ${parsedValues["stationId"]}")
+//        println("Equipment Group ID: ${parsedValues["equipmentGroupId"]}")
+//        println("System Number: ${parsedValues["systemNumber"]}")
+    }
+
+
+    fun createHexFromTerminalData(lineId: Int, stationId: Int, equipmentGroupId: Int, systemNumber: Int): String {
+        // Ensure that inputs are valid within their respective bit lengths
+        require(lineId in 0..15) { "Line ID must be between 0 and 15 (4 bits)" }
+        require(stationId in 0..255) { "Station ID must be between 0 and 255 (8 bits)" }
+        require(equipmentGroupId in 0..63) { "Equipment Group ID must be between 0 and 63 (6 bits)" }
+        require(systemNumber in 0..63) { "System Number must be between 0 and 63 (6 bits)" }
+
+        // Create the three bytes
+        val byte1 = (lineId shl 4) or (stationId shr 4)  // Line ID in upper 4 bits, part of Station ID in lower 4 bits
+        val byte2 = (stationId and 0x0F) shl 4 or (equipmentGroupId shr 2)  // Lower part of Station ID and upper part of Equipment Group ID
+        val byte3 = (equipmentGroupId and 0x03) shl 6 or systemNumber  // Lower part of Equipment Group ID and System Number
+
+        // Convert to hexadecimal string (padding to ensure 6 digits)
+        return String.format("%02X%02X%02X", byte1, byte2, byte3)
+    }
+
 }

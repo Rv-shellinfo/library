@@ -13,5 +13,6 @@ data class TxnHistoryOsa(
     var tripCounts:String,
     var txnType:String,
     var passType:String,
-    var stationName:String
+    var stationName:String,
+    var stationId:String,
 )

@@ -151,10 +151,10 @@ object IPCConstants{
 
 
     //CSA pre-defined values as per NCMC specs
-    const val TXN_STATUS_EXIT	=					0x00
-    const val TXN_STATUS_ENTRY	=				    0x10
-    const val TXN_STATUS_PENALTY=					0x20
-    const val TXN_STATUS_ONE_TAP_TICKET	=		    0x30
+    const val TXN_STATUS_EXIT	=					0
+    const val TXN_STATUS_ENTRY	=				    1
+    const val TXN_STATUS_PENALTY=					2
+    const val TXN_STATUS_ONE_TAP_TICKET	=		    3
 
     //Error Codes from CDAC Doc (NCMC Interface Specs)
     const val NO_ERROR=					                0			//NO errors found

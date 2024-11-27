@@ -94,6 +94,21 @@ object DateUtils {
     }
 
 
+    fun getSysDateTime(): String {
+        // Get the current date and time
+        val now = LocalDateTime.now()
+
+        // Define a formatter for "yyMMddHHmmss"
+        val formatter = DateTimeFormatter.ofPattern("yyMMddHHmmss")
+
+        // Format the date-time without seconds first
+        val formattedDateTime = now.format(formatter)
+
+        // Add the seconds part (always 2 digits) to the string
+        return formattedDateTime + String.format("%02d", now.second)
+    }
+
+
     /**
      * method to get the data in format specific
      */

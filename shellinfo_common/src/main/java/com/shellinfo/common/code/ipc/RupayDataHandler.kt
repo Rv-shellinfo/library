@@ -249,7 +249,7 @@ class RupayDataHandler @Inject constructor(
 
             // if penalty amount is more then 0 then have to create an entry in history
             if (penaltyAmount > 0) {
-                updateHistory(penaltyAmount, csaMasterData,true)
+                updateHistory(penaltyAmount, csaMasterData,true,TXN_STATUS_PENALTY)
             }
 
             //convert the updated csa bin to byte array
@@ -584,6 +584,14 @@ class RupayDataHandler @Inject constructor(
     }
 
 
+    fun deleteCSAData(){
+
+        val eventResponse = byteArrayOf(0x0, 0x2, 0x30, 0x30)
+        //send back the message
+        communicationService.sendData(MSG_ID_CREATE_PASS_DATA,eventResponse.toHexString())
+    }
+
+
     /**
      * processEntryCSA : This function will validate the CSA data to permit Entry at Gate
      */
@@ -631,9 +639,10 @@ class RupayDataHandler @Inject constructor(
             return
         }
 
+        val lastTrxStaus = extractTrxStatus(csaRawData.validationData.trxStatusAndRfu)
 
         //check last transaction is ENTRY
-        if (csaRawData.validationData.trxStatusAndRfu.toInt() == TXN_STATUS_ENTRY) {
+        if (lastTrxStaus == TXN_STATUS_ENTRY) {
 
             var trxTimeFromCardEffDate: Long = 0
             var entryTime: Long
@@ -710,14 +719,15 @@ class RupayDataHandler @Inject constructor(
 
             //get hex value from terminal id
             //val terminalId = Utils.bin2hex(lastEntryTerminalId!!, 3)
+
             entryValidationRequest.lastStationId = csaDataDisplay!!.lastStationId
             entryValidationRequest.lastTransactionDateTime = lastEntryDateTIme
 
         }
 
         //set current equipmentId and equipmentGroupId
-        entryValidationRequest.equipmentId = spUtils.getPreference(EQUIPMENT_ID, "")
-        entryValidationRequest.equipmentGroupId = spUtils.getPreference(EQUIPMENT_GROUP_ID, "")
+        entryValidationRequest.equipmentId = spUtils.getPreference(EQUIPMENT_ID, "4001")
+        entryValidationRequest.equipmentGroupId = spUtils.getPreference(EQUIPMENT_GROUP_ID, "4")
 
         Timber.e(TAG,">>>> ENTRY VALIDATION DATA: ${networkCall.toJson(entryValidationRequest,EntryValidationRequest::class)}")
 
@@ -763,10 +773,10 @@ class RupayDataHandler @Inject constructor(
         val osaRawData = osaMasterData.osaBinData
 
         //check for osa service active or not
-        if(true){
+        if(!osaMasterData.osaBinData!!.generalInfo.getServiceStatus()){
 
             //log for
-            Timber.e(TAG,"OSA Service De")
+            Timber.e(TAG,"OSA Service Inactive go for CSA")
 
             //if service is not active go for csa deduction
             abortOsaTransaction(osaMasterData)
@@ -819,9 +829,11 @@ class RupayDataHandler @Inject constructor(
             return
         }
 
+        //get last trx status
+        val lastTransactionStatus = extractTrxStatus(osaRawData.validationData.trxStatusAndRfu)
 
         //check last transaction is ENTRY
-        if (osaRawData.validationData.trxStatusAndRfu.toInt() == TXN_STATUS_ENTRY) {
+        if (lastTransactionStatus == TXN_STATUS_ENTRY) {
 
             var trxTimeFromCardEffDate: Long = 0
             var entryTime: Long
@@ -903,8 +915,8 @@ class RupayDataHandler @Inject constructor(
         }
 
         //set current equipmentId and equipmentGroupId
-        entryValidationRequest.equipmentId = spUtils.getPreference(EQUIPMENT_ID, "")
-        entryValidationRequest.equipmentGroupId = spUtils.getPreference(EQUIPMENT_GROUP_ID, "")
+        entryValidationRequest.equipmentId = spUtils.getPreference(EQUIPMENT_ID, "4001")
+        entryValidationRequest.equipmentGroupId = spUtils.getPreference(EQUIPMENT_GROUP_ID, "4")
 
         Timber.e(TAG,">>>> ENTRY VALIDATION DATA: ${networkCall.toJson(entryValidationRequest,EntryValidationRequest::class)}")
 
@@ -1202,7 +1214,7 @@ class RupayDataHandler @Inject constructor(
         lastTrxTime= entryTime
 
         //extract last transaction status
-        val lastTrxStatus = csaMasterData.csaBinData!!.validationData.trxStatusAndRfu
+        val lastTrxStatus = extractTrxStatus(csaMasterData.csaUpdatedBinData!!.validationData.trxStatusAndRfu)
 
         //check last transaction is ENTRY or EXIT
         if (lastTrxStatus.toInt() == TXN_STATUS_EXIT) {
@@ -1235,26 +1247,20 @@ class RupayDataHandler @Inject constructor(
             //entry date time in specific date format
             val entryDateTime = DateUtils.getTimeInYMDHMS(entryTime)
 
-            //get entry terminal id
-            val entryTerminalId= rupayUtils.byteArrayToHex(csaMasterData.csaBinData!!.validationData.terminalID)
-
-
-            //TODO REMOVE HARDCODED VALUE FOR EXIT TRANSACTION
-
             //error code
             csaMasterData.rupayMessage?.returnCode = NO_ERROR
             csaMasterData.rupayMessage?.returnMessage = "NO_ERROR"
 
-
-
             //create Fare Request with the data
             val fareRequest = GateFareRequest()
-            fareRequest.fromStationId=entryTerminalId
-            fareRequest.toStationId=spUtils.getPreference(STATION_ID,"")
+            fareRequest.fromStationId=csaMasterData.csaDisplayData!!.lastStationId
+            fareRequest.toStationId=spUtils.getPreference(STATION_ID,"0402")
             fareRequest.entryDateTime=entryDateTime
-            fareRequest.exitDateTime=entryDateTime
-            fareRequest.equipmentId=spUtils.getPreference(EQUIPMENT_ID,"")
-            fareRequest.equipmentGroupId=spUtils.getPreference(EQUIPMENT_GROUP_ID,"")
+            fareRequest.exitDateTime=DateUtils.getSysDateTime()
+            fareRequest.equipmentId=spUtils.getPreference(EQUIPMENT_ID,"5001")
+            fareRequest.equipmentGroupId=spUtils.getPreference(EQUIPMENT_GROUP_ID,"5")
+
+            //TODO call fare request api and complete the process
 
             //complete the CSA process
             completeProcessCSA(100.0,TXN_STATUS_EXIT,csaMasterData)
@@ -1372,7 +1378,7 @@ class RupayDataHandler @Inject constructor(
         lastTrxTime= entryTime
 
         //extract last transaction status
-        val lastTrxStatus = osaRawData.validationData.trxStatusAndRfu.toInt()
+        val lastTrxStatus = extractTrxStatus(osaRawData.validationData.trxStatusAndRfu)
 
         //check last transaction is ENTRY or EXIT
         if (lastTrxStatus == TXN_STATUS_EXIT) {
@@ -1614,16 +1620,22 @@ class RupayDataHandler @Inject constructor(
         csaMasterData.rupayMessage?.returnMessage = "NO_ERROR"
 
         //set transaction status
-        csaMasterData.csaUpdatedBinData!!.validationData.trxStatusAndRfu=txnStatus.toByte()
+        csaMasterData.csaUpdatedBinData!!.validationData.trxStatusAndRfu=rupayUtils.combineToByte(txnStatus,0)
 
 
         //product type
         csaMasterData.csaUpdatedBinData!!.validationData.productType = PROD_TYPE_SINGLE_JOURNEY
 
         //terminal info
-        val acquirerID = spUtils.getPreference(ACQUIRER_ID, "01")
+        val acquirerID = spUtils.getPreference(ACQUIRER_ID, "04")
         val operatorID = spUtils.getPreference(OPERATOR_ID, "6014")
-        val terminalID = spUtils.getPreference(TERMINAL_ID, "001081")
+        var terminalID = ""
+
+        if(txnStatus == TXN_STATUS_ENTRY) {
+             terminalID = spUtils.getPreference(TERMINAL_ID, "401101")
+        }else{
+            terminalID = spUtils.getPreference(TERMINAL_ID, "402141")
+        }
 
         val acquirerIDBytes = rupayUtils.hexToByte(acquirerID)!!
         val operatorIDBytes = rupayUtils.hexToByteArray(operatorID)!!
@@ -1653,7 +1665,7 @@ class RupayDataHandler @Inject constructor(
 
 
         //History Data
-        updateHistory(fare, csaMasterData)
+        updateHistory(fare, csaMasterData,false, trxStatus = txnStatus)
 //        if (fare > 0) {
 //            updateHistory(fare, csaMasterData)
 //        } else {
@@ -1951,7 +1963,7 @@ class RupayDataHandler @Inject constructor(
 
                 //set osa validation data
                 osaMasterData.osaUpdatedBinData!!.validationData.productType=passValidator.passBin.productType!!
-                osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = txnStatus.toByte()
+                osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = rupayUtils.combineToByte(txnStatus,0)
 
                 //date and time
                 val trxTimeFromEpoch: Long = System.currentTimeMillis() / 1000
@@ -1965,28 +1977,23 @@ class RupayDataHandler @Inject constructor(
 
                 //station Id
                 var stationInfo:StationsTable?=null
-                val stationId = spUtils.getPreference(STATION_ID, "0420")
+                val stationId = spUtils.getPreference(STATION_ID, "0401")
 
                 runBlocking {
                     stationInfo = dbRepository.getStationById(stationId)
                 }
 
-                if(stationInfo!=null){
-                    osaMasterData.osaUpdatedBinData?.validationData?.stationCode?.set(0,
-                        stationInfo!!.id.toByte()
-                    )
-                }else{
-                    osaMasterData.osaUpdatedBinData?.validationData?.stationCode?.set(0,
-                        0.toByte()
-                    )
-                }
-
-
+                //TODO station id our id we are saving in 1 byte have to check if any thing we can do
+                Utils.numToBin(
+                    osaMasterData.osaUpdatedBinData?.validationData?.stationCode!!,
+                    stationId.toLong(),
+                    2
+                )
 
                 //terminal info
-                val acquirerID = spUtils.getPreference(ACQUIRER_ID, "01")
+                val acquirerID = spUtils.getPreference(ACQUIRER_ID, "04")
                 val operatorID = spUtils.getPreference(OPERATOR_ID, "6014")
-                val terminalID = spUtils.getPreference(TERMINAL_ID, "108810")
+                val terminalID = spUtils.getPreference(TERMINAL_ID, "401101")
 
                 val acquirerIDBytes = rupayUtils.hexToByte(acquirerID)!!
                 val operatorIDBytes = rupayUtils.hexToByteArray(operatorID)!!
@@ -2078,13 +2085,18 @@ class RupayDataHandler @Inject constructor(
 
 
             // 3. get both stations data
-            val exitStationId = spUtils.getPreference(STATION_ID,"0425")
-            val entryStationId = osaMasterData.osaBinData!!.validationData.stationCode[0].toInt()
+            val exitStationId = spUtils.getPreference(STATION_ID,"0402")
+            val entryStationId = Utils.binToNum(osaMasterData.osaBinData!!.validationData.stationCode,2)
+            var entryStationIdString= entryStationId.toString()
+            if(entryStationId.toString().length==3){
+                entryStationIdString = "0"+entryStationIdString
+            }
+
             var exitStationInfo:StationsTable?=null
             var entryStationInfo:StationsTable?=null
 
             runBlocking {
-                entryStationInfo = dbRepository.getStationById(entryStationId)
+                entryStationInfo = dbRepository.getStationById(entryStationIdString)
                 exitStationInfo = dbRepository.getStationById(exitStationId)
             }
 
@@ -2133,7 +2145,7 @@ class RupayDataHandler @Inject constructor(
 
                                 if(response.returnCode == TIME_EXCEEDED){
 
-                                    osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = TXN_STATUS_EXIT.toByte()
+                                    osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = rupayUtils.combineToByte(TXN_STATUS_EXIT,0)
 
                                     //set entry from osa to 0 and pass index to 0
                                     osaMasterData.osaUpdatedBinData!!.rfu = byteArrayOf(0,0,0,0,0)
@@ -2169,7 +2181,7 @@ class RupayDataHandler @Inject constructor(
 
                                     }else{
 
-                                        osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = TXN_STATUS_EXIT.toByte()
+                                        osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = rupayUtils.combineToByte(TXN_STATUS_EXIT,0)
 
                                         //make osa trx abort to true
                                         ShellInfoLibrary.isOsaTrxAbort=true
@@ -2198,7 +2210,7 @@ class RupayDataHandler @Inject constructor(
 
                         }else{
 
-                            osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = TXN_STATUS_EXIT.toByte()
+                            osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = rupayUtils.combineToByte(TXN_STATUS_EXIT,0)
 
                             //make osa trx abort to true
                             ShellInfoLibrary.isOsaTrxAbort=true
@@ -2217,9 +2229,11 @@ class RupayDataHandler @Inject constructor(
 
             }else if(previousPass.validEntryStationId != 99.toByte() && previousPass.validExitStationId != 99.toByte()){
 
-                if(exitStationInfo==null || previousPass.validEntryStationId!!.toInt()!=entryStationId || previousPass.validExitStationId!!.toInt() !=exitStationInfo!!.id){
 
-                    osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = TXN_STATUS_EXIT.toByte()
+
+                if(entryStationInfo==null || exitStationInfo==null || previousPass.validEntryStationId!!.toInt() !=entryStationInfo!!.id || previousPass.validExitStationId!!.toInt() !=exitStationInfo!!.id){
+
+                    osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = rupayUtils.combineToByte(TXN_STATUS_EXIT,0)
 
                     //make osa trx abort to true
                     ShellInfoLibrary.isOsaTrxAbort=true
@@ -2245,7 +2259,7 @@ class RupayDataHandler @Inject constructor(
         osaMasterData.rupayMessage?.returnMessage = "NO_ERROR"
 
         //set osa validation data
-        osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = txnStatus.toByte()
+        osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu = rupayUtils.combineToByte(txnStatus,0)
 
         //date and time
         val trxTimeFromEpoch: Long = System.currentTimeMillis() / 1000
@@ -2259,17 +2273,20 @@ class RupayDataHandler @Inject constructor(
 
 
         //terminal info
-        val acquirerID = spUtils.getPreference(ACQUIRER_ID, "01")
+        val acquirerID = spUtils.getPreference(ACQUIRER_ID, "04")
         val operatorID = spUtils.getPreference(OPERATOR_ID, "6014")
-        val terminalID = spUtils.getPreference(TERMINAL_ID, "108090")
+        val terminalID = spUtils.getPreference(TERMINAL_ID, "402141")
 
         val acquirerIDBytes = rupayUtils.hexToByte(acquirerID)!!
         val operatorIDBytes = rupayUtils.hexToByteArray(operatorID)!!
         val terminalIDBytes = rupayUtils.hexToByteArray(terminalID)!!
 
         //validation data station id
-        osaMasterData.osaUpdatedBinData?.validationData?.stationCode?.set(0,
-            stationId.toByte()
+        val stationIdCurrent = spUtils.getPreference(STATION_ID, "0402")
+        Utils.numToBin(
+            osaMasterData.osaUpdatedBinData?.validationData?.stationCode!!,
+            stationIdCurrent.toLong(),
+            2
         )
 
         //create history data
@@ -2341,7 +2358,7 @@ class RupayDataHandler @Inject constructor(
 
     fun ByteArray.toHexString(): String = joinToString(separator = " ") { "%02x".format(it) }
 
-    fun updateHistory(fareAmount: Double, csaMasterData: CSAMasterData,isPenalty:Boolean?=false) {
+    fun updateHistory(fareAmount: Double, csaMasterData: CSAMasterData,isPenalty:Boolean?=false,trxStatus:Int) {
 
         //create history data
         val historyBin = HistoryBin()
@@ -2371,16 +2388,20 @@ class RupayDataHandler @Inject constructor(
         historyBin.cardBalance2 =
             (((cardBalance[1].toUByte().toInt() and 0x0F) shl 4) + ((cardBalance[2].toUByte()
                 .toInt() and 0xF0) ushr 4)).toByte()
-        historyBin.cardBalance3 = ((cardBalance[2].toUByte().toInt() and 0x0F) shl 4).toByte()
+        
+        
+        //as card balance3 and trx status are combined
+        val combinedByte = rupayUtils.combineToByte(cardBalance[1].toUByte().toInt(), trxStatus.toUByte().toInt())
+        historyBin.cardBalance3 = combinedByte
 
-        //transaction status
-        if(isPenalty == false) {
-            historyBin.trxStatus =
-                (csaMasterData.csaUpdatedBinData!!.validationData.trxStatusAndRfu.toInt() shr 4).toByte()
-        }else{
-            historyBin.trxStatus =
-                (TXN_STATUS_PENALTY shr 4).toByte()
-        }
+//        //transaction status
+//        if(isPenalty == false) {
+//            historyBin.trxStatus =
+//                ((trxStatus.toUByte().toInt() shr 4) and 0x0F).toByte()
+//        }else{
+//            historyBin.trxStatus =
+//                ((TXN_STATUS_PENALTY.toUByte().toInt() shr 4) and 0x0F).toByte()
+//        }
 
         //history rfu
         historyBin.rfu = 0

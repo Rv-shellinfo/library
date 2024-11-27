@@ -438,6 +438,10 @@ class IPCDataHandler @Inject constructor(
                                     //remove penalty and send back the data to write
                                     rupayDataHandler.removePenalty(bF200Data)
 
+                                }else if(ShellInfoLibrary.isForDataDelete){
+                                    ShellInfoLibrary.isForDataDelete=false
+
+                                    rupayDataHandler.deleteCSAData()
                                 }else{
                                     //handle ncmc rupay card csa data
                                     rupayDataHandler.handleRupayCardCSAData(bF200Data)

@@ -9,5 +9,7 @@ data class TxnHistory(
     var txnTime:String,
     var txnAmount:String,
     var txnType:String,
-    var stationName:String
+    var stationName:String,
+    var stationId:String,
+    var equipmentId:String
 )

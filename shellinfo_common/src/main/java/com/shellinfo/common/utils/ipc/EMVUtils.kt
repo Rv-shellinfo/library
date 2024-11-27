@@ -82,4 +82,13 @@ class EMVUtils @Inject constructor() {
         return byteArray
     }
 
+    fun combineToByte(value1: Int, value2: Int): Byte {
+        // Ensure both values fit within 4 bits
+        require(value1 in 0..15) { "value1 must be a 4-bit value (0-15)" }
+        require(value2 in 0..15) { "value2 must be a 4-bit value (0-15)" }
+
+        // Shift value1 to the upper 4 bits and combine with value2
+        return ((value1 shl 4) or value2).toByte()
+    }
+
 }
