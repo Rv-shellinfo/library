@@ -176,7 +176,7 @@ class MainActivity : AppCompatActivity() {
         })
 
         btnDelteData.setOnClickListener(View.OnClickListener {
-            shellInfoLibrary.deleteData(NcmcDataType.OSA)
+            shellInfoLibrary.deleteData(NcmcDataType.CSA)
         })
 
         //shellInfoLibrary.mqttConnect()

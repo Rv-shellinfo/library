@@ -394,7 +394,7 @@ class RupayDataHandler @Inject constructor(
 
 
         //check reader location
-        when (spUtils.getPreference(READER_LOCATION, "ENTRY")) {
+        when (spUtils.getPreference(READER_LOCATION, "EXIT")) {
 
             ENTRY_SIDE -> {
 
@@ -546,7 +546,7 @@ class RupayDataHandler @Inject constructor(
                     osaMasterData.bf200Data = bF200Data
 
                     //check reader location
-                    when (spUtils.getPreference(READER_LOCATION, "ENTRY")) {
+                    when (spUtils.getPreference(READER_LOCATION, "EXIT")) {
 
                         ENTRY_SIDE -> {
 
@@ -1779,7 +1779,7 @@ class RupayDataHandler @Inject constructor(
 
             // 6. Check Source Station
             var stationInfo:StationsTable?=null
-            val currentStationId= spUtils.getPreference(STATION_ID,"0420")
+            val currentStationId= spUtils.getPreference(STATION_ID,"0401")
             val validEntryStationId = pass.validEntryStationId ?: 0
 
             runBlocking {
@@ -2007,18 +2007,14 @@ class RupayDataHandler @Inject constructor(
                 historyBin.operatorID = operatorIDBytes
                 historyBin.terminalID = terminalIDBytes
 
-                Utils.numToBin(
-                    historyBin.trxDateTime!!,
-                    trxTimeFromCardEffDate.toLong(),
-                    3
-                )
-
 
                 //update sequence number
                 val terminateSeq = spUtils.getPreference(TRANSACTION_SEQ_NUMBER,1)
                 historyBin.trxSeqNum = rupayUtils.num2bin(terminateSeq.toLong(), 2)
                 spUtils.savePreference(TRANSACTION_SEQ_NUMBER,terminateSeq+1)
 
+                //trx date and time
+                historyBin.trxDateTime = osaMasterData.osaUpdatedBinData?.validationData?.trxDateTime!!
 
                 //product type
                 historyBin.productType= currentPass.productType
