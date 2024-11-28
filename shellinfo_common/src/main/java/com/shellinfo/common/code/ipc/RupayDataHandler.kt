@@ -17,6 +17,7 @@ import com.shellinfo.common.data.local.data.emv_rupay.display.csa_display.CSADat
 import com.shellinfo.common.data.local.data.ipc.BF200Data
 import com.shellinfo.common.data.local.db.entity.EntryTrxTable
 import com.shellinfo.common.data.local.db.entity.ExitTrxTable
+import com.shellinfo.common.data.local.db.entity.PassTable
 import com.shellinfo.common.data.local.db.entity.PurchasePassTable
 import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.data.local.db.entity.ZoneTable
@@ -233,6 +234,10 @@ class RupayDataHandler @Inject constructor(
             //update error code to no error
             csaMasterData.csaUpdatedBinData!!.validationData.errorCode = NO_ERROR.toByte()
 
+            //error code
+            csaMasterData.rupayMessage?.returnCode = NO_ERROR
+            csaMasterData.rupayMessage?.returnMessage = "NO_ERROR"
+
 
             //update transaction date time
             val trxTimeFromEpoch: Long = System.currentTimeMillis() / 1000
@@ -246,6 +251,20 @@ class RupayDataHandler @Inject constructor(
                 trxTimeFromCardEffDate.toLong(),
                 3
             )
+
+            //terminal info
+            val acquirerID = spUtils.getPreference(ACQUIRER_ID, "04")
+            val operatorID = spUtils.getPreference(OPERATOR_ID, "6014")
+            var terminalID = spUtils.getPreference(TERMINAL_ID, "401101")
+
+            val acquirerIDBytes = rupayUtils.hexToByte(acquirerID)!!
+            val operatorIDBytes = rupayUtils.hexToByteArray(operatorID)!!
+            val terminalIDBytes = rupayUtils.hexToByteArray(terminalID)!!
+
+            csaMasterData.csaUpdatedBinData!!.validationData.acquirerID = acquirerIDBytes
+            csaMasterData.csaUpdatedBinData!!.validationData.operatorID = operatorIDBytes
+            csaMasterData.csaUpdatedBinData!!.validationData.terminalID = terminalIDBytes
+
 
             // if penalty amount is more then 0 then have to create an entry in history
             if (penaltyAmount > 0) {
@@ -2548,7 +2567,7 @@ class RupayDataHandler @Inject constructor(
         val passCreationData= ShellInfoLibrary.passCreateRequest
 
         //operator id
-        val operatorId = spUtils.getPreference(OPERATOR_ID,1000)
+        val operatorId = spUtils.getPreference(OPERATOR_ID,6014)
 
         //get current date and time
         val currentDateTime= DateUtils.getDateInSpecificFormat("yyMMddHHmmss")
@@ -2557,10 +2576,10 @@ class RupayDataHandler @Inject constructor(
         val merchantId= spUtils.getPreference(SpConstants.MERCHANT_ID,1000)
 
         //station id
-        val stationId= spUtils.getPreference(STATION_ID,"1213")
+        val stationId= spUtils.getPreference(STATION_ID,"0401")
 
         //equipment id
-        val euipId= spUtils.getPreference(EQUIPMENT_ID,"222")
+        val euipId= spUtils.getPreference(EQUIPMENT_ID,"4001")
 
         //pass type id
         val passTypeId= passCreationData.productType
@@ -2569,7 +2588,7 @@ class RupayDataHandler @Inject constructor(
         val passId= currentDateTime+merchantId+stationId+euipId+passTypeId
 
         //line id
-        val lineId= spUtils.getPreference(SpConstants.LINE_ID,124)
+        val lineId= spUtils.getPreference(SpConstants.LINE_ID,"04")
 
         //create Purchase pass table request for local database
         val passPurchaseTable = PurchasePassTable(
@@ -2589,7 +2608,7 @@ class RupayDataHandler @Inject constructor(
             fromStation = passCreationData.sourceStationId.toString(),
             toStation = passCreationData.destStationId.toString(),
             zone = passCreationData.zoneId!!,
-            lines = lineId,
+            lines = lineId.toInt(),
             tripLimit = passCreationData.passLimitValue!!,
             dailyLimit = passCreationData.dailyLimitValue!!,
             paymentMethodId=passCreationData.bankDetail.paymentMethodId,
@@ -2626,7 +2645,7 @@ class RupayDataHandler @Inject constructor(
             fromStation = passCreationData.sourceStationId.toString(),
             toStation = passCreationData.destStationId.toString(),
             zone = passCreationData.zoneId!!,
-            lines = lineId,
+            lines = lineId.toInt(),
             tripLimit = passCreationData.passLimitValue!!,
             dailyLimit = passCreationData.dailyLimitValue!!,
             paymentMethodId=passCreationData.bankDetail.paymentMethodId,
@@ -2671,51 +2690,88 @@ class RupayDataHandler @Inject constructor(
     fun saveEntryTransaction(type:NcmcDataType){
 
         //operator id
-        val operatorId = spUtils.getPreference(OPERATOR_ID,1000)
-
-        //get current date and time
-        val currentDateTime= DateUtils.getDateInSpecificFormat("yyMMddHHmmss")
-
-        //merchant id
-        val merchantId= spUtils.getPreference(SpConstants.MERCHANT_ID,1000)
+        val operatorId = spUtils.getPreference(OPERATOR_ID,6014)
 
         //station id
-        val stationId= spUtils.getPreference(STATION_ID,"1213")
+        val stationId= spUtils.getPreference(STATION_ID,"0401")
 
         //equipment id
-        val euipId= spUtils.getPreference(EQUIPMENT_ID,"222")
+        val euipId= spUtils.getPreference(EQUIPMENT_ID,"4001")
 
         //equipment group id
-        val equipGroupId= spUtils.getPreference(EQUIPMENT_GROUP_ID,"1000")
+        val equipGroupId= spUtils.getPreference(EQUIPMENT_GROUP_ID,"4")
 
         //acquirer id
-        val acquirerId= spUtils.getPreference(ACQUIRER_ID,"800")
+        val acquirerId= spUtils.getPreference(ACQUIRER_ID,"04")
 
         //terminal id
-        val terminalId= spUtils.getPreference(TERMINAL_ID,"8989")
+        val terminalId= spUtils.getPreference(TERMINAL_ID,"401101")
 
         //line id
-        val lineId= spUtils.getPreference(SpConstants.LINE_ID,124)
+        val lineId= spUtils.getPreference(SpConstants.LINE_ID,"04")
 
         //sequence number
         val seqNo = spUtils.getPreference(SpConstants.TRANSACTION_SEQ_NUMBER,1)
 
         //trx id
-        var trxId:String
+        val trxId:String
 
         //pan sha
         var panSha:String
 
         //var card bin
-        var cardBin:String
+        val cardBin:String
+
+        //product type
+        var productType:Int
+
+        //pass start date
+        var passStartDate:String = ""
+
+        //pass end date
+        var passExpiryDate = ""
+
+        //pass entry station id
+        var passEntryStationId =""
+
+        //pass exit station id
+        var passExitStationId = ""
+
+        //pass balance
+        var passBalance = ""
+
 
         //check ncmc trx type
         if(type == NcmcDataType.CSA){
-            trxId = csaMasterGlobal.csaDisplayData!!.lastTxnDateTime+operatorId+acquirerId+terminalId
+            panSha = Utils.bin2hex(rupayUtils.hexStringToByteArray(csaMasterGlobal.bf200Data?.b?.`5A`!!),8)
+            trxId = rupayUtils.byteArrayToHex(csaMasterGlobal.csaUpdatedBinData!!.validationData.trxDateTime)+operatorId+acquirerId+terminalId+stationId
             cardBin = csaMasterGlobal.bf200Data?.b?.`5A`!!.slice(0..5)
+            productType = PROD_TYPE_SINGLE_JOURNEY.toInt()
         }else{
-            trxId = osaMasterGlobal.osaDisplayData!!.lastTxnDateTime+operatorId+acquirerId+terminalId
+            panSha = Utils.bin2hex(rupayUtils.hexStringToByteArray(osaMasterGlobal.bf200Data?.b?.`5A`!!),8)
+            trxId = rupayUtils.byteArrayToHex(osaMasterGlobal.osaUpdatedBinData!!.validationData.trxDateTime)+operatorId+acquirerId+terminalId+stationId
             cardBin = osaMasterGlobal.bf200Data?.b?.`5A`!!.slice(0..5)
+            productType = osaMasterGlobal.osaBinData!!.validationData.productType.toInt()
+
+            var passTable:PassTable?=null
+
+            runBlocking {
+                passTable = dbRepository.getPassById(productType)
+            }
+
+            if(passTable!=null){
+                val passList = osaMasterGlobal.osaDisplayData!!.cardPassesList
+                for(pass in passList){
+                    if(pass.passType.equals(passTable!!.passName)){
+                        passStartDate = pass.startDateTime
+                        passExpiryDate = pass.endDate
+                        passEntryStationId = pass.validEntryStationId
+                        passExitStationId = pass.validExitStationId
+                        passBalance = pass.passLimit
+                    }
+                }
+            }
+
         }
 
 
@@ -2727,9 +2783,9 @@ class RupayDataHandler @Inject constructor(
         //api request for entry trx
         val entryTrxRequest = EntryTrxRequest(
             transactionId = trxId,
-            transactionType =1,
+            transactionType = TXN_STATUS_ENTRY,
             transactionSeqNum = euipId.toInt()+seqNo,
-            lineId=lineId.toString(),
+            lineId=lineId,
             stationId=stationId,
             equipmentGroupId=equipGroupId,
             equipmentId=euipId,
@@ -2737,17 +2793,17 @@ class RupayDataHandler @Inject constructor(
             operatorId=operatorId.toString(),
             terminalId=terminalId,
             cardType=1,
-            panSha="",
-            productType=1,
+            panSha=panSha,
+            productType=productType,
             cardBin=cardBin,
             peakNonPeakTypeId=2,
             businessDate=DateUtils.getDateInSpecificFormat("yyyy-MM-dd")!!,
             transactionDateTime=DateUtils.getDateInSpecificFormat("yyyy-MM-dd HH:mm:ss")!!,
-            passStartDate="",
-            passEndDate="",
-            passStationOne="",
-            passStationTwo="",
-            passBalance=""
+            passStartDate=passStartDate,
+            passEndDate=passExpiryDate,
+            passStationOne=passEntryStationId,
+            passStationTwo=passEntryStationId,
+            passBalance=passBalance
 
         )
 
@@ -2755,7 +2811,7 @@ class RupayDataHandler @Inject constructor(
         val entryTrxTable = EntryTrxTable(
             transactionId = trxId,
             transactionType =1,
-            trxSeqNumber = euipId.toInt()+seqNo,
+            trxSeqNumber = euipId.toInt()+seqNo.toLong(),
             lineId=lineId.toString(),
             stationId=stationId,
             equipmentGroupId=equipGroupId,
@@ -2764,17 +2820,17 @@ class RupayDataHandler @Inject constructor(
             operatorId=operatorId.toString(),
             terminalId=terminalId,
             cardType=1,
-            panSha="",
-            productType=1,
+            panSha=panSha,
+            productType=productType,
             cardBin=cardBin,
             peakNonPeakTypeId=2,
             businessDate=DateUtils.getDateInSpecificFormat("yyyy-MM-dd")!!,
             transactionDateTime=DateUtils.getDateInSpecificFormat("yyyy-MM-dd HH:mm:ss")!!,
-            passStartDate="",
-            passEndDate="",
-            passStationOne="",
-            passStationTwo="",
-            passBalance=""
+            passStartDate=passStartDate,
+            passEndDate=passExpiryDate,
+            passStationOne=passEntryStationId,
+            passStationTwo=passExitStationId,
+            passBalance=passBalance
 
         )
 
@@ -2792,57 +2848,119 @@ class RupayDataHandler @Inject constructor(
     fun saveExitTransaction(type:NcmcDataType){
 
         //operator id
-        val operatorId = spUtils.getPreference(OPERATOR_ID,1000)
-
-        //get current date and time
-        val currentDateTime= DateUtils.getDateInSpecificFormat("yyMMddHHmmss")
-
-        //merchant id
-        val merchantId= spUtils.getPreference(SpConstants.MERCHANT_ID,1000)
+        val operatorId = spUtils.getPreference(OPERATOR_ID,6014)
 
         //station id
-        val stationId= spUtils.getPreference(STATION_ID,"1213")
+        val stationId= spUtils.getPreference(STATION_ID,"0402")
 
         //equipment id
-        val euipId= spUtils.getPreference(EQUIPMENT_ID,"222")
+        val euipId= spUtils.getPreference(EQUIPMENT_ID,"5001")
 
         //equipment group id
-        val equipGroupId= spUtils.getPreference(EQUIPMENT_GROUP_ID,"1000")
+        val equipGroupId= spUtils.getPreference(EQUIPMENT_GROUP_ID,"4")
 
         //acquirer id
-        val acquirerId= spUtils.getPreference(ACQUIRER_ID,"800")
+        val acquirerId= spUtils.getPreference(ACQUIRER_ID,"4")
 
         //terminal id
-        val terminalId= spUtils.getPreference(TERMINAL_ID,"8989")
+        val terminalId= spUtils.getPreference(TERMINAL_ID,"402141")
 
         //line id
-        val lineId= spUtils.getPreference(SpConstants.LINE_ID,124)
+        val lineId= spUtils.getPreference(SpConstants.LINE_ID,"04")
 
         //sequence number
         val seqNo = spUtils.getPreference(SpConstants.TRANSACTION_SEQ_NUMBER,1)
 
         //trx id
-        var trxId:String
+        val trxId:String
 
         //pan sha
         var panSha:String
 
         //var card bin
-        var cardBin:String
+        val cardBin:String
+
+        //product type
+        var productType:Int
+
+        //pass start date
+        var passStartDate:String = ""
+
+        //pass end date
+        var passExpiryDate = ""
+
+        //pass entry station id
+        var passEntryStationId =""
+
+        //pass exit station id
+        var passExitStationId = ""
+
+        //pass balance
+        var passBalance = ""
 
         //amount
         var amount:Double
         var cardBalance:Double
 
+        //entry acquirer
+        var entryAcquirerId:String =""
+
+        //entry operator id
+        var entryOperatorId = ""
+
+        //entry station id
+        var entryStationId = ""
+
+        //entry date time
+        var entryDateTime =""
+
+        //entry terminal id
+        var entryTerminalId =""
+
         //check ncmc trx type
         if(type == NcmcDataType.CSA){
-            trxId = csaMasterGlobal.csaDisplayData!!.lastTxnDateTime+operatorId+acquirerId+terminalId
+
+            panSha = Utils.bin2hex(rupayUtils.hexStringToByteArray(csaMasterGlobal.bf200Data?.b?.`5A`!!),8)
+            trxId = rupayUtils.byteArrayToHex(csaMasterGlobal.csaBinData!!.validationData.trxDateTime)+operatorId+acquirerId+terminalId+stationId
             cardBin = csaMasterGlobal.bf200Data?.b?.`5A`!!.slice(0..5)
+            productType = PROD_TYPE_SINGLE_JOURNEY.toInt()
             cardBalance = csaMasterGlobal.csaDisplayData!!.cardBalance
             amount = csaMasterGlobal.csaDisplayData!!.cardHistory.get(0).txnAmount.toDouble()
+
+            entryTerminalId = rupayUtils.byteArrayToHex(csaMasterGlobal.csaBinData!!.validationData.terminalID)
+            entryAcquirerId = rupayUtils.byteToHex(csaMasterGlobal.csaBinData!!.validationData.acquirerID)
+            entryOperatorId = rupayUtils.byteArrayToHex(csaMasterGlobal.csaBinData!!.validationData.operatorID)
+            entryDateTime = rupayUtils.byteArrayToHex(csaMasterGlobal.csaBinData!!.validationData.trxDateTime)
         }else{
-            trxId = osaMasterGlobal.osaDisplayData!!.lastTxnDateTime+operatorId+acquirerId+terminalId
+
+            panSha = Utils.bin2hex(rupayUtils.hexStringToByteArray(osaMasterGlobal.bf200Data?.b?.`5A`!!),8)
+            trxId = rupayUtils.byteArrayToHex(osaMasterGlobal.osaBinData!!.validationData.trxDateTime)+operatorId+acquirerId+terminalId+stationId
             cardBin = osaMasterGlobal.bf200Data?.b?.`5A`!!.slice(0..5)
+            productType = osaMasterGlobal.osaBinData!!.validationData.productType.toInt()
+
+            entryTerminalId = rupayUtils.byteArrayToHex(osaMasterGlobal.osaBinData!!.history.get(0).terminalID!!)
+            entryAcquirerId = rupayUtils.byteToHex(osaMasterGlobal.osaBinData!!.history.get(0).acquirerID!!)
+            entryOperatorId = rupayUtils.byteArrayToHex(osaMasterGlobal.osaBinData!!.history.get(0).operatorID!!)
+            entryDateTime = rupayUtils.byteArrayToHex(osaMasterGlobal.osaBinData!!.validationData.trxDateTime)
+
+            var passTable:PassTable?=null
+
+            runBlocking {
+                passTable = dbRepository.getPassById(productType)
+            }
+
+            if(passTable!=null){
+                val passList = osaMasterGlobal.osaDisplayData!!.cardPassesList
+                for(pass in passList){
+                    if(pass.passType.equals(passTable!!.passName)){
+                        passStartDate = pass.startDateTime
+                        passExpiryDate = pass.endDate
+                        passEntryStationId = pass.validEntryStationId
+                        passExitStationId = pass.validExitStationId
+                        passBalance = pass.passLimit
+                    }
+                }
+            }
             cardBalance = 0.0
             amount =0.0
 
@@ -2857,7 +2975,7 @@ class RupayDataHandler @Inject constructor(
         //api request for entry trx
         val exitTrxRequest = ExitTrxRequest(
             transactionId = trxId,
-            transactionType =1,
+            transactionType = TXN_STATUS_EXIT,
             transactionSeqNum = euipId.toInt()+seqNo,
             lineId=lineId.toString(),
             stationId=stationId,
@@ -2867,32 +2985,32 @@ class RupayDataHandler @Inject constructor(
             operatorId=operatorId.toString(),
             terminalId=terminalId,
             cardType=1,
-            panSha="",
-            productType=1,
+            panSha=panSha,
+            productType=productType,
             cardBin=cardBin,
             businessDate=DateUtils.getDateInSpecificFormat("yyyy-MM-dd")!!,
             transactionDateTime=DateUtils.getDateInSpecificFormat("yyyy-MM-dd HH:mm:ss")!!,
             amount= amount,
             cardBalance = cardBalance,
-            passStartDate = "",
-            passEndDate = "",
-            passStationOne="",
-            passStationTwo="",
-            passBalance="",
+            passStartDate = passStartDate,
+            passEndDate = passExpiryDate,
+            passStationOne=passEntryStationId,
+            passStationTwo=passExitStationId,
+            passBalance=passBalance,
             bankMid ="",
             bankTid ="",
             peakNonPeakTypeId=2,
-            entryAquirerId = "",
-            entryDateTime = "",
-            entryOperatorId = "",
-            entryTerminalId = ""
+            entryAquirerId = entryAcquirerId,
+            entryDateTime = entryDateTime,
+            entryOperatorId = entryOperatorId,
+            entryTerminalId = entryTerminalId
             )
 
         //db request for entry trx
         val exitTrxTable = ExitTrxTable(
             transactionId = trxId,
-            transactionType =1,
-            trxSeqNumber = euipId.toInt()+seqNo,
+            transactionType =TXN_STATUS_EXIT,
+            trxSeqNumber = euipId.toInt()+seqNo.toLong(),
             lineId=lineId.toString(),
             stationId=stationId,
             equipmentGroupId=equipGroupId,
@@ -2901,21 +3019,25 @@ class RupayDataHandler @Inject constructor(
             operatorId=operatorId.toString(),
             terminalId=terminalId,
             cardType=1,
-            panSha="",
+            panSha=panSha,
             productType=1,
             cardBin=cardBin,
             businessDate=DateUtils.getDateInSpecificFormat("yyyy-MM-dd")!!,
             transactionDateTime=DateUtils.getDateInSpecificFormat("yyyy-MM-dd HH:mm:ss")!!,
             amount= amount,
             cardBalance = cardBalance,
-            passStartDate = "",
-            passEndDate = "",
-            passStationOne="",
-            passStationTwo="",
-            passBalance="",
+            passStartDate = passStartDate,
+            passEndDate = passExpiryDate,
+            passStationOne=passEntryStationId,
+            passStationTwo=passExitStationId,
+            passBalance=passBalance,
             bankMid="",
             bankTid="",
             peakNonPeakTypeId=2,
+            entryAcquirerId = entryAcquirerId,
+            entryDateTime = entryDateTime,
+            entryOperatorId = entryOperatorId,
+            entryTerminalId = entryTerminalId
         )
 
         runBlocking {

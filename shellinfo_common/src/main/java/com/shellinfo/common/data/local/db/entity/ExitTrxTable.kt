@@ -13,7 +13,7 @@ data class ExitTrxTable(
     val transactionId: String,
 
     @ColumnInfo(name = "TRANSACTION_SEQ_NUMBER")
-    val trxSeqNumber: Int,
+    val trxSeqNumber: Long,
 
     @ColumnInfo(name = "TRANSACTION_TYPE")
     val transactionType: Int,
@@ -86,6 +86,18 @@ data class ExitTrxTable(
 
     @ColumnInfo(name = "PEAK_NON_PEAK_TYPE_ID")
     val peakNonPeakTypeId: Int,
+
+    @ColumnInfo(name = "ENTRY_ACQUIRER_ID")
+    val entryAcquirerId: String,
+
+    @ColumnInfo(name = "ENTRY_DATE_TIME")
+    val entryDateTime: String,
+
+    @ColumnInfo(name = "ENTRY_OPERATOR_ID")
+    val entryOperatorId: String,
+
+    @ColumnInfo(name = "ENTRY_TERMINAL_ID")
+    val entryTerminalId: String,
 
     @ColumnInfo(name = "IS_SYNC")
     val isSync: Boolean =false

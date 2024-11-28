@@ -64,4 +64,9 @@ class HistoryQueue<T>(private val maxSize: Int = 4) : Iterable<T> {
         }
         return deque.elementAt(index) // Retrieves the element at the specified index
     }
+
+    fun getLast(): T? {
+        return deque.lastOrNull() // Returns null if the deque is empty
+    }
+
 }

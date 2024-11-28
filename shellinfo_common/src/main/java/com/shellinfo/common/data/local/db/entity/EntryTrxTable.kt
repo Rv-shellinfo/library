@@ -13,7 +13,7 @@ data class EntryTrxTable(
     val transactionId: String,
 
     @ColumnInfo(name = "TRANSACTION_SEQ_NUMBER")
-    val trxSeqNumber: Int,
+    val trxSeqNumber: Long,
 
     @ColumnInfo(name = "TRANSACTION_TYPE")
     val transactionType: Int,

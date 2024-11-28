@@ -284,7 +284,7 @@ class ShellInfoLibrary @Inject constructor(
 
                         //get the service ids
                         val csaServiceId= spUtils.getPreference(COMMON_SERVICE_ID,0x1010)
-                        val osaServiceId= spUtils.getPreference(OPERATOR_SERVICE_ID,0x1234)
+                        val osaServiceId= spUtils.getPreference(OPERATOR_SERVICE_ID,0x1235)
 
                         //create service info object
                         val serviceInfo= ServiceInfo(commonServiceId = csaServiceId, operatorServiceId = osaServiceId)
@@ -498,7 +498,7 @@ class ShellInfoLibrary @Inject constructor(
 
         //get both service id's i.e. CSA and OSA
         val csaServiceId = spUtils.getPreference(COMMON_SERVICE_ID,0x1010)
-        val osaServiceId = spUtils.getPreference(OPERATOR_SERVICE_ID,0x1234)
+        val osaServiceId = spUtils.getPreference(OPERATOR_SERVICE_ID,0x1235)
 
         //base message to send
         var baseMessage:BaseMessage<*>?=null
@@ -566,7 +566,7 @@ class ShellInfoLibrary @Inject constructor(
         }
 
         //get osa service id
-        val osaServiceId= spUtils.getPreference(OPERATOR_SERVICE_ID,0x1234)
+        val osaServiceId= spUtils.getPreference(OPERATOR_SERVICE_ID,0x1235)
 
         //make osa create flag to true
         isForOsaCreate=true
@@ -590,7 +590,7 @@ class ShellInfoLibrary @Inject constructor(
         }
 
         //get osa service id
-        val osaServiceId= spUtils.getPreference(OPERATOR_SERVICE_ID,0x1234)
+        val osaServiceId= spUtils.getPreference(OPERATOR_SERVICE_ID,0x1235)
 
         //create base message
         val baseMessage= BaseMessage(MSG_ID_CREATE_PASS,NcmcDataType.OSA,osaServiceId)
@@ -619,7 +619,7 @@ class ShellInfoLibrary @Inject constructor(
         }
 
         //get osa service id
-        val osaServiceId= spUtils.getPreference(OPERATOR_SERVICE_ID,0x1234)
+        val osaServiceId= spUtils.getPreference(OPERATOR_SERVICE_ID,0x1235)
 
         //create base message
         val baseMessage= BaseMessage(MSG_ID_CREATE_PASS,NcmcDataType.OSA,osaServiceId)
@@ -637,7 +637,7 @@ class ShellInfoLibrary @Inject constructor(
             isForDataDelete =true
 
             //get osa service id
-            val osaServiceId= spUtils.getPreference(OPERATOR_SERVICE_ID,0x1234)
+            val osaServiceId= spUtils.getPreference(OPERATOR_SERVICE_ID,0x1235)
 
             //create base message
             val baseMessage= BaseMessage(MSG_ID_DELETE_OSA_DATA,NcmcDataType.OSA,osaServiceId)

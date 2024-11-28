@@ -1663,7 +1663,7 @@ class RupayUtils @Inject constructor(
             "02" -> "Torn Transaction"
             "03" -> "Entry not found " //   txn status is entry
             "04" -> "Exit not found " //   txn status is exit
-            "05" -> "service area present but all pass invalid"
+            "05" -> "Service area present but all pass invalid"
             "06" -> "Travel Time Exceeded" // txn status is entry
             "07" -> "Card Expired" //no change in the card
             else -> "Unknown error"
@@ -2051,14 +2051,6 @@ class RupayUtils @Inject constructor(
 
         // System Number: Last 6 bits from byte3
         val systemNumber = byte3 and 0x3F
-
-       val decode= mapOf(
-            "lineId" to lineId,
-            "stationNumber" to stationNumber,
-            "equipmentGroupId" to equipmentGroupId,
-            "systemNumber" to systemNumber
-        )
-        println("Decoded Values: $decode")
 
         return mapOf(
             "lineId" to lineId.toString().padStart(2, '0'),

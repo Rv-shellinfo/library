@@ -1,103 +1,84 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<GridLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="center_vertical"
-    android:layout_margin="32dp"
-    android:orientation="vertical"
-    >
+    android:columnCount="2"
+    android:rowCount="5"
+    android:padding="16dp"
+    android:useDefaultMargins="true">
 
     <Button
         android:id="@+id/btnStart"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Get CSA Data"/>
-
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="32dp"/>
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_columnWeight="1"
+        android:layout_rowWeight="1"
+        android:text="Get CSA Data" />
 
     <Button
         android:id="@+id/btnGetOsaData"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Get Osa Data"/>
-
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="32dp"/>
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_columnWeight="1"
+        android:layout_rowWeight="1"
+        android:text="Get Osa Data" />
 
     <Button
         android:id="@+id/btnRemovePenalty"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Remove Penalty"/>
-
-
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="32dp"/>
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_columnWeight="1"
+        android:layout_rowWeight="1"
+        android:text="Remove Penalty" />
 
     <Button
         android:id="@+id/btnCreateOSAService"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Create OSA Service"/>
-
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="32dp"/>
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_columnWeight="1"
+        android:layout_rowWeight="1"
+        android:text="Create OSA Service" />
 
     <Button
         android:id="@+id/btnCreateHolidayPass"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Create Holiday Pass"/>
-
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="32dp"/>
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_columnWeight="1"
+        android:layout_rowWeight="1"
+        android:text="Create Holiday Pass" />
 
     <Button
         android:id="@+id/btnCreateTripPass"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Create Trip Pass"/>
-
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="32dp"/>
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_columnWeight="1"
+        android:layout_rowWeight="1"
+        android:text="Create Trip Pass" />
 
     <Button
         android:id="@+id/btnCreateZonePass"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Create Zone Pass"/>
-
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="32dp"/>
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_columnWeight="1"
+        android:layout_rowWeight="1"
+        android:text="Create Zone Pass" />
 
     <Button
         android:id="@+id/btnClearOSA"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Delete Passes"/>
-
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="32dp"/>
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_columnWeight="1"
+        android:layout_rowWeight="1"
+        android:text="Delete Passes" />
 
     <Button
         android:id="@+id/btnDelteData"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Delete Data"/>
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_columnWeight="1"
+        android:layout_rowWeight="1"
+        android:text="Delete Data" />
 
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="32dp"/>
-
-</LinearLayout>
+</GridLayout>
