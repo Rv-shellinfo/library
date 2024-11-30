@@ -5,7 +5,7 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class PurchasePassRequest(
-    @Json(name ="operatorId") val operatorId:Int,
+    @Json(name ="operatorId") val operatorId:String,
     @Json(name ="passId") val passId:String,
     @Json(name ="merchantOrderId") val merchantOrderId:String,
     @Json(name ="merchantId") val merchantId:Int,

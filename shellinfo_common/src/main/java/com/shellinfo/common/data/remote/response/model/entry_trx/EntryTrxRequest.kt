@@ -14,6 +14,7 @@ data class EntryTrxRequest(
     @Json(name ="equipmentId") var equipmentId: String,
     @Json(name ="aquirerId") var aquirerId: String,
     @Json(name ="operatorId") var operatorId: String,
+    @Json(name ="operatorNameId") var operatorNameId: Int,
     @Json(name ="terminalId") var terminalId: String,
     @Json(name ="cardType") var cardType: Int,
     @Json(name ="panSha") var panSha: String,

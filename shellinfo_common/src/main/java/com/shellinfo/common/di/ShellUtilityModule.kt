@@ -6,6 +6,7 @@ import com.shellinfo.common.code.ConfigMaster
 import com.shellinfo.common.code.logs.LoggerImpl
 import com.shellinfo.common.code.mqtt.MQTTManager
 import com.shellinfo.common.code.mqtt.MqttMessageHandler
+import com.shellinfo.common.data.local.data.emv_rupay.EntryDataCache
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.shared.SharedDataManager
 import com.shellinfo.common.utils.FtpUtils
@@ -69,5 +70,11 @@ object UtilityModule {
     @Provides
     fun provideSharedDataManager():SharedDataManager{
         return SharedDataManager()
+    }
+
+    @Singleton
+    @Provides
+    fun provideEntryCacheData():EntryDataCache{
+        return EntryDataCache()
     }
 }

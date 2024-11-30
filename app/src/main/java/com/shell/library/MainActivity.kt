@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity() {
         val initData = InitData(BuildConfig.APPLICATION_ID,
             "Transit",BuildConfig.VERSION_CODE.toString(),
             BuildConfig.VERSION_NAME,
-            EquipmentType.VALIDATOR,
+            EquipmentType.TOM,
             "Transit",
             Build.SERIAL,
             ApiMode.PUBLIC,
@@ -176,7 +176,7 @@ class MainActivity : AppCompatActivity() {
         })
 
         btnDelteData.setOnClickListener(View.OnClickListener {
-            shellInfoLibrary.deleteData(NcmcDataType.CSA)
+            shellInfoLibrary.deleteData(NcmcDataType.OSA)
         })
 
         //shellInfoLibrary.mqttConnect()

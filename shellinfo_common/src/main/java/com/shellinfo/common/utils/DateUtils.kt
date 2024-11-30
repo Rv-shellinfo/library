@@ -202,4 +202,29 @@ object DateUtils {
         return String.format("%02d-%02d-%02d",day,month, year % 100)
     }
 
+
+    fun convertHexToDateTime(hexBytes: ByteArray): String {
+        if (hexBytes.size != 3) {
+            throw IllegalArgumentException("Hex bytes must be exactly 3 bytes.")
+        }
+
+        val year = 2000 + (hexBytes[0].toInt() and 0xFF) // Offset year from 2000
+        val month = (hexBytes[1].toInt() and 0xF0) shr 4 // Upper 4 bits of the 2nd byte
+        val day = (hexBytes[1].toInt() and 0x0F) // Lower 4 bits of the 2nd byte
+        val hour = (hexBytes[2].toInt() and 0xF8) shr 3 // Upper 5 bits of the 3rd byte
+        val minute = (hexBytes[2].toInt() and 0x07) * 10 // Lower 3 bits, multiplied by 10
+        val second = 0 // Assume seconds are always 0 in this example
+
+        // Validate date and time components
+        if (month !in 1..12 || day !in 1..31 || hour !in 0..23 || minute !in 0..59) {
+            throw IllegalArgumentException("Invalid date-time components in hex bytes.")
+        }
+
+        // Create a LocalDateTime object
+        val dateTime = LocalDateTime.of(year, month, day, hour, minute, second)
+
+        // Format to the desired output
+        return dateTime.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"))
+    }
+
 }

@@ -36,6 +36,9 @@ data class EntryTrxTable(
     @ColumnInfo(name = "OPERATOR_ID")
     val operatorId: String,
 
+    @ColumnInfo(name = "OPERATOR_NAME_ID")
+    val operatorNameId: Int,
+
     @ColumnInfo(name = "TERMINAL_ID")
     val terminalId: String,
 

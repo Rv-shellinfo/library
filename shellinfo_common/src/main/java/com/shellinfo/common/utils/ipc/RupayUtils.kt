@@ -174,7 +174,7 @@ class RupayUtils @Inject constructor(
 
 
             //date time
-            val dateTimeHex = getSubString(df33_data, 96, 103)
+            val dateTimeHex = getSubString(df33_data, 96, 102)
             val dateTime1 = if (emvUtils.getHexatoDecimal(dateTimeHex).toInt() == 0) {
                 "-- --"
             } else {
@@ -2080,6 +2080,15 @@ class RupayUtils @Inject constructor(
 
         // Convert to hexadecimal string (padding to ensure 6 digits)
         return String.format("%02X%02X%02X", byte1, byte2, byte3)
+    }
+
+
+    fun getDateTimeFromHex(hex:String,data_5F25:String):String{
+
+       return emvUtils.calculateSecondsOfTxn(
+            data_5F25 + "000000",
+            emvUtils.getHexatoDecimal(hex)
+        )
     }
 
 }
