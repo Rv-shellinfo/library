@@ -23,7 +23,6 @@ data class TicketRequest(
     @Json(name ="ltmrhlPassId") val ltmrhlPassId: String? ="",
     @Json(name ="patronPhoneNumber") val patronPhoneNumber: String,
     @Json(name ="fareQuoteIdforOneTicket") val fareQuoteIdforOneTicket: String?="0",
-    @Json(name ="authorization") var authorization: String?=null,
     @Json(name ="equipmentId") val equipmentId: Int?=null,
     @Json(name ="shiftId") val shiftId: Int?=null,
     @Json(name ="tomEFOUserId") val tomEFOUserId: Int?=null,
@@ -34,4 +33,5 @@ data class TicketRequest(
     @Json(name ="paymentChannel") val paymentChannel: Int?=null,
     @Json(name ="paymentGateway") val paymentGateway: String?=null,
     @Json(name ="operatorId") val operatorId: String?=null,
+    @Json(name ="ltmrhlPurchaseId") val ltmrhlPurchaseId: String?="",
 )

@@ -11,9 +11,13 @@ import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.EquipmentType
 import com.shellinfo.common.code.enums.NcmcDataType
+import com.shellinfo.common.code.enums.TicketType
 import com.shellinfo.common.data.local.data.InitData
+import com.shellinfo.common.data.remote.response.ApiResponse
+import com.shellinfo.common.data.remote.response.model.fare.FareRequest
 import com.shellinfo.common.data.remote.response.model.pass.BankTransactionDetail
 import com.shellinfo.common.data.remote.response.model.pass.PassRequest
+import com.shellinfo.common.data.remote.response.model.ticket.TicketRequest
 import com.shellinfo.common.data.shared.SharedDataManager
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -36,6 +40,9 @@ class MainActivity : AppCompatActivity() {
     lateinit var btnCreateZonePass:Button;
     lateinit var btnClearOSA:Button;
     lateinit var btnDelteData:Button;
+    lateinit var btnGetFare:Button;
+    lateinit var btnGenerateTicket:Button;
+    lateinit var btnGetBitmap:Button;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,6 +58,9 @@ class MainActivity : AppCompatActivity() {
         btnCreateZonePass= findViewById(R.id.btnCreateZonePass)
         btnDelteData= findViewById(R.id.btnDelteData)
         btnClearOSA= findViewById(R.id.btnClearOSA)
+        btnGetFare= findViewById(R.id.btnGetFare)
+        btnGenerateTicket= findViewById(R.id.btnGenerateTicket)
+        btnGetBitmap= findViewById(R.id.btnGetBitmap)
 
         //shellInfoLibrary.setApiMode(ApiMode.PUBLIC)
         //shellInfoLibrary.setBaseUrl("https://app.tsavaari.com/LTProject/")
@@ -178,6 +188,67 @@ class MainActivity : AppCompatActivity() {
         btnDelteData.setOnClickListener(View.OnClickListener {
             shellInfoLibrary.deleteData(NcmcDataType.OSA)
         })
+
+        btnGetFare.setOnClickListener(View.OnClickListener {
+            val fareRequest = FareRequest()
+            fareRequest.fromStationId="0301"
+            fareRequest.toStationId="0302"
+            fareRequest.ticketTypeId =TicketType.SJT.type
+            fareRequest.merchantId ="2000886106344"
+
+            shellInfoLibrary.getFare(fareRequest)
+
+            sharedDataManager.fareData.observe(this) {
+
+                when (it) {
+                    is ApiResponse.Loading -> {}
+                    is ApiResponse.Success -> {
+                        Log.e("Success","Success")
+                    }
+                    is ApiResponse.Error -> {
+                        Log.e("Error","Error")
+                    }
+                    else -> {}
+                }
+            }
+        })
+
+        btnGenerateTicket.setOnClickListener(View.OnClickListener {
+            val request = TicketRequest(
+                merchantOrderId = "123456",
+                merchantId = "2000886106344",
+                fromStationId = "0301",
+                toStationid = "0302",
+                ticketTypeId = TicketType.SJT.type,
+                noOfTickets = "1",
+                ltmrhlPassId="",
+                patronPhoneNumber=""
+            )
+
+
+            shellInfoLibrary.generateTicket(request)
+
+            sharedDataManager.ticketData.observe(this) {
+
+                when (it) {
+                    is ApiResponse.Loading -> {}
+                    is ApiResponse.Success -> {
+                        Log.e("Success","Success")
+                    }
+                    is ApiResponse.Error -> {
+                        Log.e("Error","Error")
+                    }
+                    else -> {}
+                }
+            }
+        })
+
+        btnGetBitmap.setOnClickListener(View.OnClickListener {
+
+            //val bitmap = shellInfoLibrary.getBarcode()
+        })
+
+
 
         //shellInfoLibrary.mqttConnect()
         //shellInfoLibrary.subscribeMqttTopic("APP_UPDATE")

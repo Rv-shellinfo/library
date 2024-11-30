@@ -222,17 +222,17 @@ class NetworkCall @Inject constructor(
                 ticketPricePerPerson= ((ticketRequest.merchantEachTicketFareAfterGst!!.toInt() / 2).toString())
             }
 
-            //create order data
-            val orderData= OrdersTable(
-                purchaseId = ticketRequest.merchantOrderId,
-                fromStation = dbRepository.getStationById(ticketRequest.fromStationId).stationName!!,
-                toStation =  dbRepository.getStationById(ticketRequest.toStationid).stationName!!,
-                unitPrice = ticketPricePerPerson,
-                transDate =  DateUtils.getTimerText()
-            )
-
-            //save order data
-            dbRepository.insertOrder(orderData)
+//            //create order data
+//            val orderData= OrdersTable(
+//                purchaseId = ticketRequest.merchantOrderId,
+//                fromStation = dbRepository.getStationById(ticketRequest.fromStationId).stationName!!,
+//                toStation =  dbRepository.getStationById(ticketRequest.toStationid).stationName!!,
+//                unitPrice = ticketPricePerPerson,
+//                transDate =  DateUtils.getTimerText()
+//            )
+//
+//            //save order data
+//            dbRepository.insertOrder(orderData)
 
 
             apiRepository.getQrTicket(ticketRequest,apiMode).collect{ response->
@@ -245,54 +245,56 @@ class NetworkCall @Inject constructor(
 
                     is ApiResponse.Success ->{
 
-                        //getting response body
-                        val res= response.data
+                        sharedDataManager.sendTicketData(response)
 
-                        //check return code
-                        if(res.returnCode.equals("0")){
-                            if(res.tickets.size>0){
-
-
-                                res.tickets.forEach {
-
-                                    //save ticket in database
-                                    val ticketData = TicketBackupTable(
-                                        shiftId = ""+ticketRequest.shiftId,
-                                        operatorId = ticketRequest.operatorId,
-                                        fromStation = dbRepository.getStationById(ticketRequest.fromStationId).stationName,
-                                        toStationName = dbRepository.getStationById(ticketRequest.toStationid).stationName,
-                                        unitPrice = ticketPricePerPerson,
-                                        totalFare = ticketPricePerPerson,
-                                        purchaseId = ticketRequest.merchantOrderId,
-                                        ticketId = it.ticketId,
-                                        jType = it.ticketTypeId,
-                                        passengerMoney = ""+ticketRequest.cashEnterAmount,
-                                        changeMoney = ""+ticketRequest.cashChangeAmount,
-                                        transDate = DateUtils.getDate("yyyy-MM-dd HH:mm:ss"),
-                                        transTime = "",
-                                        paymentMode = ""+ticketRequest.paymentMode,
-                                        noOfTickets = "1"
-                                    )
-
-                                    //save in the table
-                                    dbRepository.insertTicket(ticketData)
-
-
-                                    //TODO print ticket functionality needs to add
-                                    //TODO save in the log file functionality needs to add
-
-                                    //delete order from table
-                                    dbRepository.deleteOrderByPurchaseId(ticketRequest.merchantOrderId)
-
-
-                                    sharedDataManager.sendTicketData(response)
-
-                                }
-
-                            }
-                        }else{
-                            sharedDataManager.sendTicketData(response)
-                        }
+//                        //getting response body
+//                        val res= response.data
+//
+//                        //check return code
+//                        if(res.returnCode.equals("0")){
+//                            if(res.tickets.size>0){
+//
+//
+//                                res.tickets.forEach {
+//
+//                                    //save ticket in database
+//                                    val ticketData = TicketBackupTable(
+//                                        shiftId = ""+ticketRequest.shiftId,
+//                                        operatorId = ticketRequest.operatorId,
+//                                        fromStation = dbRepository.getStationById(ticketRequest.fromStationId).stationName,
+//                                        toStationName = dbRepository.getStationById(ticketRequest.toStationid).stationName,
+//                                        unitPrice = ticketPricePerPerson,
+//                                        totalFare = ticketPricePerPerson,
+//                                        purchaseId = ticketRequest.merchantOrderId,
+//                                        ticketId = it.ticketId,
+//                                        jType = it.ticketTypeId,
+//                                        passengerMoney = ""+ticketRequest.cashEnterAmount,
+//                                        changeMoney = ""+ticketRequest.cashChangeAmount,
+//                                        transDate = DateUtils.getDate("yyyy-MM-dd HH:mm:ss"),
+//                                        transTime = "",
+//                                        paymentMode = ""+ticketRequest.paymentMode,
+//                                        noOfTickets = "1"
+//                                    )
+//
+//                                    //save in the table
+//                                    dbRepository.insertTicket(ticketData)
+//
+//
+//                                    //TODO print ticket functionality needs to add
+//                                    //TODO save in the log file functionality needs to add
+//
+//                                    //delete order from table
+//                                    dbRepository.deleteOrderByPurchaseId(ticketRequest.merchantOrderId)
+//
+//
+//                                    sharedDataManager.sendTicketData(response)
+//
+//                                }
+//
+//                            }
+//                        }else{
+//                            sharedDataManager.sendTicketData(response)
+//                        }
 
                     }
 

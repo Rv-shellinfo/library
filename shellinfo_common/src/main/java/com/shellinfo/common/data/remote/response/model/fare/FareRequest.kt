@@ -11,7 +11,4 @@ data class FareRequest(
     @Json(name ="ticketTypeId") var ticketTypeId: Int?=0,
     @Json(name ="merchantId") var merchantId: String?="",
     @Json(name ="travelDatetime") var travelDatetime: String?="",
-    @Json(name ="authorization") var authorization: String?=""
-
-
 )

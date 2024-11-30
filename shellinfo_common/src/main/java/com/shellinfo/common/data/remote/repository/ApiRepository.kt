@@ -107,10 +107,7 @@ class ApiRepository @Inject constructor(
         var apiEndPoint=""
         //check api mode
         if(apiMode.type.equals("private")){
-            apiEndPoint=URL+ApiEndPoints.ENDPOINT_GET_FARE
-        }else if(apiMode.type.equals("public")){
-            apiEndPoint=URL+ApiEndPoints.PUBLIC_ENDPOINT_GET_FARE
-            fareRequest.authorization=spUtils.getPreference(SpConstants.API_TOKEN,"")
+            apiEndPoint=ApiEndPoints.BASE_URL_2+ApiEndPoints.ENDPOINT_GET_FARE
         }
 
         emit(networkUtils.handleApiCall { apiService.getFare(apiEndPoint,fareRequest) })
@@ -126,9 +123,6 @@ class ApiRepository @Inject constructor(
         //check api mode
         if(apiMode.type.equals("private")){
             apiEndPoint=ApiEndPoints.BASE_URL_2+ApiEndPoints.ENDPOINT_CREATE_E_TICKET
-        }else if(apiMode.type.equals("public")){
-            apiEndPoint=URL+ApiEndPoints.PUBLIC_ENDPOINT_GENERATE_TICKET
-            ticketRequest.authorization=spUtils.getPreference(SpConstants.API_TOKEN,"")
         }
 
         emit(networkUtils.handleApiCall { apiService.getTicket(apiEndPoint,ticketRequest) })

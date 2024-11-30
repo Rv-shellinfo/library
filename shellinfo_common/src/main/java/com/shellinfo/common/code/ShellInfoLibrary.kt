@@ -389,11 +389,11 @@ class ShellInfoLibrary @Inject constructor(
     }
 
     override fun getFare(fareRequest: FareRequest) {
-        networkCall.fetchFare(fareRequest, ApiMode.valueOf(spUtils.getPreference(SpConstants.API_MODE,"")))
+        networkCall.fetchFare(fareRequest, ApiMode.PRIVATE)
     }
 
     override fun generateTicket(ticketRequest: TicketRequest) {
-        networkCall.bookTicket(ticketRequest,ApiMode.valueOf(spUtils.getPreference(SpConstants.API_MODE,"")))
+        networkCall.bookTicket(ticketRequest,ApiMode.PRIVATE)
     }
 
     override fun getBarcode(ticket: Ticket,width:Int, height:Int): Bitmap {

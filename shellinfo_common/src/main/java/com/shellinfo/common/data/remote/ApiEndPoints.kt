@@ -7,8 +7,8 @@ object ApiEndPoints {
 
     //private endpoints
     const val ENDPOINT_GET_STATIONS =  "/api/pos/v1/Station/getStations"
-    const val ENDPOINT_GET_FARE =  "/api/pos/v1/Fare/GetFare"
-    const val ENDPOINT_CREATE_E_TICKET =  "/api/v1/BilleasyPayload/CreateETicket"
+
+
     const val ENDPOINT_GENERATE_TICKET =  "/api/pos/v1/Ticket/GenerateTicket"
     const val ENDPOINT_GET_BUSINESS_OPERATIONAL_DATE_TIME =  "/api/v2/Operation/GetBusinessOperationDateHour"
     const val ENDPOINT_GENERATE_PAID_FREE_EXIT_TICKET =  "/api/pos/v1/Ticket/GeneratePaidFreeExitTicket"
@@ -19,8 +19,9 @@ object ApiEndPoints {
     const val ENDPOINT_TICKET_DETAILS_BY_PHONE =  "/api/pos/v1/Ticket/GetPOSTicketDetailsByPatronPhone"
     const val ENDPOINT_GET_QR_FARE_SPECIAL_EXIST =  "/api/pos/v1/Fare/getQRFareSpecialExit"
     const val ENDPOINT_BILL_EASY_OTP_VERIFICATION =  "/api/v1/Billeasy/OTPVerification"
-    const val ENDPOINT_ENTRY_VALIDATION =  "/api/v1/Transaction/EntryValidation"
     const val ENDPOINT_HEALTH_URL =  "/api/v1/Equipment/UpdateEquipHealthData"
+
+    const val ENDPOINT_ENTRY_VALIDATION =  "/api/v1/Transaction/EntryValidation"
     const val ENDPOINT_ENTRY_TRX_URL =  "/api/v1/Transaction/AddEntryTxnDetails"
     const val ENDPOINT_EXIT_TRX_URL =  "/api/v1/Transaction/AddExitTxnDetails"
     const val ENDPOINT_STATIONS =  "/api/v1/Station/GetStations"
@@ -29,6 +30,8 @@ object ApiEndPoints {
     const val ENDPOINT_ZONES =  "/api/v1/Zone/GetZoneList"
     const val ENDPOINT_PASS_TYPES =  "/api/v1/Pass/ProductTypes"
     const val ENDPOINT_PURCHASE_PASS =  "/api/v1/Pass/PurchacePass"
+    const val ENDPOINT_CREATE_E_TICKET =  "/api/pos/v1/Ticket/GenerateTicket"
+    const val ENDPOINT_GET_FARE =  "/api/pos/v1/Fare/GetFare"
 
 
 
