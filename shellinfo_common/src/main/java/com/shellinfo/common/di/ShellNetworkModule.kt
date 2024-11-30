@@ -21,6 +21,7 @@ import com.shellinfo.common.data.remote.services.ApiService
 import com.shellinfo.common.data.remote.services.provider.ApiServiceProvider
 import com.shellinfo.common.data.remote.services.provider.NullOrMissingToEmptyStringAdapter
 import com.shellinfo.common.data.remote.services.provider.RetrofitClientProvider
+import com.shellinfo.common.data.shared.SharedDataManager
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapters.PolymorphicJsonAdapterFactory
@@ -97,8 +98,8 @@ object ShellNetworkModule {
 
     @Singleton
     @Provides
-    fun provideNetworkCall(apiRepository: ApiRepository, dbRepository: DbRepository,@DefaultMoshi moshi: Moshi) : NetworkCall{
-        return NetworkCall(apiRepository,dbRepository, moshi)
+    fun provideNetworkCall(apiRepository: ApiRepository, dbRepository: DbRepository,@DefaultMoshi moshi: Moshi, sharedDataManager: SharedDataManager) : NetworkCall{
+        return NetworkCall(apiRepository,dbRepository, moshi,sharedDataManager)
     }
 
 }

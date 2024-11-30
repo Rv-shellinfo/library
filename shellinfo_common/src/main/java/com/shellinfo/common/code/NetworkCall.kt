@@ -35,6 +35,7 @@ import com.shellinfo.common.data.remote.response.model.payment_gateway.TrackTran
 import com.shellinfo.common.data.remote.response.model.server.ServerDateTimeResponse
 import com.shellinfo.common.data.remote.response.model.ticket.TicketRequest
 import com.shellinfo.common.data.remote.response.model.ticket.TicketResponse
+import com.shellinfo.common.data.shared.SharedDataManager
 import com.shellinfo.common.di.DefaultMoshi
 import com.shellinfo.common.utils.DateUtils
 import com.shellinfo.common.utils.Utils
@@ -52,7 +53,8 @@ import kotlin.reflect.KClass
 class NetworkCall @Inject constructor(
     private val apiRepository: ApiRepository,
     private val dbRepository: DbRepository,
-    @DefaultMoshi private val moshi: Moshi
+    @DefaultMoshi private val moshi: Moshi,
+    private val sharedDataManager: SharedDataManager
 ):ViewModel(){
 
 
@@ -199,8 +201,8 @@ class NetworkCall @Inject constructor(
      */
     fun fetchFare(fareRequest:FareRequest,apiMode: ApiMode){
         viewModelScope.launch {
-            apiRepository.getFare(fareRequest,apiMode).collect(){
-                response -> _fareData.value=response
+            apiRepository.getFare(fareRequest,apiMode).collect{
+                response -> sharedDataManager.sendFareData(response)
             }
         }
     }
@@ -238,7 +240,7 @@ class NetworkCall @Inject constructor(
                 when(response){
 
                     is ApiResponse.Loading -> {
-                        _bookTicket.value= response
+                        sharedDataManager.sendTicketData(response)
                     }
 
                     is ApiResponse.Success ->{
@@ -283,23 +285,23 @@ class NetworkCall @Inject constructor(
                                     dbRepository.deleteOrderByPurchaseId(ticketRequest.merchantOrderId)
 
 
-                                    _bookTicket.value= response
+                                    sharedDataManager.sendTicketData(response)
 
                                 }
 
                             }
                         }else{
-                            _bookTicket.value= response
+                            sharedDataManager.sendTicketData(response)
                         }
 
                     }
 
                     is ApiResponse.Error ->{
-                        _bookTicket.value= response
+                        sharedDataManager.sendTicketData(response)
                     }
 
                     else ->{
-                        _bookTicket.value= response
+                        sharedDataManager.sendTicketData(response)
                     }
                 }
             }

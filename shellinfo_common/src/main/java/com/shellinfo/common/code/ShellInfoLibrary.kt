@@ -104,18 +104,6 @@ class ShellInfoLibrary @Inject constructor(
     lateinit var masterConfig: ConfigMaster
 
 
-    //stations live data
-    var stationsLiveData: LiveData<List<StationsTable>> = databaseCall.stationsLiveData
-
-    //single station live data
-    var singleStationLiveData : LiveData<StationsTable> = databaseCall.singleStationLiveData
-
-    //fare live data
-    val fareLiveData: LiveData<ApiResponse<List<FareResponse>>> get() = networkCall.fareLiveData
-
-    //book ticket data
-    val bookTicketLiveData: LiveData<ApiResponse<TicketResponse>> get() = networkCall.bookTicketLiveData
-
     //server date time data
     val serverDateTime : LiveData<ApiResponse<ServerDateTimeResponse>> get() = networkCall.severDateTimeLiveData
 

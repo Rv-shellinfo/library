@@ -3,6 +3,7 @@ package com.shellinfo.common.data.remote
 object ApiEndPoints {
 
     const val BASE_URL_1= "https://maas.ts-afc.com"
+    const val BASE_URL_2= "https://dev-sleticketing.ts-afc.com"
 
     //private endpoints
     const val ENDPOINT_GET_STATIONS =  "/api/pos/v1/Station/getStations"

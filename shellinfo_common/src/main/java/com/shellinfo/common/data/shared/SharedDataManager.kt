@@ -9,6 +9,9 @@ import com.shellinfo.common.data.local.db.entity.PassTable
 import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.data.local.db.entity.TripLimitTable
 import com.shellinfo.common.data.local.db.entity.ZoneTable
+import com.shellinfo.common.data.remote.response.ApiResponse
+import com.shellinfo.common.data.remote.response.model.fare.FareResponse
+import com.shellinfo.common.data.remote.response.model.ticket.TicketResponse
 import com.shellinfo.common.utils.SingleLiveEvent
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -59,11 +62,16 @@ class SharedDataManager @Inject constructor() {
     // Public immutable live data
     val osaData: LiveData<OSAMasterData?> get() = _osaData
 
-    //Function to remove data
-    fun resetValues(){
-        _csaData.postValue(null)
-        _osaData.postValue(null)
-    }
+
+    // Fare data
+    private val _fareData = SingleLiveEvent<ApiResponse<List<FareResponse?>>>()
+    val fareData: LiveData<ApiResponse<List<FareResponse?>>> get() = _fareData
+
+
+    //Generate Ticket
+    private val _ticketData = SingleLiveEvent<ApiResponse<TicketResponse?>>()
+    val ticketData: LiveData<ApiResponse<TicketResponse?>> get() = _ticketData
+
 
 
     // Function to update csa data
@@ -103,5 +111,13 @@ class SharedDataManager @Inject constructor() {
 
     fun sendZoneData(value: List<ZoneTable>) {
         _zoneData.postValue(value)
+    }
+
+    fun sendFareData(value:ApiResponse<List<FareResponse>>){
+        _fareData.postValue(value)
+    }
+
+    fun sendTicketData(value:ApiResponse<TicketResponse>){
+        _ticketData.postValue(value)
     }
 }

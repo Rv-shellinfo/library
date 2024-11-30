@@ -125,7 +125,7 @@ class ApiRepository @Inject constructor(
         var apiEndPoint=""
         //check api mode
         if(apiMode.type.equals("private")){
-            apiEndPoint=URL+ApiEndPoints.ENDPOINT_CREATE_E_TICKET
+            apiEndPoint=ApiEndPoints.BASE_URL_2+ApiEndPoints.ENDPOINT_CREATE_E_TICKET
         }else if(apiMode.type.equals("public")){
             apiEndPoint=URL+ApiEndPoints.PUBLIC_ENDPOINT_GENERATE_TICKET
             ticketRequest.authorization=spUtils.getPreference(SpConstants.API_TOKEN,"")
@@ -201,7 +201,7 @@ class ApiRepository @Inject constructor(
 
     fun doFareCalculation(request:GateFareRequest):Flow<ApiResponse<GateFareResponse>> = flow {
         emit(ApiResponse.Loading)
-        emit(networkUtils.handleApiCall { apiService.doGetFare("https://maas.ts-afc.com"+ApiEndPoints.ENDPOINT_GET_FARE,request)})
+        emit(networkUtils.handleApiCall { apiService.doGetFare(ApiEndPoints.BASE_URL_2+ApiEndPoints.ENDPOINT_GET_FARE,request)})
     }
 
     /**
