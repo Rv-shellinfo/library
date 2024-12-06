@@ -6,8 +6,10 @@ import com.shellinfo.common.code.NetworkCall
 import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.code.enums.BoTrxType
 import com.shellinfo.common.code.enums.EquipmentType
+import com.shellinfo.common.code.enums.ModeType
 import com.shellinfo.common.code.enums.NcmcDataType
 import com.shellinfo.common.code.enums.TicketType
+import com.shellinfo.common.code.mqtt.topic_handler.modes.ModeManager
 import com.shellinfo.common.code.pass.BasePassValidator
 import com.shellinfo.common.data.local.data.emv_rupay.CSAMasterData
 import com.shellinfo.common.data.local.data.emv_rupay.EntryDataCache
@@ -109,7 +111,8 @@ class RupayDataHandler @Inject constructor(
     private val passHandler: PassHandler,
     private val passValidator: BasePassValidator,
     private val dbRepository: DbRepository,
-    private val entryDataCache: EntryDataCache
+    private val entryDataCache: EntryDataCache,
+    private val modeManager: ModeManager
 ) {
 
     lateinit var communicationService: IRemoteService
@@ -137,7 +140,10 @@ class RupayDataHandler @Inject constructor(
     private var job: Job? = null
 
     //Entry exit override
-    private var entryExitOverride = false
+    private var isEntryExitOverrideEnable = false
+
+    //Time override
+    private var isTimeOverrideEnable = false
 
     //card effective date
     private var cardEffectiveDate:String? =null
@@ -626,7 +632,8 @@ class RupayDataHandler @Inject constructor(
 
         //double tap threshold
         val DOUBLE_TAP_THRESHOLD = spUtils.getPreference(DOUBLE_TAP_THRESHOLD, 3) // 3 seconds
-        entryExitOverride = spUtils.getPreference(ENTRY_EXIT_OVERRIDE, false)
+        isEntryExitOverrideEnable = modeManager.getCurrentMode() == ModeType.SEQ_OVERRIDE_MODE
+
 
         //get csa raw data
         val csaRawData = csaMasterData.csaBinData
@@ -716,8 +723,8 @@ class RupayDataHandler @Inject constructor(
             }
 
 
-            //check entry exit override is off then , enable flag for emergency on last station
-            if (!entryExitOverride) {
+            //check entry exit override is on then , enable flag for emergency on last station
+            if (!isEntryExitOverrideEnable) {
 
                 //last entry date time from card validation data
                 lastEntryDateTIme = DateUtils.getTimeInYMDHMS(entryTime)
@@ -794,7 +801,8 @@ class RupayDataHandler @Inject constructor(
 
         //double tap threshold
         val DOUBLE_TAP_THRESHOLD = spUtils.getPreference(DOUBLE_TAP_THRESHOLD, 3) // 3 seconds
-        entryExitOverride = spUtils.getPreference(ENTRY_EXIT_OVERRIDE, false)
+        isEntryExitOverrideEnable = modeManager.getCurrentMode() == ModeType.SEQ_OVERRIDE_MODE
+
 
         //get csa raw data
         val osaRawData = osaMasterData.osaBinData
@@ -907,8 +915,8 @@ class RupayDataHandler @Inject constructor(
             }
 
 
-            //check entry exit override is off then , enable flag for emergency on last station
-            if (!entryExitOverride) {
+            //check entry exit override is on then , enable flag for emergency on last station
+            if (!isEntryExitOverrideEnable) {
 
                 //last entry date time from card validation data
                 lastEntryDateTIme = DateUtils.getTimeInYMDHMS(entryTime)
@@ -1033,7 +1041,7 @@ class RupayDataHandler @Inject constructor(
             extractTrxStatus(csaMasterData.csaUpdatedBinData!!.validationData.trxStatusAndRfu)
 
         if (((lastTrxStatus == TXN_STATUS_EXIT) || (lastTrxStatus == TXN_STATUS_ONE_TAP_TICKET)
-                    || (lastTrxStatus == TXN_STATUS_PENALTY) || entryExitOverride) ||
+                    || (lastTrxStatus == TXN_STATUS_PENALTY) || isEntryExitOverrideEnable) ||
             (isCheckEmergencyMode && apiErrorCode.toInt() == NO_ERROR)
         ) {
 
@@ -1123,7 +1131,7 @@ class RupayDataHandler @Inject constructor(
             extractTrxStatus(osaMasterData.osaUpdatedBinData!!.validationData.trxStatusAndRfu)
 
         if (((lastTrxStatus == TXN_STATUS_EXIT) || (lastTrxStatus == TXN_STATUS_ONE_TAP_TICKET)
-                    || (lastTrxStatus == TXN_STATUS_PENALTY) || entryExitOverride) ||
+                    || (lastTrxStatus == TXN_STATUS_PENALTY) || isEntryExitOverrideEnable) ||
             (isCheckEmergencyMode && apiErrorCode.toInt() == NO_ERROR)
         ) {
 
@@ -1171,7 +1179,7 @@ class RupayDataHandler @Inject constructor(
 
         //double tap threshold
         val DOUBLE_TAP_THRESHOLD = spUtils.getPreference(DOUBLE_TAP_THRESHOLD, 3) // 3 seconds
-        entryExitOverride = spUtils.getPreference(ENTRY_EXIT_OVERRIDE, false)
+        isEntryExitOverrideEnable = spUtils.getPreference(ENTRY_EXIT_OVERRIDE, false)
 
         //get csa raw data
         val csaRawData = csaMasterData.csaBinData
@@ -1269,7 +1277,7 @@ class RupayDataHandler @Inject constructor(
 
 
         // last transaction status check condition
-        if (((lastTrxStatus.toInt() == TXN_STATUS_ENTRY) || (lastTrxStatus.toInt() == TXN_STATUS_PENALTY) || entryExitOverride)) {
+        if (((lastTrxStatus.toInt() == TXN_STATUS_ENTRY) || (lastTrxStatus.toInt() == TXN_STATUS_PENALTY) || isEntryExitOverrideEnable)) {
 
             //entry date time in specific date format
             val entryDateTime = DateUtils.getTimeInYMDHMS(entryTime)
@@ -1278,20 +1286,27 @@ class RupayDataHandler @Inject constructor(
             csaMasterData.rupayMessage?.returnCode = NO_ERROR
             csaMasterData.rupayMessage?.returnMessage = "NO_ERROR"
 
-            //create Fare Request with the data
-            val fareRequest = GateFareRequest()
-            fareRequest.fromStationId=csaMasterData.csaDisplayData!!.lastStationId
-            fareRequest.toStationId=spUtils.getPreference(STATION_ID,"0402")
-            fareRequest.entryDateTime=entryDateTime
-            fareRequest.exitDateTime=DateUtils.getSysDateTime()
-            fareRequest.equipmentId=spUtils.getPreference(EQUIPMENT_ID,"5001")
-            fareRequest.equipmentGroupId=spUtils.getPreference(EQUIPMENT_GROUP_ID,"5")
 
-            //TODO call fare request api and complete the process
+            if(modeManager.getCurrentMode() == ModeType.INCIDENT_MODE){
+                completeProcessCSA(0.0,TXN_STATUS_EXIT,csaMasterData)
+            }else
+            {
 
-            //complete the CSA process
-            completeProcessCSA(100.0,TXN_STATUS_EXIT,csaMasterData)
-//            runBlocking {
+                //complete the CSA process
+                //TODO call fare request api and complete the process
+                completeProcessCSA(100.0,TXN_STATUS_EXIT,csaMasterData)
+
+                //create Fare Request with the data
+                val fareRequest = GateFareRequest()
+                fareRequest.fromStationId=csaMasterData.csaDisplayData!!.lastStationId
+                fareRequest.toStationId=spUtils.getPreference(STATION_ID,"0402")
+                fareRequest.entryDateTime=entryDateTime
+                fareRequest.exitDateTime=DateUtils.getSysDateTime()
+                fareRequest.equipmentId=spUtils.getPreference(EQUIPMENT_ID,"5001")
+                fareRequest.equipmentGroupId=spUtils.getPreference(EQUIPMENT_GROUP_ID,"5")
+
+
+                //            runBlocking {
 //
 //                val result = calculateFare(fareRequest)
 //
@@ -1315,6 +1330,8 @@ class RupayDataHandler @Inject constructor(
 //                    return@runBlocking
 //                }
 //            }
+            }
+
         }else{
 
             //return error to payment app, not to the UI
@@ -1338,7 +1355,7 @@ class RupayDataHandler @Inject constructor(
 
         //double tap threshold
         val DOUBLE_TAP_THRESHOLD = spUtils.getPreference(DOUBLE_TAP_THRESHOLD, 3) // 3 seconds
-        entryExitOverride = spUtils.getPreference(ENTRY_EXIT_OVERRIDE, false)
+        isEntryExitOverrideEnable = spUtils.getPreference(ENTRY_EXIT_OVERRIDE, false)
 
         //get osa raw data
         val osaRawData = osaMasterData.osaBinData
@@ -1433,7 +1450,7 @@ class RupayDataHandler @Inject constructor(
 
 
         // last transaction status check condition
-        if (((lastTrxStatus == TXN_STATUS_ENTRY) || (lastTrxStatus == TXN_STATUS_PENALTY) || entryExitOverride)) {
+        if (((lastTrxStatus == TXN_STATUS_ENTRY) || (lastTrxStatus == TXN_STATUS_PENALTY) || isEntryExitOverrideEnable)) {
 
             //error code
             osaMasterData.rupayMessage?.returnCode = NO_ERROR
@@ -2560,7 +2577,7 @@ class RupayDataHandler @Inject constructor(
     fun logErrorDetails() {
         if (spUtils.getPreference(LOGGING_ON_OFF, false)) {
             FileLogger.e(TAG, "Entry Validation API Error Block Code Executed")
-            FileLogger.e(TAG, "Entry Validation : Entry Exit Override :${entryExitOverride}")
+            FileLogger.e(TAG, "Entry Validation : Entry Exit Override :${isEntryExitOverrideEnable}")
             FileLogger.e(TAG, "Entry Validation : Check Emg Mode :${isCheckEmergencyMode}")
         }
     }
@@ -2568,7 +2585,7 @@ class RupayDataHandler @Inject constructor(
     fun logCatchErrorDetails() {
         if (spUtils.getPreference(LOGGING_ON_OFF, false)) {
             FileLogger.e(TAG, "Entry Validation API CATCH Block Code Executed")
-            FileLogger.e(TAG, "Entry Validation : Entry Exit Override :${entryExitOverride}")
+            FileLogger.e(TAG, "Entry Validation : Entry Exit Override :${isEntryExitOverrideEnable}")
             FileLogger.e(TAG, "Entry Validation : Check Emg Mode :${isCheckEmergencyMode}")
         }
     }

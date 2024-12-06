@@ -4,6 +4,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.shellinfo.common.data.local.data.emv_rupay.CSAMasterData
 import com.shellinfo.common.data.local.data.emv_rupay.OSAMasterData
+import com.shellinfo.common.data.local.data.mqtt.BaseMessageMqtt
+import com.shellinfo.common.data.local.data.mqtt.DeviceControlMessage
+import com.shellinfo.common.data.local.data.mqtt.MqttData
+import com.shellinfo.common.data.local.data.mqtt.SpecialModeMessage
 import com.shellinfo.common.data.local.db.entity.DailyLimitTable
 import com.shellinfo.common.data.local.db.entity.PassTable
 import com.shellinfo.common.data.local.db.entity.StationsTable
@@ -73,6 +77,16 @@ class SharedDataManager @Inject constructor() {
     val ticketData: LiveData<ApiResponse<TicketResponse?>> get() = _ticketData
 
 
+    //device control commands
+    private val _deviceControlCommand = SingleLiveEvent<BaseMessageMqtt<*>>()
+    val deviceControlCommand: LiveData<BaseMessageMqtt<*>> get() = _deviceControlCommand
+
+
+    //special mode commands
+    private val _specialModeCommand = SingleLiveEvent<BaseMessageMqtt<*>>()
+    val specialModeCommand: LiveData<BaseMessageMqtt<*>> get() = _specialModeCommand
+
+
 
     // Function to update csa data
     fun sendCsaData(value: CSAMasterData) {
@@ -119,5 +133,13 @@ class SharedDataManager @Inject constructor() {
 
     fun sendTicketData(value:ApiResponse<TicketResponse>){
         _ticketData.postValue(value)
+    }
+
+    fun sendSpecialModes(value:BaseMessageMqtt<*>){
+        _specialModeCommand.postValue(value)
+    }
+
+    fun sendDeviceControlCommand(value:BaseMessageMqtt<*>){
+        _deviceControlCommand.postValue(value)
     }
 }

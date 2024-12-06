@@ -2,17 +2,15 @@ package com.shellinfo.common.code.mqtt
 
 import abbasi.android.filelogger.FileLogger
 import android.content.Context
-import android.util.Log
-import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import com.shellinfo.common.code.ConfigMaster
+import com.shellinfo.common.code.enums.MqttAckTopicType
 import com.shellinfo.common.code.enums.MqttTopicType
-import com.shellinfo.common.code.logs.LoggerImpl
 import com.shellinfo.common.data.local.data.mqtt.BaseMessageMqtt
-import com.shellinfo.common.data.local.db.entity.StationsTable
+import com.shellinfo.common.data.local.data.mqtt.MqttData
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
+import com.shellinfo.common.utils.DateUtils
 import com.squareup.moshi.JsonAdapter
-import dagger.hilt.android.qualifiers.ApplicationContext
 import info.mqtt.android.service.Ack
 import info.mqtt.android.service.MqttAndroidClient
 import org.eclipse.paho.client.mqttv3.IMqttActionListener
@@ -22,6 +20,7 @@ import org.eclipse.paho.client.mqttv3.MqttCallback
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.MqttException
 import org.eclipse.paho.client.mqttv3.MqttMessage
+import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -29,14 +28,11 @@ import javax.inject.Singleton
 class MQTTManager @Inject constructor(
     private val configMaster: ConfigMaster,
     private val context: Context,
-    private val mqttMessageHandler: MqttMessageHandler
+    private val mqttMessageHandler: MqttMessageHandler,
+    private val mqttMessageAdapter: JsonAdapter<BaseMessageMqtt<MqttData>>,
+    private val sharedPreferenceUtil: SharedPreferenceUtil
 ){
 
-    @Inject
-    lateinit var mqttMessageAdapter: JsonAdapter<BaseMessageMqtt<*>>
-
-    @Inject
-    lateinit var sharedPreferenceUtil: SharedPreferenceUtil
 
     private val TAG = MQTTManager::class.java.simpleName
 
@@ -89,6 +85,7 @@ class MQTTManager @Inject constructor(
             override fun connectionLost(cause: Throwable?) {
                 FileLogger.e(TAG, "MQTT Connection lost ${cause.toString()}")
                 cause?.let { FileLogger.e(TAG, it) }
+
             }
 
             override fun deliveryComplete(token: IMqttDeliveryToken?) {
@@ -106,6 +103,12 @@ class MQTTManager @Inject constructor(
                     FileLogger.d(TAG, "MQTT Connection success")
 
                     _mqttConnectionLiveData.value= true
+
+                    //set mqtt manager
+                    mqttMessageHandler.setMqttManager(this@MQTTManager)
+
+                    //method to subscribe to topics
+                    subscribeToTopics()
                 }
 
                 override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
@@ -130,6 +133,8 @@ class MQTTManager @Inject constructor(
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
 
                     FileLogger.d(TAG, "Subscribed to $topic")
+
+
                 }
 
                 override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
@@ -172,7 +177,7 @@ class MQTTManager @Inject constructor(
     /**
      * Method to publish a message on a topic
      */
-    fun publish(topic: String, msg: String, qos: Int = 1, retained: Boolean = false) {
+    private fun publish(topic: String, msg: String, qos: Int = 1, retained: Boolean = false) {
         try {
             val message = MqttMessage()
             message.payload = msg.toByteArray()
@@ -216,6 +221,40 @@ class MQTTManager @Inject constructor(
             e.printStackTrace()
             e.let { FileLogger.e(TAG, it) }
         }
+    }
+
+    /**
+     * Method to subscribe the topics
+     */
+    fun subscribeToTopics(){
+        Timber.d("Subscribing the topic","Done")
+
+        subscribe(MqttTopicType.OTA_UPDATE.name)
+        subscribe(MqttTopicType.LOG_STATUS.name)
+        subscribe(MqttTopicType.CONFIG_UPDATE.name)
+        subscribe(MqttTopicType.FIRMWARE_UPDATE.name)
+        subscribe(MqttTopicType.KEY_INJECTION.name)
+        subscribe(MqttTopicType.DEVICE_CONTROL_COMMAND.name)
+        subscribe(MqttTopicType.SPECIAL_MODE_COMMAND.name)
+        subscribe(MqttTopicType.PARAMETER.name)
+        subscribe(MqttTopicType.SLE_DATABASE_STATUS.name)
+        subscribe(MqttTopicType.SLE_MESSAGE.name)
+    }
+
+    /**
+     * Method to send back the acknowledgment
+     */
+    fun sendMqttAck(message:BaseMessageMqtt<*>){
+
+        //updated base message with current date time
+        val updatedMessage= message.copy(activationDateTime = DateUtils.getSysDateTime())
+
+        //convert message to json string
+        val jsonString = mqttMessageAdapter.toJson(updatedMessage)
+
+        //publish the message for ack
+        publish(MqttAckTopicType.fromAckTopic(updatedMessage.messageId)!!.name,jsonString)
+
     }
 
 }

@@ -5,11 +5,13 @@ import android.graphics.Bitmap
 import androidx.appcompat.app.AppCompatActivity
 import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.HttpType
+import com.shellinfo.common.code.enums.ModeType
 import com.shellinfo.common.code.enums.NcmcDataType
 import com.shellinfo.common.code.enums.PrinterType
 import com.shellinfo.common.code.printer.PrinterProcessor
 import com.shellinfo.common.data.local.data.InitData
 import com.shellinfo.common.data.local.data.ipc.base.BaseMessage
+import com.shellinfo.common.data.local.data.mqtt.BaseMessageMqtt
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
 import com.shellinfo.common.data.remote.response.model.pass.PassRequest
 import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentRequest
@@ -80,7 +82,7 @@ interface ShellInfoProvider {
 
     fun unsubscribeMqttTopic(topic:String)
 
-    fun publishMqttMessage(topic:String,msg:String)
+    fun sendMqttAck(message:BaseMessageMqtt<*>)
 
     fun disconnectMqtt()
 
@@ -104,5 +106,5 @@ interface ShellInfoProvider {
 
     fun updatePassValue()
 
-
+    fun getCurrentMode():ModeType
 }

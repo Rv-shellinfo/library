@@ -24,6 +24,7 @@ import com.shellinfo.common.data.remote.services.provider.RetrofitClientProvider
 import com.shellinfo.common.data.shared.SharedDataManager
 import com.squareup.moshi.JsonAdapter
 import com.squareup.moshi.Moshi
+import com.squareup.moshi.Types
 import com.squareup.moshi.adapters.PolymorphicJsonAdapterFactory
 import dagger.Module
 import dagger.Provides
@@ -63,29 +64,7 @@ object ShellNetworkModule {
         return Moshi.Builder().add(NullOrMissingToEmptyStringAdapter()).build()
     }
 
-    @MqttMoshi
-    @Singleton
-    @Provides
-    fun provideMqttMoshi(): Moshi{
-        return Moshi.Builder()
-            .add(PolymorphicJsonAdapterFactory.of(MqttData::class.java,"message_id")
-                .withSubtype(OtaUpdateMessage::class.java,"OTA_UPDATE")
-                .withSubtype(LogStatusMessage::class.java,"LOG_STATUS")
-                .withSubtype(ConfigUpdateMessage::class.java,"CONFIG_UPDATE")
-                .withSubtype(FirmwareUpdateMessage::class.java,"FIRMWARE_UPDATE")
-                .withSubtype(KeyInjectionMessage::class.java,"KEY_INJECTION")
-                .withSubtype(DeviceControlMessage::class.java,"DEVICE_CONTROL_COMMANDS")
-                .withSubtype(SpecialModeMessage::class.java,"SPECIAL_MODES_COMMANDS")
-                .withSubtype(ParameterMessage::class.java,"PARAMETER_TOPICS")
-                )
-            .build()
-    }
 
-    @Provides
-    @Singleton
-    fun provideMqttMessageAdapter(@MqttMoshi moshi: Moshi): JsonAdapter<BaseMessageMqtt<*>> {
-        return moshi.adapter(BaseMessageMqtt::class.java)
-    }
 
 
     @Singleton

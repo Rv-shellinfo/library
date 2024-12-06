@@ -2,10 +2,16 @@ package com.shellinfo.common.code
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.Settings
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat.startActivity
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
@@ -14,11 +20,14 @@ import com.shellinfo.common.BuildConfig
 import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.EquipmentType
 import com.shellinfo.common.code.enums.HttpType
+import com.shellinfo.common.code.enums.ModeType
 import com.shellinfo.common.code.enums.NcmcDataType
 import com.shellinfo.common.code.enums.PrinterType
+import com.shellinfo.common.code.enums.ReaderLocationType
 import com.shellinfo.common.code.ipc.IPCDataHandler
 import com.shellinfo.common.code.logs.LoggerImpl
 import com.shellinfo.common.code.mqtt.MQTTManager
+import com.shellinfo.common.code.mqtt.topic_handler.modes.ModeManager
 import com.shellinfo.common.code.printer.PrinterActions
 import com.shellinfo.common.code.printer.PrinterProcessor
 import com.shellinfo.common.code.printer.SunmiPrinter
@@ -26,6 +35,7 @@ import com.shellinfo.common.data.local.data.InitData
 import com.shellinfo.common.data.local.data.ipc.BF200Data
 import com.shellinfo.common.data.local.data.ipc.ServiceInfo
 import com.shellinfo.common.data.local.data.ipc.base.BaseMessage
+import com.shellinfo.common.data.local.data.mqtt.BaseMessageMqtt
 import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.remote.response.ApiResponse
@@ -52,7 +62,10 @@ import com.shellinfo.common.utils.IPCConstants.MSG_ID_STOP_CARD_DETECTION
 import com.shellinfo.common.utils.PermissionsUtils
 import com.shellinfo.common.utils.SpConstants
 import com.shellinfo.common.utils.SpConstants.COMMON_SERVICE_ID
+import com.shellinfo.common.utils.SpConstants.DEVICE_TYPE
+import com.shellinfo.common.utils.SpConstants.ENTRY_SIDE
 import com.shellinfo.common.utils.SpConstants.OPERATOR_SERVICE_ID
+import com.shellinfo.common.utils.SpConstants.READER_LOCATION
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -73,7 +86,8 @@ class ShellInfoLibrary @Inject constructor(
     private val mqttManager: MQTTManager,
     private val ipcDataHandler: IPCDataHandler,
     private val permissionsUtils: PermissionsUtils,
-    private val sharedDataManager: SharedDataManager
+    private val sharedDataManager: SharedDataManager,
+    private val modeManager: ModeManager
 ) :ShellInfoProvider {
 
     companion object{
@@ -161,10 +175,16 @@ class ShellInfoLibrary @Inject constructor(
         //fetch the dependant initial data
         runBlocking {
 
+
             val fetchData= networkCall.getAllData()
 
             if(fetchData.isSuccess){
-               sharedDataManager.sendLibraryInit(true)
+
+                //send library init success
+                sharedDataManager.sendLibraryInit(true)
+
+                //observe for mode changes scenarios
+                observeForModeChange()
             }else{
                 sharedDataManager.sendLibraryInit(false)
             }
@@ -315,10 +335,6 @@ class ShellInfoLibrary @Inject constructor(
                         //start ipc service
                         activity?.let { startIpcService(it) }
 
-
-
-
-
                     }
                     is PermissionsUtils.PermissionsState.Denied -> {
                         Toast.makeText(activity,"Permissions denied. The app cannot proceed.",Toast.LENGTH_LONG).show()
@@ -327,12 +343,38 @@ class ShellInfoLibrary @Inject constructor(
                         activity?.let { permissionsUtils.checkPermissions(state.permissions, it) }
                     }
                     is PermissionsUtils.PermissionsState.RequestPermissions -> {
-                        activity?.let {
-                            ActivityCompat.requestPermissions(
-                                it,
-                                state.permissions,
-                                PermissionsUtils.REQUEST_CODE
-                            )
+
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            val isGranted = Environment.isExternalStorageManager()
+
+                            if(isGranted){
+                                //start logging
+                                startLogging(true,true)
+
+                                //mqtt connection
+                                mqttManager.connect()
+
+                                //start ipc service
+                                activity?.let { startIpcService(it) }
+
+                                return@Observer
+                            }
+                        }
+
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            if (!Environment.isExternalStorageManager()) {
+                                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                                intent.data = Uri.parse("package:com.shell.library")
+                                startActivity(activity!!,intent,null)
+                            }
+                        }else{
+                            activity?.let {
+                                ActivityCompat.requestPermissions(
+                                    it,
+                                    state.permissions,
+                                    PermissionsUtils.REQUEST_CODE
+                                )
+                            }
                         }
                     }
                     else ->{
@@ -462,8 +504,8 @@ class ShellInfoLibrary @Inject constructor(
         mqttManager.unsubscribe(topic)
     }
 
-    override fun publishMqttMessage(topic: String, msg: String) {
-        mqttManager.publish(topic,msg)
+    override fun sendMqttAck(message: BaseMessageMqtt<*>) {
+        mqttManager.sendMqttAck(message)
     }
 
     override fun disconnectMqtt() {
@@ -649,6 +691,97 @@ class ShellInfoLibrary @Inject constructor(
 
     override fun updatePassValue() {
         TODO("Not yet implemented")
+    }
+
+    override fun getCurrentMode(): ModeType {
+        return modeManager.getCurrentMode()!!
+    }
+
+
+    private fun observeForModeChange(){
+
+        modeManager.currentModeLiveData.observe(activity!!) {
+
+            when (it) {
+                ModeType.MAINTENANCE_MODE,
+                ModeType.OUT_OF_SERVICE_MODE,
+                ModeType.EMERGENCY_MODE -> {
+                    //create base message
+                    val baseMessage= BaseMessage(MSG_ID_STOP_CARD_DETECTION,NcmcDataType.NONE,"")
+
+                    //stop continues card detection service in Payment application
+                    sendMessageToIpcService(MSG_ID_STOP_CARD_DETECTION,baseMessage)
+                }
+                ModeType.IN_SERVICE_MODE -> {
+
+                    if(spUtils.getPreference(DEVICE_TYPE,"") == EquipmentType.VALIDATOR.name){
+
+                        //get the service ids
+                        val csaServiceId= spUtils.getPreference(COMMON_SERVICE_ID,0x1010)
+                        val osaServiceId= spUtils.getPreference(OPERATOR_SERVICE_ID,0x1234)
+
+                        //create service info object
+                        val serviceInfo= ServiceInfo(commonServiceId = csaServiceId, operatorServiceId = osaServiceId)
+
+                        //create base message
+                        val baseMessage= BaseMessage(MSG_ID_START_CARD_DETECTION,NcmcDataType.ALL,serviceInfo)
+
+                        //stop continues card detection service in Payment application
+                        sendMessageToIpcService(MSG_ID_STOP_CARD_DETECTION,baseMessage)
+                    }
+                }
+                ModeType.POWER_SAVING_MODE -> {}
+                ModeType.STATION_CLOSE_MODE -> {
+
+                    /**
+                     * Station closed mode if reader side is entry then card detection off
+                     */
+
+                    if(spUtils.getPreference(DEVICE_TYPE,"") == EquipmentType.VALIDATOR.name){
+
+                        if(spUtils.getPreference(READER_LOCATION,"ENTRY") == ENTRY_SIDE){
+                            //create base message
+                            val baseMessage= BaseMessage(MSG_ID_STOP_CARD_DETECTION,NcmcDataType.NONE,"")
+
+                            //stop continues card detection service in Payment application
+                            sendMessageToIpcService(MSG_ID_STOP_CARD_DETECTION,baseMessage)
+                        }
+
+                    }else{
+
+                        /**
+                         * Station closed mode if tvm, tom , tr or ptd then card detection disable
+                         */
+
+                        //create base message
+                        val baseMessage= BaseMessage(MSG_ID_STOP_CARD_DETECTION,NcmcDataType.NONE,"")
+
+                        //stop continues card detection service in Payment application
+                        sendMessageToIpcService(MSG_ID_STOP_CARD_DETECTION,baseMessage)
+                    }
+
+                }
+                ModeType.DEVICE_CLOSE_MODE -> {}
+                ModeType.FARE_BYPASS_TWO_MODE,
+                ModeType.FARE_BYPASS_ONE_MODE -> {
+
+                    if(spUtils.getPreference(DEVICE_TYPE,"") == EquipmentType.VALIDATOR.name){
+
+                        if(spUtils.getPreference(READER_LOCATION,"ENTRY") == ENTRY_SIDE){
+                            //create base message
+                            val baseMessage= BaseMessage(MSG_ID_STOP_CARD_DETECTION,NcmcDataType.NONE,"")
+
+                            //stop continues card detection service in Payment application
+                            sendMessageToIpcService(MSG_ID_STOP_CARD_DETECTION,baseMessage)
+                        }
+
+                    }
+                }
+                ModeType.TEST_MODE -> {}
+                ModeType.FAILURE_MODE -> {}
+                else -> {}
+            }
+        }
     }
 
 

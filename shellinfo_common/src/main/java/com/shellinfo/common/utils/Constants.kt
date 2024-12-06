@@ -101,6 +101,10 @@ object SpConstants{
     //Terminal sequence number
     const val TRANSACTION_SEQ_NUMBER= "TRANSACTION_SEQ_NUMBER"
 
+    //Current Mode
+    const val CURRENT_MODE= "CURRENT_MODE"
+
+
 }
 
 object DBConstants{

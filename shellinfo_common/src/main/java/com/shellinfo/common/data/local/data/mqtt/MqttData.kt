@@ -10,11 +10,10 @@ interface MqttData
  */
 @JsonClass(generateAdapter = true)
 data class OtaUpdateMessage(
-    val file_name: String,
+    val fileName: String,
     val version: String,
-    val ftp_path: String,
+    val ftpPath: String,
     val md5FileHash: String,
-    val activationDateTime: String
 ):MqttData
 
 
@@ -24,8 +23,7 @@ data class OtaUpdateMessage(
  */
 @JsonClass(generateAdapter = true)
 data class LogStatusMessage(
-    val log_status: String,
-    val activationDateTime: String
+    val logStatus: String
 ):MqttData
 
 /**
@@ -33,13 +31,12 @@ data class LogStatusMessage(
  */
 @JsonClass(generateAdapter = true)
 data class ConfigUpdateMessage(
-    val base_url: String,
+    val baseUrl: String,
     val port: String,
-    val api_end_point: String,
-    val file_name: String,
+    val apiEndPoint: String,
+    val fileName: String,
     val version: String,
-    val ftp_path: String,
-    val activationDateTime: String
+    val ftpPath: String
 ):MqttData
 
 /**
@@ -47,10 +44,9 @@ data class ConfigUpdateMessage(
  */
 @JsonClass(generateAdapter = true)
 data class FirmwareUpdateMessage(
-    val file_name: String,
+    val fileName: String,
     val version: String,
-    val ftp_path: String,
-    val activationDateTime: String
+    val ftpPath: String
 ):MqttData
 
 /**
@@ -58,40 +54,68 @@ data class FirmwareUpdateMessage(
  */
 @JsonClass(generateAdapter = true)
 data class KeyInjectionMessage(
-    val capk_key_file_name: String,
-    val entry_point_key_file_name: String,
-    val processing_key_file_name: String,
-    val terminal_key_file_name: String,
-    val rupay_key_file_name: String,
-    val emvinfo_file_name: String,
+    val capkKeyFileName: String,
+    val entryPointKeyFileName: String,
+    val processingKeyFileName: String,
+    val terminalKeyFileName: String,
+    val rupayKeyFileName: String,
+    val emvInfoFileName: String,
     val version: String,
-    val ftp_path: String,
-    val activationDateTime: String,
+    val ftpPath: String,
 ):MqttData
 
 
 @JsonClass(generateAdapter = true)
 data class DeviceControlMessage(
-    val command_type: String,
-    val command_status: String,
-    val applyDateTime: String,
+    val commandType: String,
+    val commandTypeId: Int,
+    val commandStatus: String,
+    val message: String,
 ):MqttData
 
 @JsonClass(generateAdapter = true)
 data class SpecialModeMessage(
-    val command_type: String,
-    val command_status: String,
-    val applyDateTime: String,
+    val commandType: String,
+    val commandTypeId: Int,
+    val commandStatus: String,
+    val message: String,
 ):MqttData
 
 @JsonClass(generateAdapter = true)
 data class ParameterMessage(
-    val parameter_type: String,
-    val file_name: String,
+    val parameterType: String,
+    val baseUrl: String,
+    val port: String,
+    val apiEndPoint: String,
+    val fileName: String,
     val version: String,
-    val ftp_path: String,
+    val ftpPath: String,
     val md5FileHash: String,
-    val activationDateTime: String,
+):MqttData
+
+
+@JsonClass(generateAdapter = true)
+data class SleDatabaseMessage(
+    val tableName: String,
+    val tableId: Int,
+    val dataType: Int,
+    val expiryDateTime: String,
+    val md5FileHash: String,
+    val baseUrl: String,
+    val port: String,
+    val apiEndPoint: String,
+    val fileName: String,
+    val version: String,
+    val ftpPath: String,
+):MqttData
+
+
+@JsonClass(generateAdapter = true)
+data class SleDynamicMessage(
+    val message: String,
+    val cancelable: Boolean,
+    val md5FileHash: String,
+    val status:String
 ):MqttData
 
 

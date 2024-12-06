@@ -11,6 +11,7 @@ import com.shellinfo.common.code.NetworkCall
 import com.shellinfo.common.code.ipc.IPCDataHandler
 import com.shellinfo.common.code.ipc.PassHandler
 import com.shellinfo.common.code.ipc.RupayDataHandler
+import com.shellinfo.common.code.mqtt.topic_handler.modes.ModeManager
 import com.shellinfo.common.code.pass.BasePassValidator
 import com.shellinfo.common.data.local.data.emv_rupay.EntryDataCache
 import com.shellinfo.common.data.local.db.repository.DbRepository
@@ -59,8 +60,8 @@ object ShellIPCModule {
     @Provides
     fun provideRupayDataHandler(rupayUtils: RupayUtils, sharedPreferenceUtil: SharedPreferenceUtil, sharedDataManager: SharedDataManager,
                                 apiRepository: ApiRepository, networkCall: NetworkCall,passHandler: PassHandler,passValidator: BasePassValidator,
-                                dbRepository: DbRepository,entryDataCache: EntryDataCache)
-    = RupayDataHandler(rupayUtils,sharedPreferenceUtil,sharedDataManager,apiRepository,networkCall,passHandler,passValidator,dbRepository,entryDataCache)
+                                dbRepository: DbRepository,entryDataCache: EntryDataCache,modeManager: ModeManager)
+    = RupayDataHandler(rupayUtils,sharedPreferenceUtil,sharedDataManager,apiRepository,networkCall,passHandler,passValidator,dbRepository,entryDataCache,modeManager)
 
     @Singleton
     @Provides

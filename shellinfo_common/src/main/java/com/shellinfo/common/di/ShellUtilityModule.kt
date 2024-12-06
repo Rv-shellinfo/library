@@ -50,14 +50,7 @@ object UtilityModule {
         return FtpUtils(sharedPreferenceUtil,loggerImpl,master)
     }
 
-    @Singleton
-    @Provides
-    fun provideMqttMessageHandler() = MqttMessageHandler()
 
-
-    @Singleton
-    @Provides
-    fun provideMqttManager(configMaster: ConfigMaster,@ApplicationContext context: Context,mqttMessageHandler: MqttMessageHandler)= MQTTManager(configMaster,context,mqttMessageHandler)
 
 
     @Singleton

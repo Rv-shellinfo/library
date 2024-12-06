@@ -12,19 +12,13 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class MqttOtaHandler @Inject constructor() {
+class MqttOtaHandler @Inject constructor(
+    private val ftpUtils: FtpUtils,
+    private val installer: OtaInstaller,
+    private val apkDownloadWorkerStarter: ApkDownloadWorkerStarter,
+    private val sharedPreferenceUtil: SharedPreferenceUtil
+) {
 
-    @Inject
-    lateinit var ftpUtils: FtpUtils
-
-    @Inject
-    lateinit var installer: OtaInstaller
-
-    @Inject
-    lateinit var apkDownloadWorkerStarter: ApkDownloadWorkerStarter
-
-    @Inject
-    lateinit var sharedPreferenceUtil: SharedPreferenceUtil
 
     /**
      * Method to handle the OTA
@@ -42,7 +36,7 @@ class MqttOtaHandler @Inject constructor() {
     //download new build
     private fun downloadBuild(otaData:OtaUpdateMessage){
 
-        ftpUtils.downloadUpdatedApk(otaData.ftp_path,otaData.file_name,otaData.version.toInt()){
+        ftpUtils.downloadUpdatedApk(otaData.ftpPath,otaData.fileName,otaData.version.toInt()){
 
             //file path of the newly downloaded apk file
             val apkFilePath = it

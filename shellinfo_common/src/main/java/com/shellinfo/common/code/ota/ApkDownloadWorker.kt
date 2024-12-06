@@ -51,6 +51,8 @@ class ApkDownloadWorker @AssistedInject constructor(
                 } else {
 
                     FileLogger.e("File Not Exist", "Downloaded file $apkFilePath not exist")
+
+                    Result.failure()
                 }
             }
             Result.success()
