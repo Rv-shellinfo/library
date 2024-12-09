@@ -36,22 +36,24 @@ class MqttOtaHandler @Inject constructor(
     //download new build
     private fun downloadBuild(otaData:OtaUpdateMessage){
 
-        ftpUtils.downloadUpdatedApk(otaData.ftpPath,otaData.fileName,otaData.version.toInt()){
+        apkDownloadWorkerStarter.invoke(otaData.ftpPath,otaData.fileName,otaData.version.toInt())
 
-            //file path of the newly downloaded apk file
-            val apkFilePath = it
-
-            //check if file exist or not
-            val fileNew = File(apkFilePath)
-            if (fileNew.exists()) {
-
-                installer.installNewApk(fileNew)
-
-            }else{
-
-                FileLogger.e("File Not Exist","Downloaded file $apkFilePath not exist")
-            }
-
-        }
+//        ftpUtils.downloadUpdatedApk(otaData.ftpPath,otaData.fileName,otaData.version.toInt()){
+//
+//            //file path of the newly downloaded apk file
+//            val apkFilePath = it
+//
+//            //check if file exist or not
+//            val fileNew = File(apkFilePath)
+//            if (fileNew.exists()) {
+//
+//                installer.installNewApk(fileNew)
+//
+//            }else{
+//
+//                FileLogger.e("File Not Exist","Downloaded file $apkFilePath not exist")
+//            }
+//
+//        }
     }
 }

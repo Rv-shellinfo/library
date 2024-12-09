@@ -9,10 +9,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.code.enums.ApiMode
+import com.shellinfo.common.code.enums.DeviceControlCommandType
 import com.shellinfo.common.code.enums.EquipmentType
 import com.shellinfo.common.code.enums.NcmcDataType
+import com.shellinfo.common.code.enums.SpecialModesCommandType
 import com.shellinfo.common.code.enums.TicketType
 import com.shellinfo.common.data.local.data.InitData
+import com.shellinfo.common.data.local.data.mqtt.BaseMessageMqtt
+import com.shellinfo.common.data.local.data.mqtt.DeviceControlMessage
+import com.shellinfo.common.data.local.data.mqtt.SpecialModeMessage
 import com.shellinfo.common.data.remote.response.ApiResponse
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
 import com.shellinfo.common.data.remote.response.model.pass.BankTransactionDetail
@@ -43,6 +48,10 @@ class MainActivity : AppCompatActivity() {
     lateinit var btnGetFare:Button;
     lateinit var btnGenerateTicket:Button;
     lateinit var btnGetBitmap:Button;
+
+
+    //1. global mqtt message
+    lateinit var globalMqttMessage: BaseMessageMqtt<*>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -113,6 +122,89 @@ class MainActivity : AppCompatActivity() {
             val osaData= data
         })
 
+
+        //2. observable for device control commands
+        sharedDataManager.deviceControlCommand.observe(this) { message ->
+
+                // 3. assign incoming message to global message type
+                 globalMqttMessage= message
+
+                // 4. cast your message to Device Control Message type
+                val deviceControlMessage = message.data as DeviceControlMessage
+
+
+                // 5. check for command type
+                when(DeviceControlCommandType.getDeviceControlCommand(deviceControlMessage.commandTypeId) ){
+                    DeviceControlCommandType.IN_SERVICE_MODE ->{
+                        // 6. TODO do your code here based on message type
+                    }
+                    DeviceControlCommandType.OUT_OF_SERVICE_MODE ->{
+
+                        // 6. TODO do your code here based on message type
+                    }
+
+                    DeviceControlCommandType.MAINTENANCE_MODE ->{
+
+                    }
+
+                    DeviceControlCommandType.POWER_SAVING_MODE ->{
+
+                    }
+
+                    DeviceControlCommandType.TEST_MODE ->{
+
+                    }
+
+                    else ->{}
+                }
+
+
+
+        }
+
+        // 7. After your code execution acknowledge to server
+        shellInfoLibrary.sendMqttAck(globalMqttMessage)
+
+
+        //2. observable for device control commands
+        sharedDataManager.specialModeCommand.observe(this) { message ->
+
+            // 3. assign incoming message to global message type
+            globalMqttMessage= message
+
+            // 4. cast your message to Device Control Message type
+            val specialModeMessage = message.data as SpecialModeMessage
+
+
+            // 5. check for command type
+            when(SpecialModesCommandType.getSpecialModeCommand(specialModeMessage.commandTypeId) ){
+
+                SpecialModesCommandType.EMERGENCY_MODE->{
+                    // 6. TODO do your code here based on message type
+                }
+
+                SpecialModesCommandType.INCIDENT_MODE->{
+                    // 6. TODO do your code here based on message type
+                }
+
+                SpecialModesCommandType.STATION_CLOSE_MODE->{
+
+                }
+
+                SpecialModesCommandType.DEVICE_CLOSE_MODE->{
+
+                }
+
+
+                else ->{}
+            }
+
+
+
+        }
+
+        // 7. After your code execution acknowledge to server
+        shellInfoLibrary.sendMqttAck(globalMqttMessage)
 
         btnStart.setOnClickListener(View.OnClickListener {
 
@@ -188,6 +280,9 @@ class MainActivity : AppCompatActivity() {
         btnDelteData.setOnClickListener(View.OnClickListener {
             shellInfoLibrary.deleteData(NcmcDataType.OSA)
         })
+
+
+
 
         btnGetFare.setOnClickListener(View.OnClickListener {
             val fareRequest = FareRequest()

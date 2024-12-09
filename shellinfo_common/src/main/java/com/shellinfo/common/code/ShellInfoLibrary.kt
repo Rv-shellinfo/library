@@ -1,6 +1,7 @@
 package com.shellinfo.common.code
 
 import android.Manifest
+import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -12,9 +13,12 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat.startActivity
+import androidx.hilt.work.HiltWorkerFactory
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
+import androidx.work.Configuration
+import androidx.work.WorkManager
 import com.jakewharton.threetenabp.AndroidThreeTen
 import com.shellinfo.common.BuildConfig
 import com.shellinfo.common.code.enums.ApiMode
@@ -49,6 +53,7 @@ import com.shellinfo.common.data.remote.response.model.ticket.Ticket
 import com.shellinfo.common.data.remote.response.model.ticket.TicketRequest
 import com.shellinfo.common.data.remote.response.model.ticket.TicketResponse
 import com.shellinfo.common.data.shared.SharedDataManager
+import com.shellinfo.common.di.HiltWorkerFactoryProvider
 import com.shellinfo.common.utils.BarcodeUtils
 import com.shellinfo.common.utils.DateUtils
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_CREATE_OSA_SERVICE
@@ -68,7 +73,11 @@ import com.shellinfo.common.utils.SpConstants.OPERATOR_SERVICE_ID
 import com.shellinfo.common.utils.SpConstants.READER_LOCATION
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.runBlocking
 import org.eclipse.paho.client.mqttv3.MqttMessage
 import timber.log.Timber
@@ -185,6 +194,9 @@ class ShellInfoLibrary @Inject constructor(
 
                 //observe for mode changes scenarios
                 observeForModeChange()
+
+                //init worker factory
+                //initWorkerFactory(activity!!)
             }else{
                 sharedDataManager.sendLibraryInit(false)
             }
@@ -807,6 +819,21 @@ class ShellInfoLibrary @Inject constructor(
             e.printStackTrace()
             null
         }
+    }
+
+    private fun initWorkerFactory(context: Context){
+
+        val configuration = Configuration.Builder()
+            .setWorkerFactory(HiltWorkerFactoryProvider.getWorkerFactory(context))
+            .build()
+
+        WorkManager.initialize(context, configuration)
+    }
+
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface WorkerFactoryEntryPoint {
+        fun hiltWorkerFactory(): HiltWorkerFactory
     }
 
 }
