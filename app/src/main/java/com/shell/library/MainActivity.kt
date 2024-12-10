@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
 
 
     //1. global mqtt message
-    lateinit var globalMqttMessage: BaseMessageMqtt<*>
+    var globalMqttMessage: BaseMessageMqtt<*>? =null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -162,8 +162,10 @@ class MainActivity : AppCompatActivity() {
 
         }
 
+
+
         // 7. After your code execution acknowledge to server
-        shellInfoLibrary.sendMqttAck(globalMqttMessage)
+        //shellInfoLibrary.sendMqttAck(globalMqttMessage!!)
 
 
         //2. observable for device control commands
@@ -204,7 +206,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // 7. After your code execution acknowledge to server
-        shellInfoLibrary.sendMqttAck(globalMqttMessage)
+        //shellInfoLibrary.sendMqttAck(globalMqttMessage!!)
 
         btnStart.setOnClickListener(View.OnClickListener {
 
