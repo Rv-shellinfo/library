@@ -1,7 +1,6 @@
 package com.shellinfo.common.code
 
 import android.Manifest
-import android.app.Application
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -10,6 +9,8 @@ import android.os.Build
 import android.os.Environment
 import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat.startActivity
@@ -27,7 +28,6 @@ import com.shellinfo.common.code.enums.HttpType
 import com.shellinfo.common.code.enums.ModeType
 import com.shellinfo.common.code.enums.NcmcDataType
 import com.shellinfo.common.code.enums.PrinterType
-import com.shellinfo.common.code.enums.ReaderLocationType
 import com.shellinfo.common.code.ipc.IPCDataHandler
 import com.shellinfo.common.code.logs.LoggerImpl
 import com.shellinfo.common.code.mqtt.MQTTManager
@@ -35,25 +35,22 @@ import com.shellinfo.common.code.mqtt.topic_handler.modes.ModeManager
 import com.shellinfo.common.code.printer.PrinterActions
 import com.shellinfo.common.code.printer.PrinterProcessor
 import com.shellinfo.common.code.printer.SunmiPrinter
+import com.shellinfo.common.code.worker.CustomWorkerFactory
 import com.shellinfo.common.data.local.data.InitData
 import com.shellinfo.common.data.local.data.ipc.BF200Data
 import com.shellinfo.common.data.local.data.ipc.ServiceInfo
 import com.shellinfo.common.data.local.data.ipc.base.BaseMessage
 import com.shellinfo.common.data.local.data.mqtt.BaseMessageMqtt
-import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.remote.response.ApiResponse
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
-import com.shellinfo.common.data.remote.response.model.fare.FareResponse
 import com.shellinfo.common.data.remote.response.model.pass.PassRequest
 import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentRequest
 import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentResponse
 import com.shellinfo.common.data.remote.response.model.server.ServerDateTimeResponse
 import com.shellinfo.common.data.remote.response.model.ticket.Ticket
 import com.shellinfo.common.data.remote.response.model.ticket.TicketRequest
-import com.shellinfo.common.data.remote.response.model.ticket.TicketResponse
 import com.shellinfo.common.data.shared.SharedDataManager
-import com.shellinfo.common.di.HiltWorkerFactoryProvider
 import com.shellinfo.common.utils.BarcodeUtils
 import com.shellinfo.common.utils.DateUtils
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_CREATE_OSA_SERVICE
@@ -75,7 +72,6 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
-import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.runBlocking
@@ -96,7 +92,9 @@ class ShellInfoLibrary @Inject constructor(
     private val ipcDataHandler: IPCDataHandler,
     private val permissionsUtils: PermissionsUtils,
     private val sharedDataManager: SharedDataManager,
-    private val modeManager: ModeManager
+    private val modeManager: ModeManager,
+    private val workerFactory: CustomWorkerFactory,
+
 ) :ShellInfoProvider {
 
     companion object{
@@ -109,7 +107,10 @@ class ShellInfoLibrary @Inject constructor(
         var isOsaTrxAbort =false
         var isOsaTrxAbortWithPenalty =false
         lateinit var passCreateRequest: PassRequest
+        lateinit var globalActivityContext:AppCompatActivity
     }
+
+    private lateinit var permissionLauncher: ActivityResultLauncher<Intent>
 
     //application activity context
     private var activity: AppCompatActivity? = null
@@ -166,6 +167,7 @@ class ShellInfoLibrary @Inject constructor(
 
     override fun setActivity(activity: AppCompatActivity) {
         this.activity=activity
+        globalActivityContext= activity
     }
 
     override fun setHttpProtocol(type: HttpType) {
@@ -196,7 +198,7 @@ class ShellInfoLibrary @Inject constructor(
                 observeForModeChange()
 
                 //init worker factory
-                //initWorkerFactory(activity!!)
+                //initWorkerFactory()
             }else{
                 sharedDataManager.sendLibraryInit(false)
             }
@@ -332,6 +334,20 @@ class ShellInfoLibrary @Inject constructor(
      */
     private fun handlePermissions(){
 
+        activity?.let { context ->
+             permissionLauncher = context.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    if (Environment.isExternalStorageManager()) {
+                        startLogging(true, true)
+                        mqttManager.connect()
+                        context.let { startIpcService(it) }
+                    } else {
+                        Toast.makeText(context, "Permission denied", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+        }
+
         activity?.let { it ->
 
             permissionsUtils.permissionsState.observe(it, Observer { state ->
@@ -356,35 +372,29 @@ class ShellInfoLibrary @Inject constructor(
                     }
                     is PermissionsUtils.PermissionsState.RequestPermissions -> {
 
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                            val isGranted = Environment.isExternalStorageManager()
-
-                            if(isGranted){
-                                //start logging
-                                startLogging(true,true)
-
-                                //mqtt connection
-                                mqttManager.connect()
-
-                                //start ipc service
-                                activity?.let { startIpcService(it) }
-
-                                return@Observer
-                            }
-                        }
-
-                        activity?.let {
-                            ActivityCompat.requestPermissions(
-                                it,
-                                state.permissions,
-                                PermissionsUtils.REQUEST_CODE
-                            )
-                        }
-
+//                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+//                            val isGranted = Environment.isExternalStorageManager()
+//
+//                            if(isGranted){
+//                                //start logging
+//                                startLogging(true,true)
+//
+//                                //mqtt connection
+//                                mqttManager.connect()
+//
+//                                //start ipc service
+//                                activity?.let { startIpcService(it) }
+//
+//                                return@Observer
+//                            }
+//                        }
+//
+//
+//
 //                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 //                            if (!Environment.isExternalStorageManager()) {
 //                                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
-//                                intent.data = Uri.parse("package:com.shell.library")
+//                                intent.data = Uri.parse("package:${context.packageName}")
 //                                startActivity(activity!!,intent,null)
 //                            }
 //                        }else{
@@ -403,16 +413,48 @@ class ShellInfoLibrary @Inject constructor(
                 }
             })
 
-            // Check permissions on create
-            val requiredPermissions = arrayOf(
-                Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                Manifest.permission.READ_EXTERNAL_STORAGE
-            )
-            activity?.let { permissionsUtils.checkPermissions(requiredPermissions, it) }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                if (!Environment.isExternalStorageManager()) {
+                    val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                    intent.data = Uri.parse("package:${context.packageName}")
+                    permissionLauncher.launch(intent)
+                }else{
+
+                    startLogging(true,true)
+
+                    //mqtt connection
+                    mqttManager.connect()
+
+                    //start ipc service
+                    activity?.let { startIpcService(it) }
+                }
+            }else{
+                // Check permissions on create
+                val requiredPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    arrayOf(
+                        Manifest.permission.READ_MEDIA_IMAGES,
+                        Manifest.permission.READ_MEDIA_VIDEO
+                    )
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    arrayOf(
+                        Manifest.permission.READ_EXTERNAL_STORAGE
+                    )
+                } else {
+                    arrayOf(
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                    )
+                }
+
+                activity?.let { permissionsUtils.checkPermissions(requiredPermissions, it) }
+            }
+
         }
 
 
     }
+
 
     override fun getStations() {
         databaseCall.getAllStations()
@@ -829,19 +871,12 @@ class ShellInfoLibrary @Inject constructor(
         }
     }
 
-    private fun initWorkerFactory(context: Context){
-
-        val configuration = Configuration.Builder()
-            .setWorkerFactory(HiltWorkerFactoryProvider.getWorkerFactory(context))
+    fun initWorkerFactory(){
+        val config = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
             .build()
 
-        WorkManager.initialize(context, configuration)
-    }
-
-    @EntryPoint
-    @InstallIn(SingletonComponent::class)
-    interface WorkerFactoryEntryPoint {
-        fun hiltWorkerFactory(): HiltWorkerFactory
+        WorkManager.initialize(context, config)
     }
 
 }

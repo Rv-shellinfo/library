@@ -1,6 +1,7 @@
 package com.shellinfo.common.di
 
 import android.content.Context
+import androidx.work.WorkManager
 import com.shell.transitapp.utils.workers.LogWorkerStarter
 import com.shellinfo.common.code.ConfigMaster
 import com.shellinfo.common.code.logs.LoggerImpl
@@ -32,8 +33,9 @@ object UtilityModule {
     fun provideWorkerStarter(
         @ApplicationContext context: Context,
         sharedPreferenceUtil: SharedPreferenceUtil,
-        master: ConfigMaster
-    ) = LogWorkerStarter(context,sharedPreferenceUtil,master)
+        master: ConfigMaster,
+        workManager:WorkManager
+    ) = LogWorkerStarter(context,sharedPreferenceUtil,master,workManager)
 
 
 

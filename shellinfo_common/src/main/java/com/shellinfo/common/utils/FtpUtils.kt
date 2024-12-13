@@ -1,6 +1,7 @@
 package com.shellinfo.common.utils
 
 import abbasi.android.filelogger.FileLogger
+import android.os.Build
 import android.os.Environment
 import android.util.Log
 import com.shellinfo.common.code.ConfigMaster
@@ -65,7 +66,8 @@ class FtpUtils @Inject constructor(
         val ftpFolderDate = timestampFormat2.format(Date())
 
         //device serial
-        val deviceSerial = sharedPreferenceUtil.getPreference(SpConstants.DEVICE_SERIAL, "")
+        //val deviceSerial = sharedPreferenceUtil.getPreference(SpConstants.DEVICE_SERIAL, "A123A")
+        val deviceSerial = "A123A"
 
         //current date
         val currentDate = timestampFormat.format(Date())
@@ -73,15 +75,20 @@ class FtpUtils @Inject constructor(
         //server path
         val serverLogPath = ""
 
+        //server folder path
+        val dirPath1 = "/home/otauser/logs/${equipmentType.lowercase(Locale.ROOT)}/$ftpFolderDate"
+        val dirPath2 = "/home/otauser/logs/${equipmentType.lowercase(Locale.ROOT)}/$ftpFolderDate/$deviceSerial"
+
         //server file name to store
-        val serverFileName= "/home/otauser/logs/$equipmentType/$deviceSerial/$ftpFolderDate/${currentDate}.txt"
+        val serverFileName= "/log_${deviceSerial}_${currentDate}.txt"
 
         FileLogger.i("Server Log Path",serverLogPath)
 
 
         //get all files from local directory
-        val directory = File(logPath)
+        val directory = File(logPath+"/fileLogs")
         val filesInDirectory =  directory.listFiles() ?: arrayOf()
+
 
 
         try {
@@ -97,6 +104,13 @@ class FtpUtils @Inject constructor(
                 ftpClient.enterLocalPassiveMode()
                 ftpClient.setFileType(FTP.BINARY_FILE_TYPE)
 
+                //check if directory available or not if not then create one
+                if(!ftpClient.changeWorkingDirectory(dirPath1)){
+                    !ftpClient.makeDirectory(dirPath1)
+                    !ftpClient.makeDirectory(dirPath2)
+
+                }
+
                 //upload every file on server
                 for (file in filesInDirectory) {
 
@@ -105,7 +119,7 @@ class FtpUtils @Inject constructor(
                     FileLogger.i("File name to upload", file.name)
 
                     val inputStream = FileInputStream(file)
-                    val isUploaded= ftpClient.storeFile(serverFileName,inputStream)
+                    val isUploaded= ftpClient.storeFile(dirPath2+serverFileName,inputStream)
                     inputStream.close()
 
                     if(isUploaded){
@@ -185,7 +199,9 @@ class FtpUtils @Inject constructor(
             val ftpClient = FTPClient()
 
             try {
-                ftpClient.connect("$host:$port")
+
+                //connect to the host
+                ftpClient.connect(host,port.toInt())
 
                 if(ftpClient.login(ftpUser,ftpPassword)){
 
@@ -193,6 +209,7 @@ class FtpUtils @Inject constructor(
 
                     ftpClient.enterLocalPassiveMode()
                     ftpClient.setFileType(FTP.BINARY_FILE_TYPE)
+
 
                     val folder = File(Environment.getExternalStorageDirectory(),"/transit_app_build")
 

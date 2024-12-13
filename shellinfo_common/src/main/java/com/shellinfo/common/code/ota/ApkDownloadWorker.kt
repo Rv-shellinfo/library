@@ -6,12 +6,16 @@ import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.utils.FtpUtils
 import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileInputStream
+import java.io.IOException
 
 @HiltWorker
 class ApkDownloadWorker @AssistedInject constructor(
@@ -46,7 +50,15 @@ class ApkDownloadWorker @AssistedInject constructor(
                 val fileNew = File(apkFilePath)
                 if (fileNew.exists()) {
 
-                    otaInstaller.installNewApk(fileNew)
+                    try {
+                        val inputStream = FileInputStream(fileNew)
+                        otaInstaller.installPackage(inputStream,"com.shell.library",fileNew)
+                        //installPackage(this, inputStream, "com.example.apk")
+                    } catch (e: IOException) {
+                        //Toast.makeText(this, e.message, Toast.LENGTH_SHORT).show()
+                    }
+
+                    //otaInstaller.installNewApk(fileNew)
 
                 } else {
 

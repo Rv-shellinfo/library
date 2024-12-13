@@ -18,16 +18,14 @@ import javax.inject.Singleton
 class LogWorkerStarter @Inject constructor(
     private val context: Context,
     private val spUtils: SharedPreferenceUtil,
-    private val master: ConfigMaster
+    private val master: ConfigMaster,
+    private val workManager: WorkManager
 
 ) {
 
 
     //WORK Manager name to upload the logs on the server
     private val WORK_NAME="UPLOAD_LOG_WORK"
-
-    private lateinit var workManager:WorkManager
-
 
 
     companion object {
@@ -36,8 +34,6 @@ class LogWorkerStarter @Inject constructor(
 
     operator fun invoke(){
 
-        //work manager
-         workManager = WorkManager.getInstance(context)
 
         FileLogger.d("Log Upload Worker", "Starting...")
 

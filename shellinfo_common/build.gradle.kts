@@ -42,6 +42,7 @@ android {
             buildConfigField("String", "API_DOMAIN", "\"jsonplaceholder.typicode.com\"")
             buildConfigField("String", "CASH_FREE_DOMAIN", "\"https://sandbox.cashfree.com/pg/orders\"")
             buildConfigField("String", "CASH_FREE_NOTIFY_URL", "\"https://122.252.226.254:5114/implementation/v1/NotifyUrl/CFPaymentRequest\"")
+            buildConfigField("String", "BUILD_VERSION", "\"v1.1.26\"")
 
         }
 
@@ -54,7 +55,7 @@ android {
             buildConfigField("String", "SSL_FINGERPRINT", "\"fingerPrint\"")
             buildConfigField("String", "CASH_FREE_DOMAIN", "\"https://implementation.cashfree.com/pg/orders\"")
             buildConfigField("String", "CASH_FREE_NOTIFY_URL", "\"https://125.18.76.109:5114/implementation/v1/NotifyUrl/CFPaymentRequest\"")
-
+            buildConfigField("String", "BUILD_VERSION", "\"v1.1.26\"")
         }
     }
 
@@ -191,6 +192,9 @@ dependencies {
 
     //debug database library
     debugImplementation("com.github.amitshekhariitbhu.Android-Debug-Database:debug-db:1.0.7")
+
+    //apk installer
+    implementation("io.github.solrudev:simpleinstaller:5.0.0")
 
 }
 

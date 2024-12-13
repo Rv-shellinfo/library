@@ -76,10 +76,6 @@ class MQTTManager @Inject constructor(
                     ex.cause?.let { FileLogger.e(TAG, it) }
                 }
 
-
-
-
-
             }
 
             override fun connectionLost(cause: Throwable?) {

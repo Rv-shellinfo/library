@@ -1,6 +1,7 @@
 package com.shellinfo.common.di
 
 import android.content.Context
+import androidx.work.WorkManager
 import com.shellinfo.common.code.ota.ApkDownloadWorkerStarter
 import com.shellinfo.common.code.ota.OtaInstaller
 import com.shellinfo.common.code.ota.OtaReceiver
@@ -19,8 +20,9 @@ object ShellOtaModule {
     @Singleton
     @Provides
     fun provideDownloadWorker(
-        @ApplicationContext context: Context
-    )= ApkDownloadWorkerStarter(context)
+        @ApplicationContext context: Context,
+        workManager: WorkManager
+    )= ApkDownloadWorkerStarter(context,workManager)
 
     @Singleton
     @Provides

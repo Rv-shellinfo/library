@@ -7,7 +7,9 @@ import android.os.Environment
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.shell.transitapp.utils.workers.LogWorkerStarter
+import com.shellinfo.common.BuildConfig
 import com.shellinfo.common.code.ConfigMaster
+import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.utils.SpConstants
 import timber.log.Timber
@@ -27,29 +29,21 @@ class LoggerImpl @Inject constructor(
 
     override fun initLogger() {
 
-
-
         //time stamp
         val timestampFormat = SimpleDateFormat("dd-MM-yyyy-HH:mm:ss", Locale.US)
 
-
         //device serial
-        val deviceSerial = sharedPreferenceUtil.getPreference(SpConstants.DEVICE_SERIAL,"")
+        val deviceSerial = sharedPreferenceUtil.getPreference(SpConstants.DEVICE_SERIAL,"A123A")
 
         //current date
         val currentDate = timestampFormat.format(Date())
 
         //log file name to create
-        val logFileName = "log_${masterConfig.log_local_file_name}_${deviceSerial}_${currentDate}.txt"
+        val logFileName = "log_${deviceSerial}_${currentDate}.txt"
 
-        //creating directory
-        var directoryPath = Environment.getExternalStorageDirectory().absolutePath + masterConfig.log_local_file_path
-
-        //add file logger default name
-        directoryPath= "$directoryPath/fileLogs"
 
         // Create the directory if it doesn't exist
-        val directory = File(directoryPath)
+        val directory = File(ShellInfoLibrary.globalActivityContext.getExternalFilesDir(null),"/logs")
         if (!directory.exists()) {
             directory.mkdirs()
         }
@@ -71,6 +65,7 @@ class LoggerImpl @Inject constructor(
                     "Application Version Name" to sharedPreferenceUtil.getPreference(SpConstants.APP_VERSION_NAME,""),
                     "Device Type" to sharedPreferenceUtil.getPreference(SpConstants.DEVICE_TYPE,""),
                     "Serial" to sharedPreferenceUtil.getPreference(SpConstants.DEVICE_SERIAL,""),
+                    "Library Version" to BuildConfig.BUILD_VERSION
                 )
             ).build()
 

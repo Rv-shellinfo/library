@@ -7,6 +7,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.shellinfo.common.ui.PermissionActivity
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,23 +18,31 @@ class PermissionsUtils @Inject constructor(){
     val permissionsState: LiveData<PermissionsState> = _permissionsState
 
     fun checkPermissions(permissions: Array<String>, context: Context) {
-        val notGrantedPermissions = permissions.filter {
-            ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
-        }
 
-        if (notGrantedPermissions.isEmpty()) {
-            _permissionsState.value = PermissionsState.Granted
-        } else {
-            val shouldShowRationale = notGrantedPermissions.any {
-                ActivityCompat.shouldShowRequestPermissionRationale(context as Activity, it)
-            }
-            _permissionsState.value = if (shouldShowRationale) {
-                PermissionsState.ShouldShowRationale(notGrantedPermissions.toTypedArray())
+
+        PermissionActivity.start(context,permissions){allGranted ->
+            if (allGranted) {
+                _permissionsState.value = PermissionsState.Granted
             } else {
-                PermissionsState.RequestPermissions(notGrantedPermissions.toTypedArray())
+
+                val notGrantedPermissions = permissions.filter {
+                    ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
+                }
+
+                val shouldShowRationale = notGrantedPermissions.any {
+                    ActivityCompat.shouldShowRequestPermissionRationale(context as Activity, it)
+                }
+                _permissionsState.value = if (shouldShowRationale) {
+                    PermissionsState.ShouldShowRationale(notGrantedPermissions.toTypedArray())
+                } else {
+                    PermissionsState.RequestPermissions(notGrantedPermissions.toTypedArray())
+                }
             }
+
         }
     }
+
+
 
     fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         if (requestCode == REQUEST_CODE) {

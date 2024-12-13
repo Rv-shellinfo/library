@@ -8,6 +8,7 @@ import com.shellinfo.common.code.ipc.IPCDataHandler
 import com.shellinfo.common.code.logs.LoggerImpl
 import com.shellinfo.common.code.mqtt.MQTTManager
 import com.shellinfo.common.code.mqtt.topic_handler.modes.ModeManager
+import com.shellinfo.common.code.worker.CustomWorkerFactory
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.shared.SharedDataManager
 import com.shellinfo.common.utils.BarcodeUtils
@@ -37,9 +38,10 @@ object LibraryModule {
         ipcDataHandler: IPCDataHandler,
         permissionsUtils: PermissionsUtils,
         sharedDataManager: SharedDataManager,
-        modeManager: ModeManager
+        modeManager: ModeManager,
+        factory: CustomWorkerFactory
     ):ShellInfoLibrary{
-        return ShellInfoLibrary(context,spUtils,networkCall,databaseCall,barcodeUtils,loggerImpl,mqttManager,ipcDataHandler,permissionsUtils,sharedDataManager,modeManager)
+        return ShellInfoLibrary(context,spUtils,networkCall,databaseCall,barcodeUtils,loggerImpl,mqttManager,ipcDataHandler,permissionsUtils,sharedDataManager,modeManager,factory)
     }
 
 

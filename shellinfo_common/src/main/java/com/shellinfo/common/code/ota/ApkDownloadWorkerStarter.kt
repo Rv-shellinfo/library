@@ -4,6 +4,7 @@ import abbasi.android.filelogger.FileLogger
 import android.content.Context
 import android.util.Log
 import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequest
 import androidx.work.WorkManager
 import javax.inject.Inject
@@ -11,7 +12,9 @@ import javax.inject.Singleton
 
 @Singleton
 class ApkDownloadWorkerStarter @Inject constructor(
-    private val context: Context
+    private val context: Context,
+    private val workManager: WorkManager
+
 ){
 
     companion object {
@@ -20,10 +23,6 @@ class ApkDownloadWorkerStarter @Inject constructor(
 
     //WORK Manager name to upload the logs on the server
     private val WORK_NAME="DOWNLOAD_APK_WORK"
-
-    //work manager
-    private val workManager = WorkManager.getInstance(context)
-
 
     operator fun invoke(serverPath:String,fileName:String,version:Int){
 
@@ -46,7 +45,7 @@ class ApkDownloadWorkerStarter @Inject constructor(
             .build()
 
         //start worker
-        WorkManager.getInstance(context).enqueue(workRequest)
+        workManager.enqueueUniqueWork(WORK_NAME, ExistingWorkPolicy.REPLACE,workRequest)
 
 
     }
