@@ -2,6 +2,7 @@ package com.shellinfo.common.code.logs
 
 import abbasi.android.filelogger.FileLogger
 import abbasi.android.filelogger.config.Config
+import abbasi.android.filelogger.config.RetentionPolicy
 import android.os.Build
 import android.os.Environment
 import androidx.hilt.work.HiltWorkerFactory
@@ -57,6 +58,7 @@ class LoggerImpl @Inject constructor(
             .setDefaultTag("TAG")
             .setLogcatEnable(true)
             .setDataFormatterPattern("dd-MM-yyyy-HH:mm:ss")
+            .setRetentionPolicy(RetentionPolicy.TimeToLive(durationInMillis = 1000 * 60 * 60))
             .setStartupData(
                 mapOf(
                     "Application Name" to sharedPreferenceUtil.getPreference(SpConstants.APP_NAME,""),
@@ -71,10 +73,8 @@ class LoggerImpl @Inject constructor(
 
 
         //init the file logger
-        FileLogger.init(config)
+        FileLogger.init(ShellInfoLibrary.globalActivityContext,config)
 
-        //enable logging
-        FileLogger.setEnable(true)
     }
 
     override fun startLogging(localLogs:Boolean, serverLogs:Boolean) {
@@ -102,8 +102,6 @@ class LoggerImpl @Inject constructor(
 
         //if both logs needs to stop
         if(localLogs && serverLogs){
-
-            FileLogger.setEnable(false)
 
             //stop log worker
             logWorkerStarter.stopLogWorker()

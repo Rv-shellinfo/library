@@ -176,7 +176,7 @@ dependencies {
     implementation("androidx.work:work-runtime:2.9.0")
 
     //Log files
-    implementation("com.github.aabolfazl:filelogger:1.0.2")
+    implementation("com.github.aabolfazl:filelogger:1.0.4")
 
     //Ftp client library
     implementation("commons-net:commons-net:3.8.0")

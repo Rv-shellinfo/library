@@ -205,6 +205,7 @@ object IPCConstants{
     const val MSG_ID_REMOVE_PENALTY_DATA_ACK =            0x10
     const val MSG_ID_NO_DATA_ERROR =                      0x11
     const val MSG_ID_CREATE_PASS_ACK =                    0x12
+    const val MSG_ID_LOGS =                               0x13
 
 
     //CSA pre-defined values as per NCMC specs

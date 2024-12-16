@@ -30,6 +30,7 @@ import com.shellinfo.common.utils.IPCConstants.MSG_ID_AMOUNT_REQUEST
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_CREATE_OSA_ACK
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_CREATE_PASS_ACK
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_ICC_DATA
+import com.shellinfo.common.utils.IPCConstants.MSG_ID_LOGS
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_NO_DATA_ERROR
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_PAYMENT_APP_VERSION_DATA
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_REMOVE_PENALTY
@@ -304,6 +305,13 @@ class IPCDataHandler @Inject constructor(
                 }else{
                     //TODO send error to app
                 }
+            }
+
+            MSG_ID_LOGS->{
+
+                // Convert JSON string back to BaseMessage object
+                val baseMessage: BaseMessage<String>? = convertFromJson<String>(message,moshi)
+                FileLogger.e("Payment App",baseMessage!!.data)
             }
 
             MSG_ID_STYL_ERROR->{
