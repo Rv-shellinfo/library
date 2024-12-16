@@ -62,7 +62,7 @@ class MqttSpecialModesHandler @Inject constructor(
         }
 
         //send back mqtt ack
-        mqttManager.sendMqttAck(message)
+        //mqttManager.sendMqttAck(message)
 
     }
 

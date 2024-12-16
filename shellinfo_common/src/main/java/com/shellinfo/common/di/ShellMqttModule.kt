@@ -119,8 +119,9 @@ object ShellMqttModule {
     fun provideMqttMessageHandler(sharedPreferenceUtil: SharedPreferenceUtil, mqttOtaHandler: MqttOtaHandler,
                                   mqttSpecialModesHandler: MqttSpecialModesHandler, mqttDeviceControlHandler: MqttDeviceControlHandler,
                                   mqttConfigHandler: MqttConfigHandler, mqttFirmwareHandler: MqttFirmwareHandler,
-                                  mqttLogHandler: MqttLogHandler, mqttParamsHandler: MqttParamsHandler) =
-        MqttMessageHandler(sharedPreferenceUtil,mqttOtaHandler,mqttSpecialModesHandler,mqttDeviceControlHandler,mqttConfigHandler,mqttFirmwareHandler,mqttLogHandler,mqttParamsHandler)
+                                  mqttLogHandler: MqttLogHandler, mqttParamsHandler: MqttParamsHandler,
+                                  sharedDataManager: SharedDataManager) =
+        MqttMessageHandler(sharedPreferenceUtil,mqttOtaHandler,mqttSpecialModesHandler,mqttDeviceControlHandler,mqttConfigHandler,mqttFirmwareHandler,mqttLogHandler,mqttParamsHandler,sharedDataManager)
 
     @Singleton
     @Provides

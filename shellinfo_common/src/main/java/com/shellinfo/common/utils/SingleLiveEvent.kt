@@ -12,6 +12,7 @@ class SingleLiveEvent<T> : MutableLiveData<T>() {
         super.observe(owner) { t ->
             if (pending.compareAndSet(true, false)) {
                 observer.onChanged(t)
+                value = null // Clear the value to avoid stale emissions
             }
         }
     }

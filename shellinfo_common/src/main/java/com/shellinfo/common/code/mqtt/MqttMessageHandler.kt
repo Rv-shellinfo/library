@@ -14,6 +14,7 @@ import com.shellinfo.common.data.local.data.mqtt.FirmwareUpdateMessage
 import com.shellinfo.common.data.local.data.mqtt.LogStatusMessage
 import com.shellinfo.common.data.local.data.mqtt.OtaUpdateMessage
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
+import com.shellinfo.common.data.shared.SharedDataManager
 import com.shellinfo.common.utils.SpConstants
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -27,7 +28,8 @@ class MqttMessageHandler @Inject constructor(
     private val mqttConfigHandler: MqttConfigHandler,
     private val mqttFirmwareHandler: MqttFirmwareHandler,
     private val mqttLogHandler: MqttLogHandler,
-    private val mqttParamsHandler: MqttParamsHandler
+    private val mqttParamsHandler: MqttParamsHandler,
+    private val sharedDataManager: SharedDataManager
 ) {
 
     //mqtt manager
@@ -86,7 +88,7 @@ class MqttMessageHandler @Inject constructor(
             }
 
             MqttTopicType.SLE_MESSAGE->{
-
+                sharedDataManager.sendSleMessage(message!!)
             }
 
             else -> {}

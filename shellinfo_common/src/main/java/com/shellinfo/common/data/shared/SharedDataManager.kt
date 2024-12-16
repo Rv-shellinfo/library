@@ -87,6 +87,11 @@ class SharedDataManager @Inject constructor() {
     val specialModeCommand: LiveData<BaseMessageMqtt<*>> get() = _specialModeCommand
 
 
+    //SLE message
+    private val _sleMessage = SingleLiveEvent<BaseMessageMqtt<*>>()
+    val sleMessage: LiveData<BaseMessageMqtt<*>> get() = _sleMessage
+
+
 
     // Function to update csa data
     fun sendCsaData(value: CSAMasterData) {
@@ -141,5 +146,9 @@ class SharedDataManager @Inject constructor() {
 
     fun sendDeviceControlCommand(value:BaseMessageMqtt<*>){
         _deviceControlCommand.postValue(value)
+    }
+
+    fun sendSleMessage(value:BaseMessageMqtt<*>){
+        _sleMessage.postValue(value)
     }
 }

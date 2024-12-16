@@ -24,12 +24,6 @@ class Application : Application(),Configuration.Provider{
     lateinit var workerFactory: HiltWorkerFactory
 
 
-
-    override fun onCreate() {
-        super.onCreate()
-        // Hilt will automatically handle the injection of workerFactory here
-    }
-
     @EntryPoint
     @InstallIn(SingletonComponent::class)
     interface HiltWorkerFactoryEntryPoint {
