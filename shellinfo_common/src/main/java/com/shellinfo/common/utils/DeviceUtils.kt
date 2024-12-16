@@ -1,5 +1,6 @@
 package com.shellinfo.common.utils
 
+import abbasi.android.filelogger.FileLogger
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
@@ -25,12 +26,12 @@ object DeviceUtils {
                 md.update(signature.toByteArray())
                 keyHash = Base64.encodeToString(md.digest(), Base64.DEFAULT)
 
-                Timber.d("Key hash value >>> $keyHash")
+                FileLogger.d("Key hash value >>>",keyHash)
 
                 return keyHash.trim()
             }
         } catch (e: Exception) {
-            Timber.e("Key hash value Error>>> $e")
+            FileLogger.e("Key hash value Error>>>",e)
             return keyHash
         }
         return keyHash

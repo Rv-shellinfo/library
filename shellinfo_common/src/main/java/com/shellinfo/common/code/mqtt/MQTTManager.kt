@@ -90,7 +90,11 @@ class MQTTManager @Inject constructor(
         })
 
         //MQTT options
-        val options = MqttConnectOptions()
+        val options = MqttConnectOptions().apply {
+            isAutomaticReconnect = true // Enable automatic reconnection
+            isCleanSession = false      // Keep the session alive
+        }
+
         try {
             mqttClient.connect(options, null, object : IMqttActionListener {
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
@@ -223,7 +227,7 @@ class MQTTManager @Inject constructor(
      * Method to subscribe the topics
      */
     fun subscribeToTopics(){
-        Timber.d("Subscribing the topic","Done")
+        FileLogger.d("Subscribing the topic","Done")
 
         subscribe(MqttTopicType.OTA_UPDATE.name)
         subscribe(MqttTopicType.LOG_STATUS.name)

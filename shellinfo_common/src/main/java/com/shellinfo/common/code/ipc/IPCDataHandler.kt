@@ -105,7 +105,7 @@ class IPCDataHandler @Inject constructor(
             context.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
         }
 
-        Timber.e(TAG,">>>>IPC SERVICE STARTING")
+        FileLogger.e(TAG,">>>>IPC SERVICE STARTING")
 
     }
 
@@ -113,7 +113,7 @@ class IPCDataHandler @Inject constructor(
         override fun onMessageReceived(messageId:Int,message: String) {
             FileLogger.d(TAG, "Received message from payment service: $message")
 
-            Timber.e(TAG,">>>>MESSAGE RECEIVED FROM THE PAYMENT APPLICATION")
+            FileLogger.e(TAG,">>>>MESSAGE RECEIVED FROM THE PAYMENT APPLICATION")
 
             //handling the message
             handleMessage(messageId,message)
@@ -130,11 +130,11 @@ class IPCDataHandler @Inject constructor(
 
                 _isIpcConnected.postValue(true)
 
-                Timber.e(TAG,">>>>REMOTE SERVICE CONNECTION -> SUCCESSFUL")
+                FileLogger.e(TAG,">>>>REMOTE SERVICE CONNECTION -> SUCCESSFUL")
                 // Register the callback to receive messages
                 communicationService?.registerCallback(callback)
             } catch (e: RemoteException) {
-                Timber.e(TAG,">>>>REMOTE SERVICE CONNECTION ERROR -> REMOTE EXCEPTION")
+                FileLogger.e(TAG,">>>>REMOTE SERVICE CONNECTION ERROR -> REMOTE EXCEPTION")
                 e.printStackTrace()
             }
         }
@@ -144,7 +144,7 @@ class IPCDataHandler @Inject constructor(
             communicationService = null
             _isIpcConnected.postValue(false)
             stopIpcService(context)
-            Timber.e(TAG,">>>>REMOTE SERVICE CONNECTION -> DISCONNECTED")
+            FileLogger.e(TAG,">>>>REMOTE SERVICE CONNECTION -> DISCONNECTED")
             startConnection(context)
         }
 
@@ -153,7 +153,7 @@ class IPCDataHandler @Inject constructor(
             bound=false
             communicationService = null
             _isIpcConnected.postValue(false)
-            Timber.e(TAG,">>>>REMOTE SERVICE CONNECTION BINDING DIED-> DISCONNECTED")
+            FileLogger.e(TAG,">>>>REMOTE SERVICE CONNECTION BINDING DIED-> DISCONNECTED")
             startConnection(context)
         }
 
@@ -162,7 +162,7 @@ class IPCDataHandler @Inject constructor(
             bound=false
             communicationService = null
             _isIpcConnected.postValue(false)
-            Timber.e(TAG,">>>>REMOTE SERVICE CONNECTION NULL BINDING-> DISCONNECTED")
+            FileLogger.e(TAG,">>>>REMOTE SERVICE CONNECTION NULL BINDING-> DISCONNECTED")
             startConnection(context)
         }
     }
@@ -180,7 +180,7 @@ class IPCDataHandler @Inject constructor(
                 else -> throw IllegalArgumentException("Unsupported data type: ${data?.javaClass}")
             }
 
-            Timber.e(TAG,">>>>MESSAGE SENDING TO PAYMENT APPLICATION")
+            FileLogger.e(TAG,">>>>MESSAGE SENDING TO PAYMENT APPLICATION")
 
             try {
 
@@ -191,12 +191,12 @@ class IPCDataHandler @Inject constructor(
                 communicationService?.sendData(messageId,jsonString)
             } catch (e: RemoteException) {
 
-                Timber.e(TAG,">>>>MESSAGE SENDING REMOTE EXCEPTION")
+                FileLogger.e(TAG,">>>>MESSAGE SENDING REMOTE EXCEPTION")
                 FileLogger.e("AppB MainActivity", "Failed to send message to service: ${e.message}")
             }
 
         }catch (ex:Exception){
-            Timber.e(TAG,">>>>MESSAGE SENDING OTHER EXCEPTION")
+            FileLogger.e(TAG,">>>>MESSAGE SENDING OTHER EXCEPTION")
             FileLogger.e("AppB MainActivity", "Failed to send message to service: ${ex.message}")
         }
     }
@@ -207,13 +207,13 @@ class IPCDataHandler @Inject constructor(
         try{
 
             if(bound) {
-                Timber.e(TAG, ">>>>IPC SERVICE STOPPED")
+                FileLogger.e(TAG, ">>>>IPC SERVICE STOPPED")
                 context.unbindService(serviceConnection)
                 bound = false
             }
         }catch (ex:Exception){
 
-            Timber.e(TAG, ">>>>IPC SERVICE STOPPED with EXCEPTION")
+            FileLogger.e(TAG, ">>>>IPC SERVICE STOPPED with EXCEPTION")
         }
     }
 
@@ -241,19 +241,19 @@ class IPCDataHandler @Inject constructor(
 
     fun handleMessage(messageId:Int,message:String){
 
-        Timber.e(TAG,">>>>RECEIVED MESSAGE HANDLING STARTED FROM HERE WITH MESSAGE: $messageId")
+        FileLogger.e(TAG,">>>>RECEIVED MESSAGE HANDLING STARTED FROM HERE WITH MESSAGE: $messageId")
 
         when(messageId){
 
             MSG_ID_TRX_DATA_RUPAY_NCMC->{
 
-                Timber.e(TAG,">>>>MESSAGE ID RECEIVED: MSG_ID_TRX_DATA_RUPAY_NCMC")
+                FileLogger.e(TAG,">>>>MESSAGE ID RECEIVED: MSG_ID_TRX_DATA_RUPAY_NCMC")
 
                 // Convert JSON string back to BaseMessage object
                 val baseMessage: BaseMessage<BF200Data>? = convertFromJson<BF200Data>(message,moshi)
 
-                Timber.e(TAG,">>>>MESSAGE SENDING FOR :MSG_ID_TRX_DATA_RUPAY_NCMC")
-                Timber.e(TAG,">>>>MESSAGE TRANSIT VALIDATION START")
+                FileLogger.e(TAG,">>>>MESSAGE SENDING FOR :MSG_ID_TRX_DATA_RUPAY_NCMC")
+                FileLogger.e(TAG,">>>>MESSAGE TRANSIT VALIDATION START")
 
 
                 if (baseMessage != null) {
@@ -414,7 +414,7 @@ class IPCDataHandler @Inject constructor(
 
             STYL_NO_ERROR ->{
 
-                Timber.e(TAG,">>>>STYL NO ERROR BLOCK EXECUTED")
+                FileLogger.e(TAG,">>>>STYL NO ERROR BLOCK EXECUTED")
 
                 //parse STYL reader data
                 val bF200Data = baseMessage.data as BF200Data
@@ -429,7 +429,7 @@ class IPCDataHandler @Inject constructor(
 
                     IPCConstants.RUPAY_PREPAID->{
 
-                        Timber.e(TAG,">>>>RUPAY PREPAID BLOCK EXECUTED")
+                        FileLogger.e(TAG,">>>>RUPAY PREPAID BLOCK EXECUTED")
 
                         //get Rupay data type
                         val dataType = baseMessage.dataType

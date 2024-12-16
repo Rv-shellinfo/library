@@ -352,7 +352,7 @@ class RupayDataHandler @Inject constructor(
         csaMasterGlobal= csaMasterData
 
 
-        Timber.e(TAG,">>>> CSA READ DATA: ${networkCall.toJson(csaMasterData.csaDisplayData!!,
+        FileLogger.e(TAG,">>>> CSA READ DATA: ${networkCall.toJson(csaMasterData.csaDisplayData!!,
             CSADataDisplay::class)}")
 
 
@@ -413,7 +413,7 @@ class RupayDataHandler @Inject constructor(
 
         }else{
 
-            Timber.e(TAG,">>>> DEVICE TYPE NOT SET")
+            FileLogger.e(TAG,">>>> DEVICE TYPE NOT SET")
             return
 
         }
@@ -431,14 +431,14 @@ class RupayDataHandler @Inject constructor(
 
             ENTRY_SIDE -> {
 
-                Timber.e(TAG, ">>>>ENTRY SIDE CODE EXECUTED")
+                FileLogger.e(TAG, ">>>>ENTRY SIDE CODE EXECUTED")
 
                 processEntryCSA(csaMasterData)
             }
 
             EXIT_SIDE -> {
 
-                Timber.e(TAG, ">>>>EXIT SIDE CODE EXECUTED")
+                FileLogger.e(TAG, ">>>>EXIT SIDE CODE EXECUTED")
                 processExitCSA(csaMasterData)
             }
 
@@ -583,14 +583,14 @@ class RupayDataHandler @Inject constructor(
 
                         ENTRY_SIDE -> {
 
-                            Timber.e(TAG, ">>>>ENTRY SIDE OSA CODE EXECUTED")
+                            FileLogger.e(TAG, ">>>>ENTRY SIDE OSA CODE EXECUTED")
 
                             processEntryOSA(osaMasterData)
                         }
 
                         EXIT_SIDE -> {
 
-                            Timber.e(TAG, ">>>>EXIT SIDE OSA CODE EXECUTED")
+                            FileLogger.e(TAG, ">>>>EXIT SIDE OSA CODE EXECUTED")
                             processExitOSA(osaMasterData)
                         }
 
@@ -602,12 +602,12 @@ class RupayDataHandler @Inject constructor(
                 }
 
                 else ->{
-                    Timber.e(TAG,">>>> WRONG DEVICE TYPE TO HANDLE")
+                    FileLogger.e(TAG,">>>> WRONG DEVICE TYPE TO HANDLE")
                     return
                 }
             }
         }else{
-            Timber.e(TAG,">>>> DEVICE TYPE NOT SET")
+            FileLogger.e(TAG,">>>> DEVICE TYPE NOT SET")
             return
         }
 
@@ -655,7 +655,7 @@ class RupayDataHandler @Inject constructor(
         }
 
 
-        Timber.e(TAG,">>>>VALIDATION ERROR CODE: ${csaRawData.validationData.errorCode}")
+        FileLogger.e(TAG,">>>>VALIDATION ERROR CODE: ${csaRawData.validationData.errorCode}")
 
 
         //check for existing error
@@ -763,7 +763,7 @@ class RupayDataHandler @Inject constructor(
         entryValidationRequest.equipmentId = spUtils.getPreference(EQUIPMENT_ID, "4001")
         entryValidationRequest.equipmentGroupId = spUtils.getPreference(EQUIPMENT_GROUP_ID, "4")
 
-        Timber.e(TAG,">>>> ENTRY VALIDATION DATA: ${networkCall.toJson(entryValidationRequest,EntryValidationRequest::class)}")
+        FileLogger.e(TAG,">>>> ENTRY VALIDATION DATA: ${networkCall.toJson(entryValidationRequest,EntryValidationRequest::class)}")
 
         runBlocking {
 
@@ -811,7 +811,7 @@ class RupayDataHandler @Inject constructor(
         if(!osaMasterData.osaBinData!!.generalInfo.getServiceStatus()){
 
             //log for
-            Timber.e(TAG,"OSA Service Inactive go for CSA")
+            FileLogger.e(TAG,"OSA Service Inactive go for CSA")
 
             //if service is not active go for csa deduction
             abortOsaTransaction(osaMasterData)
@@ -846,7 +846,7 @@ class RupayDataHandler @Inject constructor(
         }
 
 
-        Timber.e(TAG,">>>>VALIDATION ERROR CODE: ${osaRawData!!.validationData.errorCode}")
+        FileLogger.e(TAG,">>>>VALIDATION ERROR CODE: ${osaRawData!!.validationData.errorCode}")
 
 
         //check for existing error
@@ -953,7 +953,7 @@ class RupayDataHandler @Inject constructor(
         entryValidationRequest.equipmentId = spUtils.getPreference(EQUIPMENT_ID, "4001")
         entryValidationRequest.equipmentGroupId = spUtils.getPreference(EQUIPMENT_GROUP_ID, "4")
 
-        Timber.e(TAG,">>>> ENTRY VALIDATION DATA: ${networkCall.toJson(entryValidationRequest,EntryValidationRequest::class)}")
+        FileLogger.e(TAG,">>>> ENTRY VALIDATION DATA: ${networkCall.toJson(entryValidationRequest,EntryValidationRequest::class)}")
 
         runBlocking {
 
@@ -1207,7 +1207,7 @@ class RupayDataHandler @Inject constructor(
         }
 
 
-        Timber.e(TAG,">>>>VALIDATION ERROR CODE: ${csaRawData.validationData.errorCode}")
+        FileLogger.e(TAG,">>>>VALIDATION ERROR CODE: ${csaRawData.validationData.errorCode}")
 
 
         //check for existing error
@@ -1380,7 +1380,7 @@ class RupayDataHandler @Inject constructor(
         }
 
 
-        Timber.e(TAG,">>>>VALIDATION ERROR CODE: ${osaRawData.validationData.errorCode}")
+        FileLogger.e(TAG,">>>>VALIDATION ERROR CODE: ${osaRawData.validationData.errorCode}")
 
 
         //check for existing error

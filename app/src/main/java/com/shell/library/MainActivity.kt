@@ -89,6 +89,7 @@ class MainActivity : AppCompatActivity() {
         shellInfoLibrary.start(initData)
 
 
+
         sharedDataManager.zoneData.observe(this,Observer { data ->
             // Handle the observed data
             Log.e("Data Got",">>>> Done")
@@ -99,6 +100,9 @@ class MainActivity : AppCompatActivity() {
         sharedDataManager.isLibraryInit.observe(this, Observer { data ->
             // Handle the observed data
             Log.e("Data Got",">>>> Done")
+
+            //log data
+            shellInfoLibrary.logData("MY TAG","Testing the Tag")
         })
 
 

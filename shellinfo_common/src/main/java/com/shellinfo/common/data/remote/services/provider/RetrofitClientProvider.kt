@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClientProvider {
 
-    private val loggingInterceptor = HttpLoggingInterceptor().apply {
+    private val loggingInterceptor = HttpLoggingInterceptor(CustomInterceptor()).apply {
         level = HttpLoggingInterceptor.Level.BODY
     }
 

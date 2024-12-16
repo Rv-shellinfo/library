@@ -1,5 +1,6 @@
 package com.shellinfo.common.code
 
+import abbasi.android.filelogger.FileLogger
 import android.Manifest
 import android.content.Context
 import android.content.Intent
@@ -20,6 +21,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Observer
 import androidx.work.Configuration
 import androidx.work.WorkManager
+import com.instacart.library.truetime.TrueTime
 import com.jakewharton.threetenabp.AndroidThreeTen
 import com.shellinfo.common.BuildConfig
 import com.shellinfo.common.code.enums.ApiMode
@@ -77,6 +79,7 @@ import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.runBlocking
 import org.eclipse.paho.client.mqttv3.MqttMessage
 import timber.log.Timber
+import java.util.Date
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -180,12 +183,17 @@ class ShellInfoLibrary @Inject constructor(
 
     override fun start(initData: InitData) {
 
+        //start logging
+        startLogging(true, true)
+
         //Date time library init for backward compatibility
         AndroidThreeTen.init(activity)
 
+        //Ntp time
+        initializeTrueTime()
+
         //fetch the dependant initial data
         runBlocking {
-
 
             val fetchData= networkCall.getAllData()
 
@@ -197,8 +205,6 @@ class ShellInfoLibrary @Inject constructor(
                 //observe for mode changes scenarios
                 observeForModeChange()
 
-                //init worker factory
-                //initWorkerFactory()
             }else{
                 sharedDataManager.sendLibraryInit(false)
             }
@@ -247,9 +253,7 @@ class ShellInfoLibrary @Inject constructor(
         }
 
         // Initialize Timber for Debug build
-        if (BuildConfig.DEBUG) {
-            Timber.plant(Timber.DebugTree())
-        }
+        Timber.plant(Timber.DebugTree())
 
 
         //start ipc service
@@ -271,6 +275,18 @@ class ShellInfoLibrary @Inject constructor(
         stopLogging(true,true)
 
         disconnectMqtt()
+    }
+
+
+    private fun initializeTrueTime() {
+        Thread {
+            try {
+                // Initialize with default NTP pool
+                TrueTime.build().initialize()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }.start()
     }
 
     /**
@@ -322,7 +338,7 @@ class ShellInfoLibrary @Inject constructor(
                 }
             }else{
 
-                Timber.e(TAG,"Device Type Not Provided")
+                FileLogger.e(TAG,"Device Type Not Provided")
             }
         })
 
@@ -338,7 +354,7 @@ class ShellInfoLibrary @Inject constructor(
              permissionLauncher = context.registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     if (Environment.isExternalStorageManager()) {
-                        startLogging(true, true)
+
                         mqttManager.connect()
                         context.let { startIpcService(it) }
                     } else {
@@ -353,9 +369,6 @@ class ShellInfoLibrary @Inject constructor(
             permissionsUtils.permissionsState.observe(it, Observer { state ->
                 when (state) {
                     is PermissionsUtils.PermissionsState.Granted -> {
-
-                        //start logging
-                        startLogging(true,true)
 
                         //mqtt connection
                         mqttManager.connect()
@@ -377,7 +390,7 @@ class ShellInfoLibrary @Inject constructor(
 //
 //                            if(isGranted){
 //                                //start logging
-//                                startLogging(true,true)
+    //                                startLogging(true,true)
 //
 //                                //mqtt connection
 //                                mqttManager.connect()
@@ -611,7 +624,7 @@ class ShellInfoLibrary @Inject constructor(
             }
 
             else ->{
-                Timber.e(TAG,">>>NO CSA OSA SELECTED TO FETCH THE DATA")
+                FileLogger.e(TAG,">>>NO CSA OSA SELECTED TO FETCH THE DATA")
                 return
             }
 
@@ -628,7 +641,7 @@ class ShellInfoLibrary @Inject constructor(
         val deviceType = spUtils.getPreference(SpConstants.DEVICE_TYPE,"")
         if(!deviceType.equals(EquipmentType.TOM.name)){
 
-            Timber.e(TAG, "Only TOM Application can Remove Penalty")
+            FileLogger.e(TAG, "Only TOM Application can Remove Penalty")
 
             return
         }
@@ -652,7 +665,7 @@ class ShellInfoLibrary @Inject constructor(
         val deviceType = spUtils.getPreference(SpConstants.DEVICE_TYPE,"")
         if(!deviceType.equals(EquipmentType.TOM.name)){
 
-            Timber.e(TAG, "Only TOM Application can create the Operator Service Area")
+            FileLogger.e(TAG, "Only TOM Application can create the Operator Service Area")
 
             return
         }
@@ -676,7 +689,7 @@ class ShellInfoLibrary @Inject constructor(
         val deviceType = spUtils.getPreference(SpConstants.DEVICE_TYPE,"")
         if(!deviceType.equals(EquipmentType.TOM.name)){
 
-            Timber.e(TAG, "Only TOM Application can create The Passes")
+            FileLogger.e(TAG, "Only TOM Application can create The Passes")
 
             return
         }
@@ -705,7 +718,7 @@ class ShellInfoLibrary @Inject constructor(
         val deviceType = spUtils.getPreference(SpConstants.DEVICE_TYPE,"")
         if(!deviceType.equals(EquipmentType.TOM.name)){
 
-            Timber.e(TAG, "Only TOM Application can create the Operator Service Area")
+            FileLogger.e(TAG, "Only TOM Application can create the Operator Service Area")
 
             return
         }
@@ -757,6 +770,14 @@ class ShellInfoLibrary @Inject constructor(
 
     override fun getCurrentMode(): ModeType {
         return modeManager.getCurrentMode()!!
+    }
+
+    override fun getCurrentTime(): String {
+        if(TrueTime.isInitialized()){
+            return TrueTime.now().toString()
+        }else{
+            return ""
+        }
     }
 
 
@@ -869,14 +890,6 @@ class ShellInfoLibrary @Inject constructor(
             e.printStackTrace()
             null
         }
-    }
-
-    fun initWorkerFactory(){
-        val config = Configuration.Builder()
-            .setWorkerFactory(workerFactory)
-            .build()
-
-        WorkManager.initialize(context, config)
     }
 
 }

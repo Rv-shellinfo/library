@@ -107,4 +107,6 @@ interface ShellInfoProvider {
     fun updatePassValue()
 
     fun getCurrentMode():ModeType
+
+    fun getCurrentTime():String
 }

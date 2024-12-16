@@ -1,5 +1,6 @@
 package com.shellinfo.common.utils
 
+import abbasi.android.filelogger.FileLogger
 import android.content.Context
 import android.util.Base64
 import com.shellinfo.common.utils.DeviceUtils.getDeviceHashKey
@@ -38,7 +39,7 @@ class SecurityUtils @Inject constructor(
 
         } catch (e: Exception) {
             eValue = ""
-            Timber.e("Error in SecurityUtil encrypt method -> ${e.message}")
+            FileLogger.e("Error in SecurityUtil encrypt method ->",e)
         } finally {
             c = null
             valueToEnc = null
@@ -63,7 +64,7 @@ class SecurityUtils @Inject constructor(
 
         } catch (e: Exception) {
             dValue = ""
-            Timber.e("Error in SecurityUtil decrypt method -> ${e.message}")
+            FileLogger.e("Error in SecurityUtil decrypt method ->",e)
         } finally {
             c = null
             decordedValue = null
@@ -82,7 +83,7 @@ class SecurityUtils @Inject constructor(
                 "AES",
             )
         } catch (e: Exception) {
-            Timber.e("Error in SecurityUtil generateKey() method -> ${e.message}")
+            FileLogger.e("Error in SecurityUtil generateKey() method ->",e)
         }
         return key
     }

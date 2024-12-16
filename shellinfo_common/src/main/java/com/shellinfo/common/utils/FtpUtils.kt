@@ -135,7 +135,7 @@ class FtpUtils @Inject constructor(
                 FileLogger.deleteFiles()
 
                 //create new log file
-                //loggerUtil.initLogger(LoggerConfig())
+                loggerUtil.initLogger()
 
             }else{
 

@@ -196,6 +196,9 @@ dependencies {
     //apk installer
     implementation("io.github.solrudev:simpleinstaller:5.0.0")
 
+    //ntp for clock sync
+    implementation("com.github.instacart.truetime-android:library:3.5")
+
 }
 
 

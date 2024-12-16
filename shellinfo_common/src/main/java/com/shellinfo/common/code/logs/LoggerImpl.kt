@@ -12,9 +12,12 @@ import com.shellinfo.common.BuildConfig
 import com.shellinfo.common.code.ConfigMaster
 import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
+import com.shellinfo.common.utils.GlobalCrashHandler
+import com.shellinfo.common.utils.LogUtils
 import com.shellinfo.common.utils.SpConstants
 import timber.log.Timber
 import java.io.File
+import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -58,7 +61,6 @@ class LoggerImpl @Inject constructor(
             .setDefaultTag("TAG")
             .setLogcatEnable(true)
             .setDataFormatterPattern("dd-MM-yyyy-HH:mm:ss")
-            .setRetentionPolicy(RetentionPolicy.TimeToLive(durationInMillis = 1000 * 60 * 60))
             .setStartupData(
                 mapOf(
                     "Application Name" to sharedPreferenceUtil.getPreference(SpConstants.APP_NAME,""),
@@ -74,7 +76,6 @@ class LoggerImpl @Inject constructor(
 
         //init the file logger
         FileLogger.init(ShellInfoLibrary.globalActivityContext,config)
-
     }
 
     override fun startLogging(localLogs:Boolean, serverLogs:Boolean) {
@@ -85,6 +86,9 @@ class LoggerImpl @Inject constructor(
             //init logger
             initLogger()
 
+            // Set the custom global crash handler
+            Thread.setDefaultUncaughtExceptionHandler(GlobalCrashHandler())
+
             //start logging worker to upload the log file to FTP server
             logWorkerStarter.invoke()
 
@@ -92,6 +96,9 @@ class LoggerImpl @Inject constructor(
 
             //init logger
             initLogger()
+
+            // Set the custom global crash handler
+            Thread.setDefaultUncaughtExceptionHandler(GlobalCrashHandler())
         }
 
 
@@ -117,6 +124,8 @@ class LoggerImpl @Inject constructor(
 
         //log normal data
         FileLogger.d(tag, message)
+
+
     }
 
     override fun logError(tag: String, error: Throwable) {

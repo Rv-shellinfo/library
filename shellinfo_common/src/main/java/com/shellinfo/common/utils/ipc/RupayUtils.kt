@@ -1,5 +1,6 @@
 package com.shellinfo.common.utils.ipc
 
+import abbasi.android.filelogger.FileLogger
 import android.util.Log
 import com.shellinfo.common.code.DatabaseCall
 import com.shellinfo.common.code.ShellInfoLibrary
@@ -719,7 +720,7 @@ class RupayUtils @Inject constructor(
 
         }catch (ex:Exception){
 
-            Timber.e("Error",">>> Error in parsing OSA data")
+            FileLogger.e("Error",">>> Error in parsing OSA data")
             ex.printStackTrace()
         }
 
