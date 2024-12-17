@@ -17,6 +17,7 @@ import com.shellinfo.common.code.enums.TicketType
 import com.shellinfo.common.data.local.data.InitData
 import com.shellinfo.common.data.local.data.mqtt.BaseMessageMqtt
 import com.shellinfo.common.data.local.data.mqtt.DeviceControlMessage
+import com.shellinfo.common.data.local.data.mqtt.SleDynamicMessage
 import com.shellinfo.common.data.local.data.mqtt.SpecialModeMessage
 import com.shellinfo.common.data.remote.response.ApiResponse
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
@@ -25,6 +26,7 @@ import com.shellinfo.common.data.remote.response.model.pass.PassRequest
 import com.shellinfo.common.data.remote.response.model.ticket.TicketRequest
 import com.shellinfo.common.data.shared.SharedDataManager
 import dagger.hilt.android.AndroidEntryPoint
+import java.lang.Exception
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -127,6 +129,28 @@ class MainActivity : AppCompatActivity() {
         })
 
 
+        sharedDataManager.sleMessage.observe(this){message->
+
+            // 3. assign incoming message to global message type
+            globalMqttMessage= message
+
+            // 4. cast your message to Device Control Message type
+            val sleMessage = message.data as SleDynamicMessage
+
+        }
+
+        //this for logging
+        shellInfoLibrary.logData("TAG","Message")
+
+        try{
+
+        }catch (ex:Exception){
+
+            //this is for error
+            shellInfoLibrary.logError("TAG",ex)
+        }
+
+
         //2. observable for device control commands
         sharedDataManager.deviceControlCommand.observe(this) { message ->
 
@@ -145,6 +169,7 @@ class MainActivity : AppCompatActivity() {
                     DeviceControlCommandType.OUT_OF_SERVICE_MODE ->{
 
                         // 6. TODO do your code here based on message type
+
                     }
 
                     DeviceControlCommandType.MAINTENANCE_MODE ->{

@@ -113,6 +113,7 @@ data class SleDatabaseMessage(
 @JsonClass(generateAdapter = true)
 data class SleDynamicMessage(
     val message: String,
+    val title:String,
     val cancelable: Boolean,
     val md5FileHash: String,
     val status:String

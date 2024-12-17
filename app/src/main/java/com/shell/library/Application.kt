@@ -17,8 +17,6 @@ import javax.inject.Inject
 @HiltAndroidApp
 class Application : Application(),Configuration.Provider{
 
-    @Inject
-    lateinit var shellInfoLibrary: ShellInfoLibrary
 
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
