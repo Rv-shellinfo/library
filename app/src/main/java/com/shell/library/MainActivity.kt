@@ -77,13 +77,14 @@ class MainActivity : AppCompatActivity() {
         //shellInfoLibrary.setBaseUrl("https://app.tsavaari.com/LTProject/")
         //shellInfoLibrary.seAuthToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJDbGllbnRJZCI6IjUwMDA4ODYxMDMzNDQiLCJDbGllbnRTZWNyZXQiOiI2MjdDRkE2OTMzNDU4QzI4MEUwMjc4NTY1REE2OEE5QUExODUyMzI4IiwiR3JhbnRUeXBlIjoicGFzc3dvcmQiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1lIjoidHNhdmFhcmlfbWVyY2hhbnQiLCJVc2VySWQiOiI1MDAwIiwiQ2xpZW50RW1haWwiOiJ0c2F2YWFyaUBnbWFpbC5jb20iLCJDbGllbnROdW1iZXIiOiI5OTk5OTk5OTk5IiwiQXBwbGljYXRpb25JZCI6IjIwMCIsIk93bmVySW5mbyI6IjIwMCIsImp0aSI6ImY2MTIwYWIzLWNhMTEtNDg0Ni04YzM1LTcxZmI5NTYxMmM5MCIsImV4cCI6MTcxMzYzNjYyOCwiaXNzIjoiTCZUIE1ldHJvIFJhaWwgKEh5ZGVyYWJhZCkgTGltaXRlZCIsImF1ZCI6IkwmVCBNZXRybyBSYWlsIChIeWRlcmFiYWQpIExpbWl0ZWQifQ.xiZCR1LniCGKBokbzh7jHMLpK8w0-X_S3uhVcZoQKcE")
 
-        val initData = InitData(BuildConfig.APPLICATION_ID,
-            "Transit",BuildConfig.VERSION_CODE.toString(),
-            BuildConfig.VERSION_NAME,
-            EquipmentType.TOM,
-            "Transit",
-            Build.SERIAL,
-            ApiMode.PUBLIC,
+        val initData = InitData(
+            appId = BuildConfig.APPLICATION_ID,
+            appName = "Transit",BuildConfig.VERSION_CODE.toString(),
+            appVersionName = BuildConfig.VERSION_NAME,
+            deviceType = EquipmentType.TOM,
+            appType = "Transit",
+            deviceSerial =  Build.SERIAL,
+            apiMode = ApiMode.PUBLIC,
             "")
 
 
@@ -99,13 +100,17 @@ class MainActivity : AppCompatActivity() {
 
 
 
-        sharedDataManager.isLibraryInit.observe(this, Observer { data ->
-            // Handle the observed data
-            Log.e("Data Got",">>>> Done")
+        sharedDataManager.isLibraryInit.observe(this) { data ->
 
-            //log data
-            shellInfoLibrary.logData("MY TAG","Testing the Tag")
-        })
+            data.getContentIfNotHandled()?.let {
+                // Handle the observed data
+                Log.e("Data Got", ">>>> Done")
+
+                //log data
+                shellInfoLibrary.logData("MY TAG", "Testing the Tag")
+            }
+
+        }
 
 
         shellInfoLibrary.getStations()
@@ -129,14 +134,15 @@ class MainActivity : AppCompatActivity() {
         })
 
 
-        sharedDataManager.sleMessage.observe(this){message->
+        sharedDataManager.sleMessage.observe(this){event->
 
-            // 3. assign incoming message to global message type
-            globalMqttMessage= message
+            event.getContentIfNotHandled()?.let { message ->
+                // 3. assign incoming message to global message type
+                globalMqttMessage= message
 
-            // 4. cast your message to Device Control Message type
-            val sleMessage = message.data as SleDynamicMessage
-
+                // 4. cast your message to Device Control Message type
+                val sleMessage = message.data as SleDynamicMessage
+            }
         }
 
         //this for logging
@@ -152,43 +158,42 @@ class MainActivity : AppCompatActivity() {
 
 
         //2. observable for device control commands
-        sharedDataManager.deviceControlCommand.observe(this) { message ->
+        sharedDataManager.deviceControlCommand.observe(this) { event->
 
-                // 3. assign incoming message to global message type
-                 globalMqttMessage= message
+                event.getContentIfNotHandled()?.let { message ->
+                    // 3. assign incoming message to global message type
+                    globalMqttMessage= message
 
-                // 4. cast your message to Device Control Message type
-                val deviceControlMessage = message.data as DeviceControlMessage
+                    // 4. cast your message to Device Control Message type
+                    val deviceControlMessage = message.data as DeviceControlMessage
 
 
-                // 5. check for command type
-                when(DeviceControlCommandType.getDeviceControlCommand(deviceControlMessage.commandTypeId) ){
-                    DeviceControlCommandType.IN_SERVICE_MODE ->{
-                        // 6. TODO do your code here based on message type
+                    // 5. check for command type
+                    when(DeviceControlCommandType.getDeviceControlCommand(deviceControlMessage.commandTypeId) ){
+                        DeviceControlCommandType.IN_SERVICE_MODE ->{
+                            // 6. TODO do your code here based on message type
+                        }
+                        DeviceControlCommandType.OUT_OF_SERVICE_MODE ->{
+
+                            // 6. TODO do your code here based on message type
+
+                        }
+
+                        DeviceControlCommandType.MAINTENANCE_MODE ->{
+
+                        }
+
+                        DeviceControlCommandType.POWER_SAVING_MODE ->{
+
+                        }
+
+                        DeviceControlCommandType.TEST_MODE ->{
+
+                        }
+
+                        else ->{}
                     }
-                    DeviceControlCommandType.OUT_OF_SERVICE_MODE ->{
-
-                        // 6. TODO do your code here based on message type
-
-                    }
-
-                    DeviceControlCommandType.MAINTENANCE_MODE ->{
-
-                    }
-
-                    DeviceControlCommandType.POWER_SAVING_MODE ->{
-
-                    }
-
-                    DeviceControlCommandType.TEST_MODE ->{
-
-                    }
-
-                    else ->{}
                 }
-
-
-
         }
 
 
@@ -198,40 +203,40 @@ class MainActivity : AppCompatActivity() {
 
 
         //2. observable for device control commands
-        sharedDataManager.specialModeCommand.observe(this) { message ->
+        sharedDataManager.specialModeCommand.observe(this) { event->
 
-            // 3. assign incoming message to global message type
-            globalMqttMessage= message
+            event.getContentIfNotHandled()?.let { message ->
+                // 3. assign incoming message to global message type
+                globalMqttMessage= message
 
-            // 4. cast your message to Device Control Message type
-            val specialModeMessage = message.data as SpecialModeMessage
+                // 4. cast your message to Device Control Message type
+                val specialModeMessage = message.data as SpecialModeMessage
 
 
-            // 5. check for command type
-            when(SpecialModesCommandType.getSpecialModeCommand(specialModeMessage.commandTypeId) ){
+                // 5. check for command type
+                when(SpecialModesCommandType.getSpecialModeCommand(specialModeMessage.commandTypeId) ){
 
-                SpecialModesCommandType.EMERGENCY_MODE->{
-                    // 6. TODO do your code here based on message type
+                    SpecialModesCommandType.EMERGENCY_MODE->{
+                        // 6. TODO do your code here based on message type
+                    }
+
+                    SpecialModesCommandType.INCIDENT_MODE->{
+                        // 6. TODO do your code here based on message type
+                    }
+
+                    SpecialModesCommandType.STATION_CLOSE_MODE->{
+
+                    }
+
+                    SpecialModesCommandType.DEVICE_CLOSE_MODE->{
+
+                    }
+
+
+                    else ->{}
                 }
 
-                SpecialModesCommandType.INCIDENT_MODE->{
-                    // 6. TODO do your code here based on message type
-                }
-
-                SpecialModesCommandType.STATION_CLOSE_MODE->{
-
-                }
-
-                SpecialModesCommandType.DEVICE_CLOSE_MODE->{
-
-                }
-
-
-                else ->{}
             }
-
-
-
         }
 
         // 7. After your code execution acknowledge to server
@@ -324,18 +329,22 @@ class MainActivity : AppCompatActivity() {
 
             shellInfoLibrary.getFare(fareRequest)
 
-            sharedDataManager.fareData.observe(this) {
+            sharedDataManager.fareData.observe(this) { event->
 
-                when (it) {
-                    is ApiResponse.Loading -> {}
-                    is ApiResponse.Success -> {
-                        Log.e("Success","Success")
+                event.getContentIfNotHandled()?.let {
+                    when (it) {
+                        is ApiResponse.Loading -> {}
+                        is ApiResponse.Success -> {
+                            Log.e("Success","Success")
+                        }
+                        is ApiResponse.Error -> {
+                            Log.e("Error","Error")
+                        }
+                        else -> {}
                     }
-                    is ApiResponse.Error -> {
-                        Log.e("Error","Error")
-                    }
-                    else -> {}
                 }
+
+
             }
         })
 
@@ -354,18 +363,22 @@ class MainActivity : AppCompatActivity() {
 
             shellInfoLibrary.generateTicket(request)
 
-            sharedDataManager.ticketData.observe(this) {
+            sharedDataManager.ticketData.observe(this) { event->
 
-                when (it) {
-                    is ApiResponse.Loading -> {}
-                    is ApiResponse.Success -> {
-                        Log.e("Success","Success")
+                event.getContentIfNotHandled()?.let {
+                    when (it) {
+                        is ApiResponse.Loading -> {}
+                        is ApiResponse.Success -> {
+                            Log.e("Success","Success")
+                        }
+                        is ApiResponse.Error -> {
+                            Log.e("Error","Error")
+                        }
+                        else -> {}
                     }
-                    is ApiResponse.Error -> {
-                        Log.e("Error","Error")
-                    }
-                    else -> {}
                 }
+
+
             }
         })
 

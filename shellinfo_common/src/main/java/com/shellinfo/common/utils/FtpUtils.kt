@@ -67,7 +67,7 @@ class FtpUtils @Inject constructor(
 
         //device serial
         //val deviceSerial = sharedPreferenceUtil.getPreference(SpConstants.DEVICE_SERIAL, "A123A")
-        val deviceSerial = "A123A"
+        val deviceSerial = sharedPreferenceUtil.getPreference(SpConstants.DEVICE_SERIAL, "A123A")
 
         //current date
         val currentDate = timestampFormat.format(Date())
@@ -105,11 +105,19 @@ class FtpUtils @Inject constructor(
                 ftpClient.setFileType(FTP.BINARY_FILE_TYPE)
 
                 //check if directory available or not if not then create one
-                if(!ftpClient.changeWorkingDirectory(dirPath1)){
-                    !ftpClient.makeDirectory(dirPath1)
-                    !ftpClient.makeDirectory(dirPath2)
+                val pathFiles = ftpClient.listFiles(dirPath1)
+                val pathFiles2 = ftpClient.listFiles(dirPath2)
 
+
+                if(pathFiles.isEmpty()){
+                    !ftpClient.makeDirectory(dirPath1)
                 }
+
+                //check if directory available or not if not then create one
+                if(pathFiles2.isEmpty()){
+                    !ftpClient.makeDirectory(dirPath2)
+                }
+
 
                 //upload every file on server
                 for (file in filesInDirectory) {
