@@ -5,6 +5,7 @@ import android.os.Build
 import android.os.Environment
 import android.util.Log
 import com.shellinfo.common.code.ConfigMaster
+import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.code.enums.EquipmentType
 import com.shellinfo.common.code.logs.LoggerImpl
 import com.shellinfo.common.code.mqtt.MQTTManager
@@ -219,15 +220,14 @@ class FtpUtils @Inject constructor(
                     ftpClient.setFileType(FTP.BINARY_FILE_TYPE)
 
 
-                    val folder = File(Environment.getExternalStorageDirectory(),"/transit_app_build")
-
-                    // Create the folder if it doesn't exist
-                    if (!folder.exists()) {
-                        folder.mkdirs()
+                    // Create the directory if it doesn't exist
+                    val directory = File(ShellInfoLibrary.globalActivityContext.getExternalFilesDir(null),"/build")
+                    if (!directory.exists()) {
+                        directory.mkdirs()
                     }
 
                     //create local file if not exist and delete all other apk files
-                    val localFile= File(folder,localFilePath!!)
+                    val localFile= File(directory,localFilePath!!)
 
                     //if already exist then delete the file and create new else create new
                     if(localFile.exists()){
@@ -258,7 +258,7 @@ class FtpUtils @Inject constructor(
                     outputStream.close()
 
                     if (success) {
-                        println("File downloaded successfully.")
+                        FileLogger.i(TAG,"File downloaded successfully.")
 
                         //saving the file name in the preference
                         sharedPreferenceUtil.savePreference(SpConstants.NEW_APK_FILE_NAME,localFile.name)

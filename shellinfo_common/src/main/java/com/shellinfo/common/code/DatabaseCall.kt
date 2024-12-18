@@ -10,9 +10,7 @@ import com.shellinfo.common.data.local.db.entity.ZoneTable
 import com.shellinfo.common.data.local.db.repository.DbRepository
 import com.shellinfo.common.data.shared.SharedDataManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine

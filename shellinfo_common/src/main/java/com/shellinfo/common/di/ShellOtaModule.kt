@@ -27,8 +27,9 @@ object ShellOtaModule {
     @Singleton
     @Provides
     fun provideApkInstaller(
-        @ApplicationContext context: Context
-    )= OtaInstaller(context)
+        @ApplicationContext context: Context,
+        sharedPreferenceUtil: SharedPreferenceUtil
+    )= OtaInstaller(context,sharedPreferenceUtil)
 
     @Singleton
     @Provides

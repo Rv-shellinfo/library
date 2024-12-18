@@ -26,10 +26,11 @@ class MqttOtaHandler @Inject constructor(
     fun handleOta(otaData:OtaUpdateMessage){
 
         //compare version before downloading and installing the new version
-        if(sharedPreferenceUtil.getPreference(SpConstants.APP_VERSION_CODE,1) < otaData.version.toInt()){
-
+        if(sharedPreferenceUtil.getPreference(SpConstants.APP_SERVER_VERSION,1) < otaData.version.toInt()){
             //download the updated build
             downloadBuild(otaData)
+        }else{
+            FileLogger.d("OTA","LATEST APP ALREADY INSTALLED")
         }
     }
 
@@ -37,23 +38,5 @@ class MqttOtaHandler @Inject constructor(
     private fun downloadBuild(otaData:OtaUpdateMessage){
 
         apkDownloadWorkerStarter.invoke(otaData.ftpPath,otaData.fileName,otaData.version.toInt())
-
-//        ftpUtils.downloadUpdatedApk(otaData.ftpPath,otaData.fileName,otaData.version.toInt()){
-//
-//            //file path of the newly downloaded apk file
-//            val apkFilePath = it
-//
-//            //check if file exist or not
-//            val fileNew = File(apkFilePath)
-//            if (fileNew.exists()) {
-//
-//                installer.installNewApk(fileNew)
-//
-//            }else{
-//
-//                FileLogger.e("File Not Exist","Downloaded file $apkFilePath not exist")
-//            }
-//
-//        }
     }
 }

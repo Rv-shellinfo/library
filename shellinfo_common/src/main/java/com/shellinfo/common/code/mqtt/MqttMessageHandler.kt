@@ -12,10 +12,12 @@ import com.shellinfo.common.code.mqtt.topic_handler.modes.MqttSpecialModesHandle
 import com.shellinfo.common.data.local.data.mqtt.BaseMessageMqtt
 import com.shellinfo.common.data.local.data.mqtt.FirmwareUpdateMessage
 import com.shellinfo.common.data.local.data.mqtt.LogStatusMessage
+import com.shellinfo.common.data.local.data.mqtt.MqttData
 import com.shellinfo.common.data.local.data.mqtt.OtaUpdateMessage
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.shared.SharedDataManager
 import com.shellinfo.common.utils.SpConstants
+import com.squareup.moshi.JsonAdapter
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -29,7 +31,8 @@ class MqttMessageHandler @Inject constructor(
     private val mqttFirmwareHandler: MqttFirmwareHandler,
     private val mqttLogHandler: MqttLogHandler,
     private val mqttParamsHandler: MqttParamsHandler,
-    private val sharedDataManager: SharedDataManager
+    private val sharedDataManager: SharedDataManager,
+    private val mqttMessageAdapter: JsonAdapter<BaseMessageMqtt<MqttData>>,
 ) {
 
     //mqtt manager
@@ -53,6 +56,13 @@ class MqttMessageHandler @Inject constructor(
         when(topic){
 
             MqttTopicType.OTA_UPDATE ->{
+                //convert message to json string
+                val jsonString = mqttMessageAdapter.toJson(message)
+
+                //save message
+                spUtils.savePreference(SpConstants.UPDATE_ACK_MESSAGE,jsonString)
+
+                //handle ota message
                 mqttOtaHandler.handleOta(message?.data as OtaUpdateMessage)
             }
 

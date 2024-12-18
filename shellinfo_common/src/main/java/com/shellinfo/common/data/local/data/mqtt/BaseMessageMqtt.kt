@@ -4,7 +4,7 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class BaseMessageMqtt<out T:MqttData>(
-    val message: String,
+    var message: String,
     val messageId: Int,
     val equipmentGroupId: String,
     val equipmentGroupName: String,

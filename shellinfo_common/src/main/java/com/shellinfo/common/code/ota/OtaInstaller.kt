@@ -8,15 +8,23 @@ import android.content.pm.PackageInstaller
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
+import android.os.Process
 import android.util.Log
 import com.shellinfo.common.R
 import com.shellinfo.common.code.ShellInfoLibrary
-import io.github.solrudev.simpleinstaller.apksource.ApkSource
-import io.github.solrudev.simpleinstaller.data.ConfirmationStrategy
-import io.github.solrudev.simpleinstaller.data.InstallResult
-import io.github.solrudev.simpleinstaller.data.notification
-import io.github.solrudev.simpleinstaller.installPackage
+import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
+import com.shellinfo.common.utils.SpConstants
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import ru.solrudev.ackpine.DisposableSubscriptionContainer
+import ru.solrudev.ackpine.installer.parameters.InstallParameters
+import ru.solrudev.ackpine.installer.parameters.InstallerType
+import ru.solrudev.ackpine.session.Session
+import ru.solrudev.ackpine.session.SessionResult
+import ru.solrudev.ackpine.session.await
+import ru.solrudev.ackpine.session.parameters.Confirmation
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -24,33 +32,106 @@ import java.io.InputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.system.exitProcess
 
 @Singleton
 class OtaInstaller @Inject constructor(
-    private val context:Context
+    private val context:Context,
+    private val spUtil: SharedPreferenceUtil
 ){
 
     private val TAG = this.javaClass.simpleName
 
 
-    @Throws(IOException::class)
-    fun installPackage( inputStream: InputStream, packageName: String, uri:File): Boolean {
 
-        val packageInstaller = io.github.solrudev.simpleinstaller.PackageInstaller
-        runBlocking {
-            val result =packageInstaller.installPackage(uri){
-                confirmationStrategy = ConfirmationStrategy.IMMEDIATE
-                notification {
-                    title = "Notification title"
-                    contentText = "Notification text"
-                }
-            }
 
-            when (result) {
-                InstallResult.Success -> println("Install succeeded.")
-                is InstallResult.Failure -> println(result.cause)
-            }
+    suspend fun installPackage(uri:File): Boolean {
+
+        val packageInstallerNew = ru.solrudev.ackpine.installer.PackageInstaller.getInstance(ShellInfoLibrary.globalActivityContext)
+
+        // Step 1: Get the URI of the APK file
+        val apkUri: Uri = Uri.fromFile(uri)
+
+        // Step 2: Configure installation parameters
+        val installParameters = InstallParameters.Builder(apkUri)
+            .setRequireUserAction(false) // Silent install (if possible)
+            .setInstallerType(InstallerType.SESSION_BASED)
+            .setConfirmation(Confirmation.IMMEDIATE)
+            .build()
+
+
+        try {
+
+            val restartIntent = Intent(context, AppRestartReceiver::class.java)
+            context.sendBroadcast(restartIntent)
+
+            spUtil.savePreference(SpConstants.IS_APP_UPDATED,true)
+
+            packageInstallerNew.createSession(installParameters).await()
+
+//            CoroutineScope(Dispatchers.IO).launch {
+//                try {
+//                    val result = packageInstallerNew.createSession(installParameters).await()
+//                    Log.d("UpdateInstaller", "Installation session result: $result")
+//                    // Proceed with app restart logic here
+//                } catch (e: Exception) {
+//                    Log.e("UpdateInstaller", "Error during installation session", e)
+//                }
+//            }
+//            val session = packageInstallerNew.createSession(installParameters)
+//
+//            session.addProgressListener(DisposableSubscriptionContainer()){
+//                    sessionId, progress ->
+//                    Log.e("Progress", ""+progress.progress)
+//            }
+
+//            when (packageInstallerNew.createSession(installParameters).await()) {
+//
+//                is SessionResult.Success->{
+//                    Log.e("Success","Success")
+//                }
+//                is SessionResult.Error->{
+//                    Log.e("Error","Error")
+//                }
+//
+//                else ->{
+//
+//                    Log.e("Error","Else")
+//                    // Restart the app after logging (optional)
+//                    val intent = Intent(ShellInfoLibrary.globalActivityContext, ShellInfoLibrary.globalActivityContext::class.java)
+//                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+//                    ShellInfoLibrary.globalActivityContext.startActivity(intent)
+//
+//                    // Kill the current process to avoid the system's default crash dialog
+//                    Process.killProcess(Process.myPid())
+//                    exitProcess(0)
+//                }
+//            }
+
+        } catch (cancellationException: CancellationException) {
+            println("Cancelled")
+            Log.e("Error","cancellationException")
+            throw cancellationException
+        } catch (exception: Exception) {
+            Log.e("Error","exception")
+            println(exception)
         }
+
+//        val packageInstaller = io.github.solrudev.simpleinstaller.PackageInstaller
+//        runBlocking {
+//            val result =packageInstaller.installPackage(uri){
+//                confirmationStrategy = ConfirmationStrategy.IMMEDIATE
+//                notification {
+//                    title = "Notification title"
+//                    contentText = "Notification text"
+//                }
+//            }
+//
+//            when (result) {
+//                InstallResult.Success -> println("Install succeeded.")
+//                is InstallResult.Failure -> println(result.cause)
+//            }
+//        }
 
 
 //        val installParams:InstallParameters =InstallParameters()

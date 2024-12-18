@@ -51,7 +51,7 @@ class MqttDeviceControlHandler @Inject constructor(
         }
 
         //send back mqtt ack
-        mqttManager.sendMqttAck(message)
+        //mqttManager.sendMqttAck(message)
     }
 
     fun setInServiceMode(message:DeviceControlMessage){

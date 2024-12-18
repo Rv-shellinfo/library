@@ -120,8 +120,9 @@ object ShellMqttModule {
                                   mqttSpecialModesHandler: MqttSpecialModesHandler, mqttDeviceControlHandler: MqttDeviceControlHandler,
                                   mqttConfigHandler: MqttConfigHandler, mqttFirmwareHandler: MqttFirmwareHandler,
                                   mqttLogHandler: MqttLogHandler, mqttParamsHandler: MqttParamsHandler,
-                                  sharedDataManager: SharedDataManager) =
-        MqttMessageHandler(sharedPreferenceUtil,mqttOtaHandler,mqttSpecialModesHandler,mqttDeviceControlHandler,mqttConfigHandler,mqttFirmwareHandler,mqttLogHandler,mqttParamsHandler,sharedDataManager)
+                                  sharedDataManager: SharedDataManager,
+                                  mqttMessageAdapter: JsonAdapter<BaseMessageMqtt<MqttData>>,) =
+        MqttMessageHandler(sharedPreferenceUtil,mqttOtaHandler,mqttSpecialModesHandler,mqttDeviceControlHandler,mqttConfigHandler,mqttFirmwareHandler,mqttLogHandler,mqttParamsHandler,sharedDataManager,mqttMessageAdapter)
 
     @Singleton
     @Provides

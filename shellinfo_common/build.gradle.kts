@@ -103,6 +103,8 @@ repositories {
     }
 }
 
+
+
 // Apply the standalone publish.gradle script
 //apply(from = "publish.gradle")
 
@@ -194,12 +196,15 @@ dependencies {
     debugImplementation("com.github.amitshekhariitbhu.Android-Debug-Database:debug-db:1.0.7")
 
     //apk installer
-    implementation("io.github.solrudev:simpleinstaller:5.0.0")
+    implementation("ru.solrudev.ackpine:ackpine-core:0.5.1")
+    implementation("ru.solrudev.ackpine:ackpine-ktx:0.5.1")
+
 
     //ntp for clock sync
     implementation("com.github.instacart.truetime-android:library:3.5")
 
 }
+
 
 
 

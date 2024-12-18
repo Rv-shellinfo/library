@@ -104,6 +104,11 @@ object SpConstants{
     //Current Mode
     const val CURRENT_MODE= "CURRENT_MODE"
 
+    //OTA keys
+    const val IS_APP_UPDATED= "IS_APP_UPDATED"
+    const val UPDATE_ACK_MESSAGE="UPDATE_ACK_MESSAGE"
+    const val APP_SERVER_VERSION="APP_SERVER_VERSION"
+
 
 }
 

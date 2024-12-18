@@ -8,8 +8,10 @@ import com.shellinfo.common.code.enums.MqttAckTopicType
 import com.shellinfo.common.code.enums.MqttTopicType
 import com.shellinfo.common.data.local.data.mqtt.BaseMessageMqtt
 import com.shellinfo.common.data.local.data.mqtt.MqttData
+import com.shellinfo.common.data.local.data.mqtt.OtaUpdateMessage
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.utils.DateUtils
+import com.shellinfo.common.utils.SpConstants
 import com.squareup.moshi.JsonAdapter
 import info.mqtt.android.service.Ack
 import info.mqtt.android.service.MqttAndroidClient
@@ -58,7 +60,7 @@ class MQTTManager @Inject constructor(
         mqttClient.setCallback(object : MqttCallback {
             override fun messageArrived(topic: String?, message: MqttMessage?) {
 
-                //log for mqtt connection success
+                //log for mqtt message receive
                 FileLogger.d(TAG,"MQTT MESSAGE ARRIVED FOR TOPIC -> $topic")
 
                 try {
@@ -92,7 +94,7 @@ class MQTTManager @Inject constructor(
         //MQTT options
         val options = MqttConnectOptions().apply {
             isAutomaticReconnect = true // Enable automatic reconnection
-            isCleanSession = false      // Keep the session alive
+            isCleanSession = true      // Keep the session alive
         }
 
         try {
@@ -109,6 +111,21 @@ class MQTTManager @Inject constructor(
 
                     //method to subscribe to topics
                     subscribeToTopics()
+
+                    //check if app is restarted with due to update
+                    if(sharedPreferenceUtil.getPreference(SpConstants.IS_APP_UPDATED,false)){
+
+                        //get saved ota message to send ack to the server
+                        val otaMessage= sharedPreferenceUtil.getPreference(SpConstants.UPDATE_ACK_MESSAGE,"")
+
+                        if(otaMessage.isNotEmpty()){
+                            sharedPreferenceUtil.savePreference(SpConstants.IS_APP_UPDATED,false)
+                            val baseMessage= mqttMessageAdapter.fromJson(otaMessage)
+                            val otaData = baseMessage?.data as OtaUpdateMessage
+                            sharedPreferenceUtil.savePreference(SpConstants.APP_SERVER_VERSION,otaData.version.toInt())
+                            sendMqttAck(baseMessage)
+                        }
+                    }
                 }
 
                 override fun onFailure(asyncActionToken: IMqttToken?, exception: Throwable?) {
@@ -127,7 +144,7 @@ class MQTTManager @Inject constructor(
     /**
      * Method to subscribe the topic
      */
-    fun subscribe(topic: String, qos: Int = 1) {
+    fun subscribe(topic: String, qos: Int = 0) {
         try {
             mqttClient.subscribe(topic, qos, null, object : IMqttActionListener {
                 override fun onSuccess(asyncActionToken: IMqttToken?) {
@@ -247,10 +264,16 @@ class MQTTManager @Inject constructor(
     fun sendMqttAck(message:BaseMessageMqtt<*>){
 
         //updated base message with current date time
-        val updatedMessage= message.copy(activationDateTime = DateUtils.getSysDateTime())
+        var updatedMessage= message.copy(activationDateTime = DateUtils.getSysDateTime())
+
+        //update the message type string
+        updatedMessage.message = MqttAckTopicType.fromAckTopic(updatedMessage.messageId)!!.name
 
         //convert message to json string
         val jsonString = mqttMessageAdapter.toJson(updatedMessage)
+
+        //log ack message
+        FileLogger.i("ACK_MESSAGE",jsonString)
 
         //publish the message for ack
         publish(MqttAckTopicType.fromAckTopic(updatedMessage.messageId)!!.name,jsonString)
