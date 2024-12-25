@@ -105,4 +105,21 @@
         android:layout_rowWeight="1"
         android:text="Get Bitmap" />
 
+    <Button
+        android:id="@+id/btnGetStationData"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_columnWeight="1"
+        android:layout_rowWeight="1"
+        android:text="Get Stations Data" />
+
+    <androidx.appcompat.widget.AppCompatImageView
+        android:id="@+id/tktBarcode"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_columnWeight="1"
+        android:layout_rowWeight="1"
+         />
+
+
 </GridLayout>

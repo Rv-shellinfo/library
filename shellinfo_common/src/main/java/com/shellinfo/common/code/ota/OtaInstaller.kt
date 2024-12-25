@@ -55,7 +55,7 @@ class OtaInstaller @Inject constructor(
         // Step 2: Configure installation parameters
         val installParameters = InstallParameters.Builder(apkUri)
             .setRequireUserAction(false) // Silent install (if possible)
-            .setInstallerType(InstallerType.SESSION_BASED)
+            .setInstallerType(InstallerType.DEFAULT)
             .setConfirmation(Confirmation.IMMEDIATE)
             .build()
 

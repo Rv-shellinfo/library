@@ -6,6 +6,7 @@ import android.util.Log
 import android.view.View
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.AppCompatImageView
 import androidx.lifecycle.Observer
 import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.code.enums.ApiMode
@@ -50,6 +51,8 @@ class MainActivity : AppCompatActivity() {
     lateinit var btnGetFare:Button;
     lateinit var btnGenerateTicket:Button;
     lateinit var btnGetBitmap:Button;
+    lateinit var btnGetStationData:Button;
+    lateinit var tktBarcode:AppCompatImageView;
 
 
     //1. global mqtt message
@@ -72,6 +75,8 @@ class MainActivity : AppCompatActivity() {
         btnGetFare= findViewById(R.id.btnGetFare)
         btnGenerateTicket= findViewById(R.id.btnGenerateTicket)
         btnGetBitmap= findViewById(R.id.btnGetBitmap)
+        btnGetStationData= findViewById(R.id.btnGetStationData)
+        tktBarcode= findViewById(R.id.tktBarcode)
 
         //shellInfoLibrary.setApiMode(ApiMode.PUBLIC)
         //shellInfoLibrary.setBaseUrl("https://app.tsavaari.com/LTProject/")
@@ -113,12 +118,6 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-        shellInfoLibrary.getStations()
-
-        sharedDataManager.stationData.observe(this, Observer { data ->
-            // Handle the observed data
-            Log.e("Data Got",">>>> Done")
-        })
 
 
         sharedDataManager.csaData.observe(this, Observer { data ->
@@ -350,7 +349,7 @@ class MainActivity : AppCompatActivity() {
 
         btnGenerateTicket.setOnClickListener(View.OnClickListener {
             val request = TicketRequest(
-                merchantOrderId = "123456",
+                merchantOrderId = "999991",
                 merchantId = "2000886106344",
                 fromStationId = "0301",
                 toStationid = "0302",
@@ -369,6 +368,8 @@ class MainActivity : AppCompatActivity() {
                     when (it) {
                         is ApiResponse.Loading -> {}
                         is ApiResponse.Success -> {
+                            val bitmap = shellInfoLibrary.getBarcode(it.data!!.tickets.get(0),50,50)
+                            tktBarcode.setImageBitmap(bitmap)
                             Log.e("Success","Success")
                         }
                         is ApiResponse.Error -> {
@@ -387,6 +388,20 @@ class MainActivity : AppCompatActivity() {
             //val bitmap = shellInfoLibrary.getBarcode()
         })
 
+
+        btnGetStationData.setOnClickListener {
+            shellInfoLibrary.getStations()
+        }
+
+        sharedDataManager.stationData.observe(this) { data ->
+
+            data.getContentIfNotHandled()?.let { it ->
+                // Handle the observed data
+                Log.e("Data Got", ">>>> Done"+it)
+
+            }
+
+        }
 
 
         //shellInfoLibrary.mqttConnect()

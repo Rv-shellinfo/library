@@ -1,4 +1,4 @@
-package com.shellinfo.common.data.local.db.dao
+ package com.shellinfo.common.data.local.db.dao
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -21,4 +21,13 @@ interface TicketBackupDao {
 
     @Query("DELETE FROM TICKET_BACKUP_TABLE")
     suspend fun deleteAll()
+
+//    @Query("SELECT COUNT(*) AS recordCount, IFNULL(SUM(PENALTY_AMOUNT), 0) AS totalPenalty " +
+//                "FROM TICKET_BACKUP_TABLE " +
+//                "WHERE PAYMENT_MODE_TICKET IN (:paymentModes) AND TRANSACTION_TYPE_ID = :transactionTypeId"
+//    )
+//    suspend fun getCountAndSumForCondition(
+//        paymentModes: List<Int>, // Accepts a list of payment modes
+//        transactionTypeId: Int
+//    ): CountAndSumResult
 }

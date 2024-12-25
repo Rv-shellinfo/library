@@ -31,7 +31,7 @@ class BarcodeUtils @Inject constructor(
             //create bit matrix for bar code generation
             val bitMatrix: BitMatrix = MultiFormatWriter().encode(
                 qrData,
-                BarcodeFormat.CODE_128,
+                BarcodeFormat.QR_CODE,
                 width!!, // Width of the barcode
                 height!! // Height of the barcode
             )
