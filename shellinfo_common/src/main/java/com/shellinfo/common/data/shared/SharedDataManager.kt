@@ -26,130 +26,130 @@ class SharedDataManager @Inject constructor() {
 
 
     // Library properly init indicator
-    private val _isLibraryInit = SingleLiveEvent<Event<Boolean>>()
-    val isLibraryInit: LiveData<Event<Boolean>> get() = _isLibraryInit
+    private val _isLibraryInit = SingleLiveEvent<Boolean>()
+    val isLibraryInit: LiveData<Boolean> get() = _isLibraryInit
 
     // Get all station data
-    private val _stationData = SingleLiveEvent<Event<List<StationsTable>>>()
-    val stationData: LiveData<Event<List<StationsTable>>> get() = _stationData
+    private val _stationData = SingleLiveEvent<List<StationsTable>>()
+    val stationData: LiveData<List<StationsTable>> get() = _stationData
 
     // Get all station data
-    private val _singleStationData = SingleLiveEvent<Event<StationsTable>>()
-    val singleStationData: LiveData<Event<StationsTable>> get() = _singleStationData
+    private val _singleStationData = SingleLiveEvent<StationsTable>()
+    val singleStationData: LiveData<StationsTable> get() = _singleStationData
 
     // Get trip limits data
-    private val _tripLimitData = SingleLiveEvent<Event<List<TripLimitTable>>>()
-    val tripLimitData: LiveData<Event<List<TripLimitTable>>> get() = _tripLimitData
+    private val _tripLimitData = SingleLiveEvent<List<TripLimitTable>>()
+    val tripLimitData: LiveData<List<TripLimitTable>> get() = _tripLimitData
 
     // Get daily limits data
-    private val _dailyLimitData = SingleLiveEvent<Event<List<DailyLimitTable>>>()
-    val dailyLimitData: LiveData<Event<List<DailyLimitTable>>> get() = _dailyLimitData
+    private val _dailyLimitData = SingleLiveEvent<List<DailyLimitTable>>()
+    val dailyLimitData: LiveData<List<DailyLimitTable>> get() = _dailyLimitData
 
     // Get zone data
-    private val _zoneData = SingleLiveEvent<Event<List<ZoneTable>>>()
-    val zoneData: LiveData<Event<List<ZoneTable>>> get() = _zoneData
+    private val _zoneData = SingleLiveEvent<List<ZoneTable>>()
+    val zoneData: LiveData<List<ZoneTable>> get() = _zoneData
 
     //Get Pass data
-    private val _passData = SingleLiveEvent<Event<List<PassTable>>>()
-    val passData: LiveData<Event<List<PassTable>>> get() = _passData
+    private val _passData = SingleLiveEvent<List<PassTable>>()
+    val passData: LiveData<List<PassTable>> get() = _passData
 
 
     // Private mutable live data
-    private val _csaData = SingleLiveEvent<Event<CSAMasterData?>>()
+    private val _csaData = SingleLiveEvent<CSAMasterData?>()
 
     // Public immutable live data
-    val csaData: LiveData<Event<CSAMasterData?>> get() = _csaData
+    val csaData: LiveData<CSAMasterData?> get() = _csaData
 
 
     // Private mutable live data
-    private val _osaData = SingleLiveEvent<Event<OSAMasterData?>>()
+    private val _osaData = SingleLiveEvent<OSAMasterData?>()
 
     // Public immutable live data
-    val osaData: LiveData<Event<OSAMasterData?>> get() = _osaData
+    val osaData: LiveData<OSAMasterData?> get() = _osaData
 
 
     // Fare data
-    private val _fareData = SingleLiveEvent<Event<ApiResponse<List<FareResponse?>>>>()
-    val fareData: LiveData<Event<ApiResponse<List<FareResponse?>>>> get() = _fareData
+    private val _fareData = SingleLiveEvent<ApiResponse<List<FareResponse?>>>()
+    val fareData: LiveData<ApiResponse<List<FareResponse?>>> get() = _fareData
 
 
     //Generate Ticket
-    private val _ticketData = SingleLiveEvent<Event<ApiResponse<TicketResponse?>>>()
-    val ticketData: LiveData<Event<ApiResponse<TicketResponse?>>> get() = _ticketData
+    private val _ticketData = SingleLiveEvent<ApiResponse<TicketResponse?>>()
+    val ticketData: LiveData<ApiResponse<TicketResponse?>> get() = _ticketData
 
 
     //device control commands
-    private val _deviceControlCommand = SingleLiveEvent<Event<BaseMessageMqtt<*>>>()
-    val deviceControlCommand: LiveData<Event<BaseMessageMqtt<*>>> get() = _deviceControlCommand
+    private val _deviceControlCommand = SingleLiveEvent<BaseMessageMqtt<*>>()
+    val deviceControlCommand: LiveData<BaseMessageMqtt<*>> get() = _deviceControlCommand
 
 
     //special mode commands
-    private val _specialModeCommand = SingleLiveEvent<Event<BaseMessageMqtt<*>>>()
-    val specialModeCommand: LiveData<Event<BaseMessageMqtt<*>>> get() = _specialModeCommand
+    private val _specialModeCommand = SingleLiveEvent<BaseMessageMqtt<*>>()
+    val specialModeCommand: LiveData<BaseMessageMqtt<*>> get() = _specialModeCommand
 
 
     //SLE message
-    private val _sleMessage = SingleLiveEvent<Event<BaseMessageMqtt<*>>>()
-    val sleMessage: LiveData<Event<BaseMessageMqtt<*>>> get() = _sleMessage
+    private val _sleMessage = SingleLiveEvent<BaseMessageMqtt<*>>()
+    val sleMessage: LiveData<BaseMessageMqtt<*>>get() = _sleMessage
 
 
 
     // Function to update csa data
     fun sendCsaData(value: CSAMasterData) {
-        _csaData.postValue(Event(value))
+        _csaData.postValue(value)
 
     }
 
     // Function to update and send osa data
     fun sendOsaData(value: OSAMasterData) {
-        _osaData.postValue(Event(value))
+        _osaData.postValue(value)
     }
 
     fun sendLibraryInit(value: Boolean) {
-        _isLibraryInit.postValue(Event(value))
+        _isLibraryInit.postValue(value)
     }
 
     fun sendStationsData(value: List<StationsTable>) {
-        _stationData.postValue(Event(value))
+        _stationData.postValue(value)
     }
 
     fun sendSingleStationData(value: StationsTable) {
-        _singleStationData.postValue(Event(value))
+        _singleStationData.postValue(value)
     }
 
     fun sendPassData(value: List<PassTable>) {
-        _passData.postValue(Event(value))
+        _passData.postValue(value)
     }
 
     fun sendDailyLimitsData(value: List<DailyLimitTable>) {
-        _dailyLimitData.postValue(Event(value))
+        _dailyLimitData.postValue(value)
     }
 
     fun sendTripLimitData(value: List<TripLimitTable>) {
-        _tripLimitData.postValue(Event(value))
+        _tripLimitData.postValue(value)
     }
 
     fun sendZoneData(value: List<ZoneTable>) {
-        _zoneData.postValue(Event(value))
+        _zoneData.postValue(value)
     }
 
     fun sendFareData(value:ApiResponse<List<FareResponse>>){
-        _fareData.postValue(Event(value))
+        _fareData.postValue(value)
     }
 
     fun sendTicketData(value:ApiResponse<TicketResponse>){
-        _ticketData.postValue(Event(value))
+        _ticketData.postValue(value)
     }
 
     fun sendSpecialModes(value:BaseMessageMqtt<*>){
-        _specialModeCommand.postValue(Event(value))
+        _specialModeCommand.postValue(value)
     }
 
     fun sendDeviceControlCommand(value:BaseMessageMqtt<*>){
-        _deviceControlCommand.postValue(Event(value))
+        _deviceControlCommand.postValue(value)
     }
 
     fun sendSleMessage(value:BaseMessageMqtt<*>){
-        _sleMessage.postValue(Event(value))
+        _sleMessage.postValue(value)
     }
 }

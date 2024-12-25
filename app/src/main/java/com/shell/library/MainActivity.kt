@@ -106,14 +106,12 @@ class MainActivity : AppCompatActivity() {
 
 
         sharedDataManager.isLibraryInit.observe(this) { data ->
-
-            data.getContentIfNotHandled()?.let {
                 // Handle the observed data
                 Log.e("Data Got", ">>>> Done")
 
                 //log data
                 shellInfoLibrary.logData("MY TAG", "Testing the Tag")
-            }
+
 
         }
 
@@ -133,15 +131,15 @@ class MainActivity : AppCompatActivity() {
         })
 
 
-        sharedDataManager.sleMessage.observe(this){event->
+        sharedDataManager.sleMessage.observe(this){message->
 
-            event.getContentIfNotHandled()?.let { message ->
+
                 // 3. assign incoming message to global message type
                 globalMqttMessage= message
 
                 // 4. cast your message to Device Control Message type
                 val sleMessage = message.data as SleDynamicMessage
-            }
+
         }
 
         //this for logging
@@ -157,9 +155,9 @@ class MainActivity : AppCompatActivity() {
 
 
         //2. observable for device control commands
-        sharedDataManager.deviceControlCommand.observe(this) { event->
+        sharedDataManager.deviceControlCommand.observe(this) { message->
 
-                event.getContentIfNotHandled()?.let { message ->
+
                     // 3. assign incoming message to global message type
                     globalMqttMessage= message
 
@@ -192,7 +190,7 @@ class MainActivity : AppCompatActivity() {
 
                         else ->{}
                     }
-                }
+
         }
 
 
@@ -202,9 +200,9 @@ class MainActivity : AppCompatActivity() {
 
 
         //2. observable for device control commands
-        sharedDataManager.specialModeCommand.observe(this) { event->
+        sharedDataManager.specialModeCommand.observe(this) { message->
 
-            event.getContentIfNotHandled()?.let { message ->
+
                 // 3. assign incoming message to global message type
                 globalMqttMessage= message
 
@@ -235,7 +233,7 @@ class MainActivity : AppCompatActivity() {
                     else ->{}
                 }
 
-            }
+
         }
 
         // 7. After your code execution acknowledge to server
@@ -328,9 +326,8 @@ class MainActivity : AppCompatActivity() {
 
             shellInfoLibrary.getFare(fareRequest)
 
-            sharedDataManager.fareData.observe(this) { event->
+            sharedDataManager.fareData.observe(this) {
 
-                event.getContentIfNotHandled()?.let {
                     when (it) {
                         is ApiResponse.Loading -> {}
                         is ApiResponse.Success -> {
@@ -341,18 +338,16 @@ class MainActivity : AppCompatActivity() {
                         }
                         else -> {}
                     }
-                }
-
 
             }
         })
 
         btnGenerateTicket.setOnClickListener(View.OnClickListener {
             val request = TicketRequest(
-                merchantOrderId = "999991",
+                merchantOrderId = "98939200",
                 merchantId = "2000886106344",
-                fromStationId = "0301",
-                toStationid = "0302",
+                fromStationId = "0401",
+                toStationid = "0402",
                 ticketTypeId = TicketType.SJT.type,
                 noOfTickets = "1",
                 ltmrhlPassId="",
@@ -362,9 +357,8 @@ class MainActivity : AppCompatActivity() {
 
             shellInfoLibrary.generateTicket(request)
 
-            sharedDataManager.ticketData.observe(this) { event->
+            sharedDataManager.ticketData.observe(this) {
 
-                event.getContentIfNotHandled()?.let {
                     when (it) {
                         is ApiResponse.Loading -> {}
                         is ApiResponse.Success -> {
@@ -379,8 +373,6 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
 
-
-            }
         })
 
         btnGetBitmap.setOnClickListener(View.OnClickListener {
@@ -393,13 +385,8 @@ class MainActivity : AppCompatActivity() {
             shellInfoLibrary.getStations()
         }
 
-        sharedDataManager.stationData.observe(this) { data ->
-
-            data.getContentIfNotHandled()?.let { it ->
-                // Handle the observed data
-                Log.e("Data Got", ">>>> Done"+it)
-
-            }
+        sharedDataManager.stationData.observe(this) {
+            Log.e("Data Got", ">>>> Done"+it)
 
         }
 
