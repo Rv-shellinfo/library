@@ -77,8 +77,8 @@ object ShellNetworkModule {
 
     @Singleton
     @Provides
-    fun provideNetworkCall(apiRepository: ApiRepository, dbRepository: DbRepository,@DefaultMoshi moshi: Moshi, sharedDataManager: SharedDataManager) : NetworkCall{
-        return NetworkCall(apiRepository,dbRepository, moshi,sharedDataManager)
+    fun provideNetworkCall(apiRepository: ApiRepository, dbRepository: DbRepository,@DefaultMoshi moshi: Moshi, sharedDataManager: SharedDataManager,spUtils: SharedPreferenceUtil) : NetworkCall{
+        return NetworkCall(apiRepository,dbRepository, moshi,sharedDataManager,spUtils)
     }
 
 }

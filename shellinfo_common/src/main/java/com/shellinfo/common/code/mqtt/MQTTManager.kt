@@ -1,8 +1,16 @@
 package com.shellinfo.common.code.mqtt
 
 import abbasi.android.filelogger.FileLogger
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.Context
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
+import androidx.core.app.NotificationCompat
 import androidx.lifecycle.MutableLiveData
+import androidx.work.ForegroundInfo
 import com.shellinfo.common.code.ConfigMaster
 import com.shellinfo.common.code.enums.MqttAckTopicType
 import com.shellinfo.common.code.enums.MqttTopicType
@@ -53,10 +61,23 @@ class MQTTManager @Inject constructor(
     /**
      * Method to connect to MQTT
      */
+    @RequiresApi(Build.VERSION_CODES.O)
     fun connect() {
 
         val serverURI = "tcp://68.233.98.228:1883"
-        mqttClient = MqttAndroidClient(context, serverURI, "kotlin_client", Ack.AUTO_ACK)
+
+        val deviceType= sharedPreferenceUtil.getPreference(SpConstants.DEVICE_TYPE,"")
+        val deviceSerial =sharedPreferenceUtil.getPreference(SpConstants.DEVICE_SERIAL,"A123490")
+
+        mqttClient = MqttAndroidClient(context, serverURI, deviceType+deviceSerial).apply {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                // Set foreground service for Android 8.0 and above
+                setForegroundService(createForegroundInfo())
+            } else {
+                // Log or handle for Android 7.0 and below
+                Timber.i("MQTTClient", "Foreground service not required for Android < 8.0")
+            }
+        }
         mqttClient.setCallback(object : MqttCallback {
             override fun messageArrived(topic: String?, message: MqttMessage?) {
 
@@ -93,9 +114,10 @@ class MQTTManager @Inject constructor(
 
         //MQTT options
         val options = MqttConnectOptions().apply {
-            isAutomaticReconnect = true // Enable automatic reconnection
-            isCleanSession = true      // Keep the session alive
+            isAutomaticReconnect=true
+            isCleanSession = false
         }
+
 
         try {
             mqttClient.connect(options, null, object : IMqttActionListener {
@@ -133,6 +155,8 @@ class MQTTManager @Inject constructor(
                     FileLogger.e(TAG, "MQTT Connection failure ${exception?.message}")
                     exception?.let { FileLogger.e(TAG, it) }
                 }
+
+
             })
         } catch (e: Exception) {
             e.printStackTrace()
@@ -278,6 +302,29 @@ class MQTTManager @Inject constructor(
         //publish the message for ack
         publish(MqttAckTopicType.fromAckTopic(updatedMessage.messageId)!!.name,jsonString)
 
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    private fun createForegroundInfo(): Notification {
+        // Step 1: Create a Notification Channel (Required for Android 8.0+)
+        val channel = NotificationChannel(
+            "MQTT_CHANNEL",
+            "Foreground Worker",
+            NotificationManager.IMPORTANCE_DEFAULT
+        )
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.createNotificationChannel(channel)
+
+        // Step 2: Build the Notification
+        val notification: Notification = NotificationCompat.Builder(context, "MQTT_CHANNEL")
+            .setContentTitle("Mqtt Worker")
+            .setContentText("Performing long-running task...")
+            .setSmallIcon(android.R.drawable.ic_menu_info_details)
+            .build()
+
+        // Step 3: Return the ForegroundInfo
+        return notification
     }
 
 }

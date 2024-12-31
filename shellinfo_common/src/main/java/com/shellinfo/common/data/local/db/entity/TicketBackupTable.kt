@@ -18,23 +18,29 @@ data class TicketBackupTable(
     @ColumnInfo(name = "OPERATOR_ID")
     val operatorId: String?,
 
-    @ColumnInfo(name = "FROM_STATION_NAME")
-    val fromStation: String?,
+    @ColumnInfo(name = "PENALTY_AMOUNT")
+    val penaltyAmount: Double?,
 
-    @ColumnInfo(name = "TO_STATION_NAME")
-    val toStationName: String?,
+    @ColumnInfo(name = "FROM_STATION_ID")
+    val fromStationId: String?,
+
+    @ColumnInfo(name = "TO_STATION_ID")
+    val toStationId: String?,
 
     @ColumnInfo(name = "UNIT_PRICE")
-    val unitPrice: String?,
+    val unitPrice: Double?,
 
     @ColumnInfo(name = "TOTAL_FARE")
-    val totalFare: String?,
+    val totalFare: Double?,
 
     @ColumnInfo(name = "PURCHASE_ID")
     val purchaseId: String?,
 
     @ColumnInfo(name = "TICKET_ID")
     val ticketId: String?,
+
+    @ColumnInfo(name = "TICKET_TYPE")
+    val ticketType: Int?,
 
     @ColumnInfo(name = "J_TYPE")
     val jType: String?,
@@ -46,15 +52,35 @@ data class TicketBackupTable(
     val changeMoney: String?,
 
     @ColumnInfo(name = "NUMBER_OF_TICKET")
-    val noOfTickets: String?,
+    val noOfTickets: Int?,
 
-    @ColumnInfo(name = "TRANS_DATE")
-    val transDate: String?,
+    @ColumnInfo(name = "TRANSACTION_DATE")
+    val transactionDate: String?,
 
-    @ColumnInfo(name = "TRANS_TIME")
-    val transTime: String?,
+    @ColumnInfo(name = "TRANSACTION_TYPE_ID")
+    val transactionTypeId: Int?,
 
-    @ColumnInfo(name = "PAYMENT_MODE_TICKET")
-    val paymentMode: String?
+    @ColumnInfo(name = "TRANSACTION_TYPE")
+    val transactionType: String?,
+
+    @ColumnInfo(name = "PAYMENT_MODE")
+    val paymentMode: Int,
+
+    @ColumnInfo(name = "TID")
+    val tid: String?,
+
+    @ColumnInfo(name = "PAYMENT_CHANNEL")
+    val paymentChannel: Int,
+
+    @ColumnInfo(name = "BANK_TRANSACTION_ID")
+    val bankTransactionId: String?,
+
+    @ColumnInfo(name = "BANK_REFERENCE_NUMBER")
+    val bankReferenceNumber: String?,
+
+    @ColumnInfo(name = "VOUCHER_CODE")
+    val voucherCode: String
+
+
 
 )

@@ -90,7 +90,7 @@ class SharedDataManager @Inject constructor() {
 
     //SLE message
     private val _sleMessage = SingleLiveEvent<Event<BaseMessageMqtt<*>>>()
-    val sleMessage: LiveData<Event<BaseMessageMqtt<*>>>get() = _sleMessage
+    val sleMessage: LiveData<Event<BaseMessageMqtt<*>>> get() = _sleMessage
 
 
 

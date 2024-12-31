@@ -105,4 +105,31 @@ object Utils {
         return num
     }
 
+    fun getOrderId(
+        prefix: String,
+        serialNumber: String
+    ): String {
+        val maxLength = 40
+        val alphaNumericString = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz"
+
+        // Current timestamp
+        val timestamp = System.currentTimeMillis().toString()
+
+        // Prepare prefix with serial number
+        val prefixWithSerial = "$prefix$serialNumber"
+
+        // Calculate the required length for the alphanumeric part
+        val alphaNumericLength = maxLength - (prefixWithSerial.length + timestamp.length)
+
+        // Build the alphanumeric string to exactly fit the remaining length
+        val sb = StringBuilder()
+        repeat(alphaNumericLength) {
+            val index = (alphaNumericString.length * Math.random()).toInt()
+            sb.append(alphaNumericString[index])
+        }
+
+        // Combine prefix, alphanumeric string, and timestamp
+        return prefixWithSerial + sb.toString() + timestamp
+    }
+
 }

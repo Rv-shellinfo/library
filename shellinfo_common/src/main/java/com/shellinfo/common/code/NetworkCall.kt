@@ -13,7 +13,9 @@ import com.cashfree.pg.core.api.callback.CFCheckoutResponseCallback
 import com.cashfree.pg.core.api.utils.CFErrorResponse
 import com.shellinfo.common.code.enums.ApiMode
 import com.shellinfo.common.code.enums.PaymentGatewayType
+import com.shellinfo.common.code.enums.PaymentMode
 import com.shellinfo.common.code.enums.TicketType
+import com.shellinfo.common.code.enums.TransactionType
 import com.shellinfo.common.code.payment_gateway.CashFreePaymentGateway
 import com.shellinfo.common.code.payment_gateway.PaymentGateway
 import com.shellinfo.common.code.payment_gateway.PaymentProcessor
@@ -22,6 +24,7 @@ import com.shellinfo.common.data.local.db.entity.OrdersTable
 import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.data.local.db.entity.TicketBackupTable
 import com.shellinfo.common.data.local.db.repository.DbRepository
+import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.remote.repository.ApiRepository
 import com.shellinfo.common.data.remote.response.ApiResponse
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
@@ -38,6 +41,7 @@ import com.shellinfo.common.data.remote.response.model.ticket.TicketResponse
 import com.shellinfo.common.data.shared.SharedDataManager
 import com.shellinfo.common.di.DefaultMoshi
 import com.shellinfo.common.utils.DateUtils
+import com.shellinfo.common.utils.SpConstants
 import com.shellinfo.common.utils.Utils
 import com.squareup.moshi.Moshi
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -54,7 +58,8 @@ class NetworkCall @Inject constructor(
     private val apiRepository: ApiRepository,
     private val dbRepository: DbRepository,
     @DefaultMoshi private val moshi: Moshi,
-    private val sharedDataManager: SharedDataManager
+    private val sharedDataManager: SharedDataManager,
+    private val spUtils:SharedPreferenceUtil
 ):ViewModel(){
 
 
@@ -214,26 +219,19 @@ class NetworkCall @Inject constructor(
         viewModelScope.launch {
 
             //calculate per ticket amount
-            var ticketPricePerPerson ="0";
+            var ticketPricePerPerson =0.0;
 
             if(ticketRequest.ticketTypeId.equals(TicketType.SJT.type)){
-                ticketPricePerPerson= ticketRequest.merchantEachTicketFareAfterGst!!
+                ticketPricePerPerson= ticketRequest.merchantEachTicketFareAfterGst!!.toDouble()
             }else if(ticketRequest.ticketTypeId.equals(TicketType.RJT.type)){
-                ticketPricePerPerson= ((ticketRequest.merchantEachTicketFareAfterGst!!.toInt() / 2).toString())
+                ticketPricePerPerson= ((ticketRequest.merchantEachTicketFareAfterGst!!.toInt() / 2)).toDouble()
             }
 
-//            //create order data
-//            val orderData= OrdersTable(
-//                purchaseId = ticketRequest.merchantOrderId,
-//                fromStation = dbRepository.getStationById(ticketRequest.fromStationId).stationName!!,
-//                toStation =  dbRepository.getStationById(ticketRequest.toStationid).stationName!!,
-//                unitPrice = ticketPricePerPerson,
-//                transDate =  DateUtils.getTimerText()
-//            )
-//
-//            //save order data
-//            dbRepository.insertOrder(orderData)
-
+            //order id generation
+            val serial= spUtils.getPreference(SpConstants.DEVICE_SERIAL,"A123450")
+            val prefix= spUtils.getPreference(SpConstants.DEVICE_TYPE,"")
+            val merchantOrderId= Utils.getOrderId(prefix,serial)
+            ticketRequest.merchantOrderId=merchantOrderId
 
             apiRepository.getQrTicket(ticketRequest,apiMode).collect{ response->
 
@@ -249,28 +247,38 @@ class NetworkCall @Inject constructor(
                         val res= response.data
 
                         //check return code
-                        if(res.returnCode.equals("0")){
+                        if(res.returnCode.equals("0") && res.tickets.isNotEmpty()){
                             if(res.tickets.size>0){
 
                                 res.tickets.forEach {
 
+
+                                    //TODO station ids needs to be dynamic for now
                                     //save ticket in database
                                     val ticketData = TicketBackupTable(
                                         shiftId = ""+ticketRequest.shiftId,
                                         operatorId = ticketRequest.operatorId,
-                                        fromStation = dbRepository.getStationById(ticketRequest.fromStationId).stationName,
-                                        toStationName = dbRepository.getStationById(ticketRequest.toStationid).stationName,
+                                        fromStationId = ticketRequest.fromStationId,
+                                        toStationId = ticketRequest.toStationid,
                                         unitPrice = ticketPricePerPerson,
                                         totalFare = ticketPricePerPerson,
-                                        purchaseId = ticketRequest.merchantOrderId,
+                                        penaltyAmount = ticketPricePerPerson,
+                                        purchaseId = res.ltmrhlPurchaseId,
                                         ticketId = it.ticketId,
+                                        ticketType = ticketRequest.ticketTypeId,
                                         jType = it.ticketTypeId,
-                                        passengerMoney = ""+ticketRequest.cashEnterAmount,
-                                        changeMoney = ""+ticketRequest.cashChangeAmount,
-                                        transDate = DateUtils.getDate("yyyy-MM-dd HH:mm:ss"),
-                                        transTime = "",
-                                        paymentMode = ""+ticketRequest.paymentMode,
-                                        noOfTickets = "1"
+                                        passengerMoney = ticketRequest.cashEnterAmount?.toString() ?: "0",
+                                        changeMoney = ticketRequest.cashChangeAmount?.toString() ?: "0",
+                                        transactionDate = DateUtils.getDate("yyyy-MM-dd HH:mm:ss"),
+                                        transactionTypeId = ticketRequest.transType,
+                                        transactionType = TransactionType.getDescriptionByType(ticketRequest.transType!!),
+                                        paymentMode = ticketRequest.paymentMode?:PaymentMode.CASH.mode,
+                                        paymentChannel = ticketRequest.paymentChannel ?: 0,
+                                        tid = "",
+                                        bankReferenceNumber = "",
+                                        bankTransactionId = "",
+                                        voucherCode = "",
+                                        noOfTickets = 1,
                                     )
 
                                     //save in the table

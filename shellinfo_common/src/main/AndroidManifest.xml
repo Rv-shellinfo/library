@@ -55,6 +55,7 @@
 
         <receiver android:name=".code.ota.AppRestartReceiver" />
 
+
     </application>
 
 

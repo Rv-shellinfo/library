@@ -349,12 +349,11 @@ class MainActivity : AppCompatActivity() {
 
         btnGenerateTicket.setOnClickListener(View.OnClickListener {
             val request = TicketRequest(
-                merchantOrderId = "999991",
                 merchantId = "2000886106344",
                 fromStationId = "0301",
                 toStationid = "0302",
                 ticketTypeId = TicketType.SJT.type,
-                noOfTickets = "1",
+                noOfTickets = 1,
                 ltmrhlPassId="",
                 patronPhoneNumber=""
             )
