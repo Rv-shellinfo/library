@@ -43,6 +43,7 @@ import com.shellinfo.common.data.local.data.ipc.BF200Data
 import com.shellinfo.common.data.local.data.ipc.ServiceInfo
 import com.shellinfo.common.data.local.data.ipc.base.BaseMessage
 import com.shellinfo.common.data.local.data.mqtt.BaseMessageMqtt
+import com.shellinfo.common.data.local.db.model.CountAndSumResult
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.remote.response.ApiResponse
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
@@ -778,6 +779,13 @@ class ShellInfoLibrary @Inject constructor(
         }else{
             return ""
         }
+    }
+
+    override fun getCountAndSumForCondition(
+        paymentModes: List<Int>,
+        transactionTypeId: Int
+    ): CountAndSumResult {
+        return databaseCall.getTicketCountAndSum(paymentModes,transactionTypeId)
     }
 
 

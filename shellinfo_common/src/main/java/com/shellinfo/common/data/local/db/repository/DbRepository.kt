@@ -20,6 +20,7 @@ import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.data.local.db.entity.TicketBackupTable
 import com.shellinfo.common.data.local.db.entity.TripLimitTable
 import com.shellinfo.common.data.local.db.entity.ZoneTable
+import com.shellinfo.common.data.local.db.model.CountAndSumResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -75,6 +76,12 @@ class DbRepository @Inject constructor(
 
     suspend fun insertTicket(ticketBackupTable: TicketBackupTable){
         ticketBackupDao.insert(ticketBackupTable)
+    }
+
+    suspend fun getCountAndSumForCondition(paymentModes: List<Int>,
+                                           transactionTypeId: Int): CountAndSumResult {
+        return ticketBackupDao.getCountAndSumForCondition(paymentModes,transactionTypeId)
+
     }
 
     suspend fun insertPasses(passList:List<PassTable>){

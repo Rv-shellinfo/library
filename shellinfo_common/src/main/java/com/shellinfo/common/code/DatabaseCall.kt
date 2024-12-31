@@ -7,10 +7,12 @@ import androidx.lifecycle.viewModelScope
 import com.shellinfo.common.data.local.db.entity.PassTable
 import com.shellinfo.common.data.local.db.entity.StationsTable
 import com.shellinfo.common.data.local.db.entity.ZoneTable
+import com.shellinfo.common.data.local.db.model.CountAndSumResult
 import com.shellinfo.common.data.local.db.repository.DbRepository
 import com.shellinfo.common.data.shared.SharedDataManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -56,6 +58,16 @@ class DatabaseCall @Inject constructor(
             val stations = dbRepository.searchStation(keyword)
             sharedDataManager.sendStationsData(stations)
         }
+    }
+
+    fun getTicketCountAndSum(paymentModes: List<Int>,
+                             transactionTypeId: Int): CountAndSumResult {
+
+        var data:CountAndSumResult
+        runBlocking {
+             data= dbRepository.getCountAndSumForCondition(paymentModes,transactionTypeId)
+        }
+        return data
     }
 
    suspend fun getStationByStationId(id:String):StationsTable{

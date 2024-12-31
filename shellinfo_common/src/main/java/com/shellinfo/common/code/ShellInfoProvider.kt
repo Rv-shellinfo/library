@@ -12,6 +12,7 @@ import com.shellinfo.common.code.printer.PrinterProcessor
 import com.shellinfo.common.data.local.data.InitData
 import com.shellinfo.common.data.local.data.ipc.base.BaseMessage
 import com.shellinfo.common.data.local.data.mqtt.BaseMessageMqtt
+import com.shellinfo.common.data.local.db.model.CountAndSumResult
 import com.shellinfo.common.data.remote.response.model.fare.FareRequest
 import com.shellinfo.common.data.remote.response.model.pass.PassRequest
 import com.shellinfo.common.data.remote.response.model.payment_gateway.AppPaymentRequest
@@ -109,4 +110,7 @@ interface ShellInfoProvider {
     fun getCurrentMode():ModeType
 
     fun getCurrentTime():String
+
+    fun getCountAndSumForCondition(paymentModes: List<Int>,
+                                   transactionTypeId: Int): CountAndSumResult
 }
