@@ -111,6 +111,8 @@ interface ShellInfoProvider {
 
     fun getCurrentTime():String
 
+    fun setReaderLocation(side:String)
+
     fun getCountAndSumForCondition(paymentModes: List<Int>,
                                    transactionTypeId: Int): CountAndSumResult
 }

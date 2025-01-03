@@ -602,7 +602,7 @@ class RupayDataHandler @Inject constructor(
                     osaMasterData.bf200Data = bF200Data
 
                     //check reader location
-                    when (spUtils.getPreference(READER_LOCATION, "EXIT")) {
+                    when (spUtils.getPreference(READER_LOCATION, "ENTRY")) {
 
                         ENTRY_SIDE -> {
 
@@ -2730,7 +2730,7 @@ class RupayDataHandler @Inject constructor(
      */
     fun saveNcmcTransaction(type:NcmcDataType){
 
-        if(spUtils.getPreference(READER_LOCATION, "EXIT") == ENTRY_SIDE){
+        if(spUtils.getPreference(READER_LOCATION, "ENTRY") == ENTRY_SIDE){
             saveEntryTransaction(type)
         }else if(spUtils.getPreference(READER_LOCATION, "EXIT") == EXIT_SIDE){
             saveExitTransaction(type)

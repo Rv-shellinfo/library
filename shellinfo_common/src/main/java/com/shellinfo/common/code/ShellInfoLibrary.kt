@@ -781,6 +781,10 @@ class ShellInfoLibrary @Inject constructor(
         }
     }
 
+    override fun setReaderLocation(side: String) {
+        spUtils.savePreference(READER_LOCATION,side)
+    }
+
     override fun getCountAndSumForCondition(
         paymentModes: List<Int>,
         transactionTypeId: Int
