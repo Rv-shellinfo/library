@@ -50,6 +50,7 @@ import com.shellinfo.common.utils.IPCConstants.STYL_NO_USB_PERMISSION
 import com.shellinfo.common.utils.IPCConstants.STYL_ODA_ERROR_1
 import com.shellinfo.common.utils.IPCConstants.STYL_ODA_ERROR_2
 import com.shellinfo.common.utils.IPCConstants.STYL_READER_BUSY
+import com.shellinfo.common.utils.MessageUtils
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import timber.log.Timber
@@ -271,9 +272,11 @@ class IPCDataHandler @Inject constructor(
                 if(baseMessage!!.messageId == STYL_NO_ERROR){
                     rupayDataHandler.saveNcmcTransaction(baseMessage.dataType)
 
-                    //TODO send success to app
+                    //send message to app
+                    rupayDataHandler.sendMessageToApp(baseMessage.messageId, MessageUtils.getMessage(baseMessage.messageId))
                 }else{
-                    //TODO send error to app
+                    //send message to app
+                    rupayDataHandler.sendMessageToApp(baseMessage.messageId, MessageUtils.getMessage(baseMessage.messageId))
                 }
             }
 
@@ -301,9 +304,11 @@ class IPCDataHandler @Inject constructor(
                 if(baseMessage!!.messageId == STYL_NO_ERROR){
                     rupayDataHandler.savePassPurchaseData()
 
-                    //TODO send success to app
+                    //send message to app
+                    rupayDataHandler.sendMessageToApp(baseMessage.messageId, MessageUtils.getMessage(baseMessage.messageId))
                 }else{
-                    //TODO send error to app
+                    //send message to app
+                    rupayDataHandler.sendMessageToApp(baseMessage.messageId, MessageUtils.getMessage(baseMessage.messageId))
                 }
             }
 

@@ -6,6 +6,7 @@ import com.shellinfo.common.code.NetworkCall
 import com.shellinfo.common.code.ShellInfoLibrary
 import com.shellinfo.common.code.enums.BoTrxType
 import com.shellinfo.common.code.enums.EquipmentType
+import com.shellinfo.common.code.enums.GateType
 import com.shellinfo.common.code.enums.ModeType
 import com.shellinfo.common.code.enums.NcmcDataType
 import com.shellinfo.common.code.enums.TicketType
@@ -65,6 +66,7 @@ import com.shellinfo.common.utils.IPCConstants.TXN_STATUS_ENTRY
 import com.shellinfo.common.utils.IPCConstants.TXN_STATUS_EXIT
 import com.shellinfo.common.utils.IPCConstants.TXN_STATUS_ONE_TAP_TICKET
 import com.shellinfo.common.utils.IPCConstants.TXN_STATUS_PENALTY
+import com.shellinfo.common.utils.MessageUtils
 import com.shellinfo.common.utils.SpConstants
 import com.shellinfo.common.utils.SpConstants.ACQUIRER_ID
 import com.shellinfo.common.utils.SpConstants.BANK_MID
@@ -170,8 +172,15 @@ class RupayDataHandler @Inject constructor(
 
         //set error
         csaMasterData.rupayMessage!!.returnCode= errorCode
-        csaMasterData.rupayMessage!!.returnMessage= errorMessage
+        csaMasterData.rupayMessage!!.returnMessage= MessageUtils.getMessage(errorCode)
         csaMasterData.rupayMessage!!.isSuccess =false
+
+        //set gate side
+        if(spUtils.getPreference(READER_LOCATION, "ENTRY")== "ENTRY"){
+            csaMasterData.rupayMessage!!.gateType = GateType.ENTRY_GATE
+        }else{
+            csaMasterData.rupayMessage!!.gateType = GateType.EXIT_GATE
+        }
 
         //post value to live data to application
         sharedDataManager.sendCsaData(csaMasterData)
@@ -194,8 +203,15 @@ class RupayDataHandler @Inject constructor(
 
         //set error
         osaMasterData.rupayMessage!!.returnCode= errorCode
-        osaMasterData.rupayMessage!!.returnMessage= errorMessage
+        osaMasterData.rupayMessage!!.returnMessage= MessageUtils.getMessage(errorCode)
         osaMasterData.rupayMessage!!.isSuccess =false
+
+        //set gate side
+        if(spUtils.getPreference(READER_LOCATION, "ENTRY")== "ENTRY"){
+            osaMasterData.rupayMessage!!.gateType = GateType.ENTRY_GATE
+        }else{
+            osaMasterData.rupayMessage!!.gateType = GateType.EXIT_GATE
+        }
 
         //post value to live data to application
         sharedDataManager.sendOsaData(osaMasterData)
@@ -218,7 +234,14 @@ class RupayDataHandler @Inject constructor(
 
         //set error
         csaMasterData.rupayMessage!!.returnCode= returnCode!!
-        csaMasterData.rupayMessage!!.returnMessage= returnMessage!!
+        csaMasterData.rupayMessage!!.returnMessage= MessageUtils.getMessage(returnCode)
+
+        //set gate side
+        if(spUtils.getPreference(READER_LOCATION, "ENTRY")== "ENTRY"){
+            csaMasterData.rupayMessage!!.gateType = GateType.ENTRY_GATE
+        }else{
+            csaMasterData.rupayMessage!!.gateType = GateType.EXIT_GATE
+        }
 
         //post value to live data to application
         sharedDataManager.sendCsaData(csaMasterData)
