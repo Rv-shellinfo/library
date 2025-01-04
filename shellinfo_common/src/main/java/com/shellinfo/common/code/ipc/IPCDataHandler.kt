@@ -484,6 +484,10 @@ class IPCDataHandler @Inject constructor(
                     }
                 }
 
+            }else ->{
+
+                rupayDataHandler.sendMessageToApp(baseMessage.messageId,MessageUtils.getMessage(baseMessage.messageId))
+
             }
 
         }

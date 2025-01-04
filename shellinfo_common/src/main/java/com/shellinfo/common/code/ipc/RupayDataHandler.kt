@@ -796,7 +796,7 @@ class RupayDataHandler @Inject constructor(
 
                 val response= result.getOrNull()
 
-                if(response!=null){
+                if(response!=null && response.returnCode=="00"){
                     handleEntryValidationResponse(response,csaMasterData)
                 }else{
 
@@ -810,6 +810,12 @@ class RupayDataHandler @Inject constructor(
                 }
 
             }else{
+
+                //return error to payment app and UI
+                handleError(
+                    FAILURE_ENTRY_VALIDATION,
+                    rupayUtils.getError("FAILURE_ENTRY_VALIDATION")
+                )
                 return@runBlocking
             }
         }
