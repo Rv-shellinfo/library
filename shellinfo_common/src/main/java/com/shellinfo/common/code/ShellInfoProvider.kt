@@ -113,6 +113,6 @@ interface ShellInfoProvider {
 
     fun setReaderLocation(side:String)
 
-    fun getCountAndSumForCondition(paymentModes: List<Int>,
+    fun getCountAndSumForCondition(shiftId:String,paymentModes: List<Int>,
                                    transactionTypeId: Int): CountAndSumResult
 }

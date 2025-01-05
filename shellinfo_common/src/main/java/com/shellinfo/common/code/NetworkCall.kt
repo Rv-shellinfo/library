@@ -284,11 +284,7 @@ class NetworkCall @Inject constructor(
                                     //save in the table
                                     dbRepository.insertTicket(ticketData)
 
-
-                                    //TODO print ticket functionality needs to add
-                                    //TODO save in the log file functionality needs to add
-
-
+                                    //send ticket data to application
                                     sharedDataManager.sendTicketData(response)
 
                                 }

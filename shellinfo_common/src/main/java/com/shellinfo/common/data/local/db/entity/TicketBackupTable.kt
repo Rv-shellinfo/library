@@ -10,7 +10,7 @@ data class TicketBackupTable(
 
     @PrimaryKey(autoGenerate = true)
     @ColumnInfo(name = "UID")
-    val uId: Int? = 0,
+    val uId: Long? = 0,
 
     @ColumnInfo(name = "SHIFT_ID")
     val shiftId: String? ,

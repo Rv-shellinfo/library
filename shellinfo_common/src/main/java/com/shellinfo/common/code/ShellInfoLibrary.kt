@@ -12,6 +12,7 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat.startActivity
@@ -568,6 +569,7 @@ class ShellInfoLibrary @Inject constructor(
         loggerImpl.logError(tag,error)
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun mqttConnect() {
         mqttManager.connect()
     }
@@ -786,10 +788,11 @@ class ShellInfoLibrary @Inject constructor(
     }
 
     override fun getCountAndSumForCondition(
+        shiftId:String,
         paymentModes: List<Int>,
         transactionTypeId: Int
     ): CountAndSumResult {
-        return databaseCall.getTicketCountAndSum(paymentModes,transactionTypeId)
+        return databaseCall.getTicketCountAndSum(shiftId,paymentModes,transactionTypeId)
     }
 
 

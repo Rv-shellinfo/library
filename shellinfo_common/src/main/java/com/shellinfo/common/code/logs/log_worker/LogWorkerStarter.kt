@@ -38,7 +38,7 @@ class LogWorkerStarter @Inject constructor(
         FileLogger.d("Log Upload Worker", "Starting...")
 
         //cancel previous worker if any
-        workManager.cancelUniqueWork(WORK_NAME)
+        //workManager.cancelUniqueWork(WORK_NAME)
 
         //creating request for periodic worker
         val request = PeriodicWorkRequestBuilder<UploadLogsWorker>(master.log_frequency.toLong(), TimeUnit.MINUTES)

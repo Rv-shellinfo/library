@@ -9,6 +9,8 @@ data class TicketRequest(
     @Json(name ="merchantOrderId") var merchantOrderId: String?="",
     @Json(name ="merchantId") var merchantId: String,
     @Json(name ="transType") var transType: Int?=0,
+    @Json(name ="transTypeId") var transTypeId: String?="",
+    @Json(name ="transDate") var transDate: String?="",
     @Json(name ="fromStationId") var fromStationId: String,
     @Json(name ="toStationid") var toStationid: String,
     @Json(name ="ticketTypeId") var ticketTypeId: Int,

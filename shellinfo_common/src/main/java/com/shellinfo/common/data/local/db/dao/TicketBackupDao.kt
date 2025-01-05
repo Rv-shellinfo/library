@@ -24,13 +24,14 @@ interface TicketBackupDao {
     @Query("DELETE FROM TICKET_BACKUP_TABLE")
     suspend fun deleteAll()
 
-    @Query(
-        "SELECT COUNT(*) AS recordCount, IFNULL(SUM(PENALTY_AMOUNT), 0) AS totalPenalty " +
-                "FROM $TICKET_BACKUP_TABLE " +
-                "WHERE PAYMENT_MODE IN (:paymentModes) AND TRANSACTION_TYPE_ID = :transactionTypeId"
-    )
-    suspend fun getCountAndSumForCondition(
-        paymentModes: List<Int>, // Accepts a list of payment modes
-        transactionTypeId: Int
-    ): CountAndSumResult
+     @Query(
+         "SELECT COUNT(*) AS recordCount, IFNULL(SUM(PENALTY_AMOUNT), 0) AS totalPenalty " +
+                 "FROM $TICKET_BACKUP_TABLE " +
+                 "WHERE SHIFT_ID = :shiftId AND PAYMENT_MODE IN (:paymentModes) AND TRANSACTION_TYPE_ID = :transactionTypeId"
+     )
+     suspend fun getCountAndSumForCondition(
+         shiftId: String,
+         paymentModes: List<Int>,
+         transactionTypeId: Int
+     ): CountAndSumResult
 }

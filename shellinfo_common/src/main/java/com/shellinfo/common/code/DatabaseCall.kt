@@ -60,12 +60,12 @@ class DatabaseCall @Inject constructor(
         }
     }
 
-    fun getTicketCountAndSum(paymentModes: List<Int>,
+    fun getTicketCountAndSum(shiftId:String, paymentModes: List<Int>,
                              transactionTypeId: Int): CountAndSumResult {
 
         var data:CountAndSumResult
         runBlocking {
-             data= dbRepository.getCountAndSumForCondition(paymentModes,transactionTypeId)
+             data= dbRepository.getCountAndSumForCondition(shiftId,paymentModes,transactionTypeId)
         }
         return data
     }

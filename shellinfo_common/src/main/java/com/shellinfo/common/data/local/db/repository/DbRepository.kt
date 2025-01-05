@@ -78,9 +78,9 @@ class DbRepository @Inject constructor(
         ticketBackupDao.insert(ticketBackupTable)
     }
 
-    suspend fun getCountAndSumForCondition(paymentModes: List<Int>,
+    suspend fun getCountAndSumForCondition(shiftId: String,paymentModes: List<Int>,
                                            transactionTypeId: Int): CountAndSumResult {
-        return ticketBackupDao.getCountAndSumForCondition(paymentModes,transactionTypeId)
+        return ticketBackupDao.getCountAndSumForCondition(shiftId,paymentModes,transactionTypeId)
 
     }
 
