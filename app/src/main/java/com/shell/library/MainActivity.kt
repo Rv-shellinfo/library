@@ -86,7 +86,7 @@ class MainActivity : AppCompatActivity() {
             appId = BuildConfig.APPLICATION_ID,
             appName = "Transit",BuildConfig.VERSION_CODE.toString(),
             appVersionName = BuildConfig.VERSION_NAME,
-            deviceType = EquipmentType.VALIDATOR,
+            deviceType = EquipmentType.TOM,
             appType = "Transit",
             deviceSerial =  Build.SERIAL,
             apiMode = ApiMode.PUBLIC,

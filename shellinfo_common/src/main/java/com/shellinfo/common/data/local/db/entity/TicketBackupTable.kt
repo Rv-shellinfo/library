@@ -8,9 +8,9 @@ import com.shellinfo.common.utils.DBConstants
 @Entity(tableName = DBConstants.TICKET_BACKUP_TABLE)
 data class TicketBackupTable(
 
-    @PrimaryKey(autoGenerate = true)
-    @ColumnInfo(name = "UID")
-    val uId: Long? = 0,
+    @PrimaryKey
+    @ColumnInfo(name = "TICKET_ID")
+    val ticketId: String,
 
     @ColumnInfo(name = "SHIFT_ID")
     val shiftId: String? ,
@@ -36,8 +36,6 @@ data class TicketBackupTable(
     @ColumnInfo(name = "PURCHASE_ID")
     val purchaseId: String?,
 
-    @ColumnInfo(name = "TICKET_ID")
-    val ticketId: String?,
 
     @ColumnInfo(name = "TICKET_TYPE")
     val ticketType: Int?,
