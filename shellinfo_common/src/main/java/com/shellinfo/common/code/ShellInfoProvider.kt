@@ -114,5 +114,5 @@ interface ShellInfoProvider {
     fun setReaderLocation(side:String)
 
     fun getCountAndSumForCondition(shiftId:String,paymentModes: List<Int>,
-                                   transactionTypeId: Int): CountAndSumResult
+                                   transactionTypeId: Int,ticketType:Int): CountAndSumResult
 }

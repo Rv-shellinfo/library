@@ -790,9 +790,10 @@ class ShellInfoLibrary @Inject constructor(
     override fun getCountAndSumForCondition(
         shiftId:String,
         paymentModes: List<Int>,
-        transactionTypeId: Int
+        transactionTypeId: Int,
+        ticketType:Int
     ): CountAndSumResult {
-        return databaseCall.getTicketCountAndSum(shiftId,paymentModes,transactionTypeId)
+        return databaseCall.getTicketCountAndSum(shiftId,paymentModes,transactionTypeId,ticketType)
     }
 
 

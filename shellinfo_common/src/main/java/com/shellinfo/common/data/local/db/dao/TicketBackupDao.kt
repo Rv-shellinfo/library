@@ -36,6 +36,6 @@ interface TicketBackupDao {
          shiftId: String,
          paymentModes: List<Int>,
          transactionTypeId: Int,
-         ticketType: String
+         ticketType: Int
      ): CountAndSumResult
 }
