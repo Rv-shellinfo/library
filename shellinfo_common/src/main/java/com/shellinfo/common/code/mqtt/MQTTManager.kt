@@ -9,6 +9,7 @@ import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.work.ForegroundInfo
 import com.shellinfo.common.code.ConfigMaster
@@ -19,6 +20,8 @@ import com.shellinfo.common.data.local.data.mqtt.MqttData
 import com.shellinfo.common.data.local.data.mqtt.OtaUpdateMessage
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.utils.DateUtils
+import com.shellinfo.common.utils.Event
+import com.shellinfo.common.utils.SingleLiveEvent
 import com.shellinfo.common.utils.SpConstants
 import com.squareup.moshi.JsonAdapter
 import info.mqtt.android.service.Ack
@@ -39,7 +42,7 @@ class MQTTManager @Inject constructor(
     private val configMaster: ConfigMaster,
     private val context: Context,
     private val mqttMessageHandler: MqttMessageHandler,
-    private val mqttMessageAdapter: JsonAdapter<BaseMessageMqtt<MqttData>>,
+    val mqttMessageAdapter: JsonAdapter<BaseMessageMqtt<MqttData>>,
     private val sharedPreferenceUtil: SharedPreferenceUtil
 ){
 
@@ -54,8 +57,8 @@ class MQTTManager @Inject constructor(
     val mqttMessageLiveData: MutableLiveData<MqttMessage?> get() = _mqttMessageLiveData
 
     //mqtt connection live data
-    private val _mqttConnectionLiveData = MutableLiveData<Boolean>()
-    val mqttConnectionLiveData: MutableLiveData<Boolean> get() = _mqttConnectionLiveData
+    private val _mqttConnectionLiveData = SingleLiveEvent<Event<Boolean>>()
+    val mqttConnectionLiveData: LiveData<Event<Boolean>> get() = _mqttConnectionLiveData
 
 
     /**
@@ -126,7 +129,7 @@ class MQTTManager @Inject constructor(
 
                     FileLogger.d(TAG, "MQTT Connection success")
 
-                    _mqttConnectionLiveData.value= true
+                    _mqttConnectionLiveData.postValue(Event(true))
 
                     //set mqtt manager
                     mqttMessageHandler.setMqttManager(this@MQTTManager)
@@ -218,7 +221,7 @@ class MQTTManager @Inject constructor(
     /**
      * Method to publish a message on a topic
      */
-    private fun publish(topic: String, msg: String, qos: Int = 1, retained: Boolean = false) {
+    fun publish(topic: String, msg: String, qos: Int = 1, retained: Boolean = false) {
         try {
             val message = MqttMessage()
             message.payload = msg.toByteArray()

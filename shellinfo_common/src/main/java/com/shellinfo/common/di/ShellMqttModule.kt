@@ -24,6 +24,7 @@ import com.shellinfo.common.data.local.data.mqtt.LogStatusMessage
 import com.shellinfo.common.data.local.data.mqtt.MqttData
 import com.shellinfo.common.data.local.data.mqtt.OtaUpdateMessage
 import com.shellinfo.common.data.local.data.mqtt.ParameterMessage
+import com.shellinfo.common.data.local.data.mqtt.SlaveDeviceStatus
 import com.shellinfo.common.data.local.data.mqtt.SleDatabaseMessage
 import com.shellinfo.common.data.local.data.mqtt.SleDynamicMessage
 import com.shellinfo.common.data.local.data.mqtt.SpecialModeMessage
@@ -63,6 +64,7 @@ object ShellMqttModule {
                 .withSubtype(ParameterMessage::class.java,"PARAMETER")
                 .withSubtype(SleDynamicMessage::class.java,"SLE_MESSAGE")
                 .withSubtype(SleDatabaseMessage::class.java,"SLE_DATABASE_STATUS")
+                .withSubtype(SlaveDeviceStatus::class.java,"SLAVE_DEVICE_STATUS")
             )
             .build()
     }

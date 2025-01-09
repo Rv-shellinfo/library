@@ -118,4 +118,14 @@ data class SleDynamicMessage(
     val status:String
 ):MqttData
 
+@JsonClass(generateAdapter = true)
+data class SlaveDeviceStatus(
+    val type:String,
+    val deviceType: Int,
+    val deviceName:String,
+    val deviceSerial: String,
+    val deviceLocation:String,
+    val isConnected:Boolean
+):MqttData
+
 

@@ -4,6 +4,7 @@ object Constants {
     const val SHARED_PREF_FILE_NAME = "shell_sp"
     const val ENCRYPTED_SHARED_PREF_FILE_NAME = "shell_enc_sp"
     const val CONNECTION_TIMEOUT = "60"
+    const val ACTION_USB_PERMISSION = "com.shellinfo.common.USB_PERMISSION"
 
 }
 
@@ -293,4 +294,18 @@ object IPCConstants{
     const val ENTRY_EXIT_OVERRIDE_OFF = "0"
     const val ENTRY_EXIT_OVERRIDE_ON = "1"
 
+}
+
+object DeviceVendors{
+
+    const val TOM_QR_SCANNER_VENDOR_ID = 7851
+    const val TVM_QR_SCANNER_VENDOR_ID = 7852
+    const val VALIDATOR_QR_SCANNER_VENDOR_ID = 7853
+    const val EMV_READER_VENDOR_ID = 11563
+    const val POS_DEVICE_VENDOR_ID = 3725
+    const val PDU_DEVICE_TOM_VENDOR_ID = 9721
+    const val PDU_DEVICE_TVM_VENDOR_ID = 9722
+    const val PRINTER_DEVICE_TOM_VENDOR_ID = 9799
+    const val PRINTER_DEVICE_TVM_VENDOR_ID = 9788
+    const val ECU_TVM_VENDOR_ID = 9766
 }

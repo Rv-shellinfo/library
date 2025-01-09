@@ -2,13 +2,17 @@ package com.shellinfo.common.code
 
 import abbasi.android.filelogger.FileLogger
 import android.Manifest
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Bitmap
+import android.hardware.usb.UsbManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.Settings
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
@@ -38,6 +42,7 @@ import com.shellinfo.common.code.mqtt.topic_handler.modes.ModeManager
 import com.shellinfo.common.code.printer.PrinterActions
 import com.shellinfo.common.code.printer.PrinterProcessor
 import com.shellinfo.common.code.printer.SunmiPrinter
+import com.shellinfo.common.code.usb.UsbReceiver
 import com.shellinfo.common.code.worker.CustomWorkerFactory
 import com.shellinfo.common.data.local.data.InitData
 import com.shellinfo.common.data.local.data.ipc.BF200Data
@@ -56,7 +61,9 @@ import com.shellinfo.common.data.remote.response.model.ticket.Ticket
 import com.shellinfo.common.data.remote.response.model.ticket.TicketRequest
 import com.shellinfo.common.data.shared.SharedDataManager
 import com.shellinfo.common.utils.BarcodeUtils
+import com.shellinfo.common.utils.Constants.ACTION_USB_PERMISSION
 import com.shellinfo.common.utils.DateUtils
+import com.shellinfo.common.utils.Event
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_CREATE_OSA_SERVICE
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_CREATE_PASS
 import com.shellinfo.common.utils.IPCConstants.MSG_ID_DELETE_CSA_DATA
@@ -117,6 +124,11 @@ class ShellInfoLibrary @Inject constructor(
 
     private lateinit var permissionLauncher: ActivityResultLauncher<Intent>
 
+    //usb manager and receiver
+    private lateinit var usbManager: UsbManager
+    private val usbReceiver = UsbReceiver()
+
+
     //application activity context
     private var activity: AppCompatActivity? = null
 
@@ -143,7 +155,7 @@ class ShellInfoLibrary @Inject constructor(
     val mqttMessageResponse: MutableLiveData<MqttMessage?> get()= mqttManager.mqttMessageLiveData
 
     //mqtt connection callback
-    val mqttIsConnected: MutableLiveData<Boolean> get()= mqttManager.mqttConnectionLiveData
+    val mqttIsConnected: LiveData<Event<Boolean>> get()= mqttManager.mqttConnectionLiveData
 
 
     override fun setApiMode(mode: ApiMode) {
@@ -207,15 +219,29 @@ class ShellInfoLibrary @Inject constructor(
                 //observe for mode changes scenarios
                 observeForModeChange()
 
+                //get usb manager
+                usbManager = activity?.getSystemService(Context.USB_SERVICE) as UsbManager
+
+                // Register the USB Receiver
+                val filter = IntentFilter().apply {
+                    addAction(ACTION_USB_PERMISSION)
+                    addAction(UsbManager.ACTION_USB_DEVICE_ATTACHED)
+                    addAction(UsbManager.ACTION_USB_DEVICE_DETACHED)
+                    addAction(Intent.ACTION_CONFIGURATION_CHANGED)
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    activity!!.registerReceiver(usbReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+                } else {
+                    activity?.registerReceiver(usbReceiver, filter)
+                }
+
             }else{
                 sharedDataManager.sendLibraryInit(false)
             }
         }
 
-        //start simulation payment app data
-        //startSimulation()
 
-        //addDummyPass()
 
         //save application specific data in shared preferences for future use
 //        spUtils.savePreference(SpConstants.APP_ID,initData.appId)
@@ -257,7 +283,6 @@ class ShellInfoLibrary @Inject constructor(
         // Initialize Timber for Debug build
         Timber.plant(Timber.DebugTree())
 
-
         //start ipc service
         activity?.let { startIpcService(it) }
 
@@ -267,6 +292,18 @@ class ShellInfoLibrary @Inject constructor(
         //handle card read service
         handleCardDetectionService()
 
+
+        //observe the mqtt connection
+        activity?.let {
+            mqttManager.mqttConnectionLiveData.observe(it) {
+                it.getContentIfNotHandled()?.let {
+                    checkConnectedDevices()
+                }
+            }
+
+        }
+
+
     }
 
     override fun stop() {
@@ -274,9 +311,30 @@ class ShellInfoLibrary @Inject constructor(
         //start ipc service
         activity?.let { stopIpcService(it) }
 
+        //stop usb receiver
+        activity?.unregisterReceiver(usbReceiver)
+
         stopLogging(true,true)
 
         disconnectMqtt()
+    }
+
+
+    private fun checkConnectedDevices() {
+        val deviceList = usbManager.deviceList
+        for ((_, device) in deviceList) {
+            Log.d("MainActivity", "Already connected device: ${device.deviceName}")
+//            if (!usbManager.hasPermission(device)) {
+//                val permissionIntent = PendingIntent.getBroadcast(
+//                    activity, 0, Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+//                )
+//                usbManager.requestPermission(device, permissionIntent)
+//            } else {
+//                usbReceiver.sendDeviceConnectionToServer(device,true)
+//            }
+            usbReceiver.sendDeviceConnectionToServer(device,true)
+        }
+
     }
 
 
