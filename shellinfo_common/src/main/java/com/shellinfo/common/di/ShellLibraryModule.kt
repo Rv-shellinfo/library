@@ -13,6 +13,7 @@ import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.shared.SharedDataManager
 import com.shellinfo.common.utils.BarcodeUtils
 import com.shellinfo.common.utils.PermissionsUtils
+import com.shellinfo.common.utils.UsbDeviceConnectionHandler
 import com.squareup.moshi.Moshi
 import dagger.Module
 import dagger.Provides
@@ -39,9 +40,10 @@ object LibraryModule {
         permissionsUtils: PermissionsUtils,
         sharedDataManager: SharedDataManager,
         modeManager: ModeManager,
-        factory: CustomWorkerFactory
+        factory: CustomWorkerFactory,
+        usbDeviceConnectionHandler: UsbDeviceConnectionHandler
     ):ShellInfoLibrary{
-        return ShellInfoLibrary(context,spUtils,networkCall,databaseCall,barcodeUtils,loggerImpl,mqttManager,ipcDataHandler,permissionsUtils,sharedDataManager,modeManager,factory)
+        return ShellInfoLibrary(context,spUtils,networkCall,databaseCall,barcodeUtils,loggerImpl,mqttManager,ipcDataHandler,permissionsUtils,sharedDataManager,modeManager,factory,usbDeviceConnectionHandler)
     }
 
 

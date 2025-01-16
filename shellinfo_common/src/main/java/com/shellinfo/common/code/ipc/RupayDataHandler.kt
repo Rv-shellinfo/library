@@ -12,6 +12,7 @@ import com.shellinfo.common.code.enums.NcmcDataType
 import com.shellinfo.common.code.enums.TicketType
 import com.shellinfo.common.code.mqtt.topic_handler.modes.ModeManager
 import com.shellinfo.common.code.pass.BasePassValidator
+import com.shellinfo.common.code.serial_comm.SerialCommManager
 import com.shellinfo.common.data.local.data.emv_rupay.CSAMasterData
 import com.shellinfo.common.data.local.data.emv_rupay.EntryDataCache
 import com.shellinfo.common.data.local.data.emv_rupay.OSAMasterData
@@ -114,7 +115,8 @@ class RupayDataHandler @Inject constructor(
     private val passValidator: BasePassValidator,
     private val dbRepository: DbRepository,
     private val entryDataCache: EntryDataCache,
-    private val modeManager: ModeManager
+    private val modeManager: ModeManager,
+    private val serialCommManager: SerialCommManager
 ) {
 
     lateinit var communicationService: IRemoteService
@@ -190,6 +192,9 @@ class RupayDataHandler @Inject constructor(
             //send back error to payment app
             communicationService.sendData(MSG_ID_ERROR_TRANSACTION, "MSG_ID_ERROR_TRANSACTION")
         }
+
+        //send serial communication to Gate
+        serialCommManager.sendTrxErrorToEcu()
     }
 
 
@@ -221,6 +226,9 @@ class RupayDataHandler @Inject constructor(
             //send back error to payment app
             communicationService.sendData(MSG_ID_ERROR_TRANSACTION, "MSG_ID_ERROR_TRANSACTION")
         }
+
+        //send serial communication to Gate
+        serialCommManager.sendTrxErrorToEcu()
     }
 
 
@@ -245,6 +253,9 @@ class RupayDataHandler @Inject constructor(
 
         //post value to live data to application
         sharedDataManager.sendCsaData(csaMasterData)
+
+        //send serial communication to Gate
+        serialCommManager.sendTrxSuccessToEcu()
 
     }
 

@@ -307,5 +307,5 @@ object DeviceVendors{
     const val PDU_DEVICE_TVM_VENDOR_ID = 9722
     const val PRINTER_DEVICE_TOM_VENDOR_ID = 9799
     const val PRINTER_DEVICE_TVM_VENDOR_ID = 9788
-    const val ECU_TVM_VENDOR_ID = 9766
+    const val ECU_VENDOR_ID = 1659
 }

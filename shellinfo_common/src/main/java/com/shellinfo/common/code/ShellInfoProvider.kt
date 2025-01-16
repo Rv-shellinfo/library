@@ -113,6 +113,9 @@ interface ShellInfoProvider {
 
     fun setReaderLocation(side:String)
 
+    fun sendTrxSuccessToEcu()
+    fun sendTrxErrorToEcu()
+
     fun getCountAndSumForCondition(shiftId:String,paymentModes: List<Int>,
                                    transactionTypeId: Int,ticketType:Int): CountAndSumResult
 }

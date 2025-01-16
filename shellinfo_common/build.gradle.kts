@@ -199,6 +199,8 @@ dependencies {
     implementation("ru.solrudev.ackpine:ackpine-core:0.5.1")
     implementation("ru.solrudev.ackpine:ackpine-ktx:0.5.1")
 
+    //serial communication library
+    implementation("com.github.mik3y:usb-serial-for-android:3.8.1")
 
     //ntp for clock sync
     implementation("com.github.instacart.truetime-android:library:3.5")

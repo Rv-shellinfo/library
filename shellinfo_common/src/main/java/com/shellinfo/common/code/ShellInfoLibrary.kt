@@ -79,6 +79,7 @@ import com.shellinfo.common.utils.SpConstants.DEVICE_TYPE
 import com.shellinfo.common.utils.SpConstants.ENTRY_SIDE
 import com.shellinfo.common.utils.SpConstants.OPERATOR_SERVICE_ID
 import com.shellinfo.common.utils.SpConstants.READER_LOCATION
+import com.shellinfo.common.utils.UsbDeviceConnectionHandler
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.Types
 import dagger.hilt.EntryPoint
@@ -106,6 +107,7 @@ class ShellInfoLibrary @Inject constructor(
     private val sharedDataManager: SharedDataManager,
     private val modeManager: ModeManager,
     private val workerFactory: CustomWorkerFactory,
+    private val usbDeviceConnectionHandler: UsbDeviceConnectionHandler
 
 ) :ShellInfoProvider {
 
@@ -324,15 +326,16 @@ class ShellInfoLibrary @Inject constructor(
         val deviceList = usbManager.deviceList
         for ((_, device) in deviceList) {
             Log.d("MainActivity", "Already connected device: ${device.deviceName}")
-//            if (!usbManager.hasPermission(device)) {
-//                val permissionIntent = PendingIntent.getBroadcast(
-//                    activity, 0, Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-//                )
-//                usbManager.requestPermission(device, permissionIntent)
-//            } else {
-//                usbReceiver.sendDeviceConnectionToServer(device,true)
-//            }
-            usbReceiver.sendDeviceConnectionToServer(device,true)
+            if (!usbManager.hasPermission(device)) {
+                val permissionIntent = PendingIntent.getBroadcast(
+                    activity, 0, Intent(ACTION_USB_PERMISSION), PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                usbManager.requestPermission(device, permissionIntent)
+            } else {
+
+                activity?.let { usbDeviceConnectionHandler.sendDeviceConnectionToServer(device,true, it) }
+            }
+            //usbReceiver.sendDeviceConnectionToServer(device,true)
         }
 
     }
@@ -843,6 +846,14 @@ class ShellInfoLibrary @Inject constructor(
 
     override fun setReaderLocation(side: String) {
         spUtils.savePreference(READER_LOCATION,side)
+    }
+
+    override fun sendTrxSuccessToEcu() {
+        usbDeviceConnectionHandler.sendTrxSuccessToEcu()
+    }
+
+    override fun sendTrxErrorToEcu() {
+        usbDeviceConnectionHandler.sendTrxErrorToEcu()
     }
 
     override fun getCountAndSumForCondition(

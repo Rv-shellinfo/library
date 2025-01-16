@@ -52,6 +52,8 @@ class MainActivity : AppCompatActivity() {
     lateinit var btnGenerateTicket:Button;
     lateinit var btnGetBitmap:Button;
     lateinit var btnGetStationData:Button;
+    lateinit var btnEcuSuccess:Button;
+    lateinit var btnEcuError:Button;
     lateinit var tktBarcode:AppCompatImageView;
 
 
@@ -76,6 +78,8 @@ class MainActivity : AppCompatActivity() {
         btnGenerateTicket= findViewById(R.id.btnGenerateTicket)
         btnGetBitmap= findViewById(R.id.btnGetBitmap)
         btnGetStationData= findViewById(R.id.btnGetStationData)
+        btnEcuSuccess= findViewById(R.id.ecuSuccess)
+        btnEcuError= findViewById(R.id.ecuError)
         tktBarcode= findViewById(R.id.tktBarcode)
 
         //shellInfoLibrary.setApiMode(ApiMode.PUBLIC)
@@ -390,6 +394,14 @@ class MainActivity : AppCompatActivity() {
 
         btnGetStationData.setOnClickListener {
             shellInfoLibrary.getStations()
+        }
+
+        btnEcuSuccess.setOnClickListener {
+            shellInfoLibrary.sendTrxSuccessToEcu()
+        }
+
+        btnEcuError.setOnClickListener {
+            shellInfoLibrary.sendTrxErrorToEcu()
         }
 
         sharedDataManager.stationData.observe(this) { data ->

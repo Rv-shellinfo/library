@@ -7,11 +7,13 @@ import com.shellinfo.common.code.ConfigMaster
 import com.shellinfo.common.code.logs.LoggerImpl
 import com.shellinfo.common.code.mqtt.MQTTManager
 import com.shellinfo.common.code.mqtt.MqttMessageHandler
+import com.shellinfo.common.code.serial_comm.SerialCommManager
 import com.shellinfo.common.data.local.data.emv_rupay.EntryDataCache
 import com.shellinfo.common.data.local.prefs.SharedPreferenceUtil
 import com.shellinfo.common.data.shared.SharedDataManager
 import com.shellinfo.common.utils.FtpUtils
 import com.shellinfo.common.utils.PermissionsUtils
+import com.shellinfo.common.utils.UsbDeviceConnectionHandler
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -71,5 +73,17 @@ object UtilityModule {
     @Provides
     fun provideEntryCacheData():EntryDataCache{
         return EntryDataCache()
+    }
+
+    @Singleton
+    @Provides
+    fun provideSerialComm():SerialCommManager{
+        return SerialCommManager()
+    }
+
+    @Singleton
+    @Provides
+    fun provideDeviceConnectionHandler(mqttManager: MQTTManager,spUtil: SharedPreferenceUtil,serialCommManager: SerialCommManager): UsbDeviceConnectionHandler{
+        return UsbDeviceConnectionHandler(mqttManager,spUtil,serialCommManager)
     }
 }
